@@ -407,6 +407,25 @@ export interface CompositionDocument {
    */
   imports?: Record<string, string>;
 
+  /**
+   * Canonical primary storage marker — ADR-916 Phase 3 G4 sub-phase 3-D (D19=B 채택).
+   *
+   * - `schemaVersion`: storage 형태 marker. `"legacy-1.0"` (legacy primary)
+   *   또는 `"canonical-primary-1.0"` (canonical primary 전환 후). undefined =
+   *   legacy primary 가정 (BC).
+   * - `canRollback`: rollback 가능 여부. `restoreFromLegacyBackup(projectId)`
+   *   가 backup snapshot 을 발견하면 true. ADR-916 Phase 3 G4 의 rollback
+   *   prerequisite (D19=B).
+   *
+   * **본 단축 단계 (3-D)**: 필드 surface 만 도입. 실 schemaVersion bump
+   * (`"legacy-1.0"` → `"canonical-primary-1.0"`) 는 mutation reverse 광역 refactor
+   * 완료 후 별도 sub-phase 에서 진행.
+   */
+  _meta?: {
+    schemaVersion?: "legacy-1.0" | "canonical-primary-1.0";
+    canRollback?: boolean;
+  };
+
   /** canonical 노드 트리 */
   children: CanonicalNode[];
 }

@@ -23,6 +23,7 @@ import {
   isWebGLCanvas,
   isCanvasCompareMode,
   isCanonicalDocumentSyncEnabled,
+  isCanonicalPrimaryEnabled,
 } from "../../utils/featureFlags";
 import { startCanonicalDocumentSync } from "../stores/canonical/canonicalDocumentSync";
 // ADR-916 Phase 2 G3 Step 4 — BuilderCore layout refresh dual-mode
@@ -31,6 +32,8 @@ import {
   getActiveCanonicalDocument,
 } from "../stores/canonical/canonicalElementsBridge";
 import { canonicalDocumentToElements } from "../stores/canonical/canonicalElementsView";
+// ADR-916 Phase 3 G4 sub-phase 3-B — Canonical primary backup bootstrap
+import { saveLegacyBackup } from "@/adapters/canonical/restoreFromLegacyBackup";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import {
   ToastContainer,
@@ -108,6 +111,17 @@ export const BuilderCore: React.FC = () => {
     if (!isCanonicalDocumentSyncEnabled() || !projectId) return;
     const stop = startCanonicalDocumentSync(projectId);
     return stop;
+  }, [projectId]);
+
+  // ADR-916 Phase 3 G4 sub-phase 3-B — Canonical primary backup bootstrap.
+  // flag `VITE_ADR916_CANONICAL_PRIMARY=true` 시 Builder 진입 시점에 현재
+  // legacy elements snapshot 을 localStorage backup 저장 (rollback prerequisite).
+  // mutation reverse 광역 refactor 는 별도 sub-phase 분리 — 본 단축 단계에서는
+  // backup snapshot 보존만으로 D19=B `restoreFromLegacyBackup` 경로 활성화.
+  useEffect(() => {
+    if (!isCanonicalPrimaryEnabled() || !projectId) return;
+    const elements = useStore.getState().elements;
+    saveLegacyBackup(projectId, elements);
   }, [projectId]);
 
   // 히스토리 정보 업데이트 (구독 기반)

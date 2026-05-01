@@ -24,6 +24,7 @@ import {
 } from "../diffLegacyRoundtrip";
 import {
   clearLegacyBackup,
+  getCanonicalPrimaryStatus,
   loadLegacyBackup,
   restoreFromLegacyBackup,
   saveLegacyBackup,
@@ -275,6 +276,44 @@ describe("restoreFromLegacyBackup (3-A-impl)", () => {
       "not-json-{",
     );
     expect(loadLegacyBackup("proj-bad")).toBeNull();
+  });
+
+  // ── 3-D: getCanonicalPrimaryStatus ──
+
+  it("3-D: backup 없음 → hasBackup=false canRollback=false", () => {
+    const status = getCanonicalPrimaryStatus("missing-project");
+    expect(status.hasBackup).toBe(false);
+    expect(status.canRollback).toBe(false);
+    expect(status.schemaVersion).toBeUndefined();
+  });
+
+  it("3-D: legacy-1.0 backup → hasBackup=true canRollback=false (rollback 불필요)", () => {
+    saveLegacyBackup("proj-legacy", [makeElement("a")]);
+    const status = getCanonicalPrimaryStatus("proj-legacy");
+    expect(status.hasBackup).toBe(true);
+    expect(status.schemaVersion).toBe("legacy-1.0");
+    expect(status.canRollback).toBe(false);
+    expect(status.savedAt).toMatch(/\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("3-D: canonical-primary-1.0 backup → canRollback=true", () => {
+    saveLegacyBackup(
+      "proj-canonical",
+      [makeElement("a")],
+      "canonical-primary-1.0",
+    );
+    const status = getCanonicalPrimaryStatus("proj-canonical");
+    expect(status.hasBackup).toBe(true);
+    expect(status.schemaVersion).toBe("canonical-primary-1.0");
+    expect(status.canRollback).toBe(true);
+  });
+
+  it("3-D: clearLegacyBackup → status hasBackup=false", () => {
+    saveLegacyBackup("proj-cleared", [makeElement("a")]);
+    clearLegacyBackup("proj-cleared");
+    const status = getCanonicalPrimaryStatus("proj-cleared");
+    expect(status.hasBackup).toBe(false);
+    expect(status.canRollback).toBe(false);
   });
 });
 

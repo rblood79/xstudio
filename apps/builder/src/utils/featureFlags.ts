@@ -195,6 +195,27 @@ export function isCanonicalDocumentSyncEnabled(): boolean {
 }
 
 /**
+ * Canonical primary storage marker 활성화 여부 (ADR-916 Phase 3 G4 sub-phase 3-B).
+ *
+ * `true` 일 때 Builder 진입 시점에 (1) 현재 legacy elements snapshot 을
+ * `saveLegacyBackup(projectId, elements)` 로 localStorage 저장 + (2) canonical
+ * store 가 사용자 mutation 의 primary 로 marker. 단, 본 단축 단계에서는 elementsApi
+ * write 경로 reverse 는 진행하지 않음 (~30+ caller refactor → 별도 sub-phase).
+ *
+ * **default `false` (보수적)**: 3-A monitoring evidence 수집 + production
+ * destructive=0 확정 후 enable. 본 flag enable 은 사용자 명시 dev 환경 설정.
+ *
+ * **rollback 경로**: env override `VITE_ADR916_CANONICAL_PRIMARY=false` 로 즉시
+ * 비활성화. localStorage backup 은 보존되어 `restoreFromLegacyBackup(projectId)`
+ * 로 복원 가능 (D19=B 채택, ADR-916 design §8.5).
+ *
+ * @returns true if canonical primary marker + auto-backup should activate (default false)
+ */
+export function isCanonicalPrimaryEnabled(): boolean {
+  return parseBoolean(import.meta.env.VITE_ADR916_CANONICAL_PRIMARY, false);
+}
+
+/**
  * 모든 Feature Flags 조회
  *
  * @returns 현재 Feature Flags 상태

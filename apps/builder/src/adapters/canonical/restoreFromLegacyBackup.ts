@@ -23,13 +23,35 @@ import type { Element } from "@/types/builder/unified.types";
 
 const BACKUP_KEY_PREFIX = "__adr916_legacy_backup_" as const;
 
+/**
+ * Backup snapshot 의 source schema marker (ADR-916 Phase 3 G4 sub-phase 3-D).
+ *
+ * - `legacy-1.0`: legacy `elements[]` 직접 저장 시점 backup.
+ * - `canonical-primary-1.0`: canonical primary 전환 후 backup (mutation reverse
+ *   완료 시점 별도 sub-phase 에서 사용).
+ */
+export type BackupSchemaVersion = "legacy-1.0" | "canonical-primary-1.0";
+
 interface BackupPayload {
-  /** schema version of the backup format */
+  /** schema version of the backup payload format */
   version: "1.0";
   /** ISO 8601 timestamp */
   savedAt: string;
+  /** ADR-916 3-D — source storage schema 시점 marker */
+  schemaVersion: BackupSchemaVersion;
   /** legacy elements snapshot */
   elements: Element[];
+}
+
+export interface CanonicalPrimaryStatus {
+  /** backup snapshot 존재 여부 */
+  hasBackup: boolean;
+  /** backup 의 source schemaVersion (없으면 undefined) */
+  schemaVersion?: BackupSchemaVersion;
+  /** backup 저장 시점 ISO timestamp (없으면 undefined) */
+  savedAt?: string;
+  /** rollback 가능 여부 — `hasBackup && schemaVersion === "canonical-primary-1.0"` */
+  canRollback: boolean;
 }
 
 function backupKey(projectId: string): string {
@@ -50,11 +72,14 @@ function getStorage(): Storage | null {
  *
  * @param projectId - 대상 project id
  * @param elements - legacy elements snapshot (cutover 직전 상태)
+ * @param schemaVersion - source storage schema marker (default `"legacy-1.0"`).
+ *   `canonical-primary-1.0` 은 mutation reverse 완료 sub-phase 에서 사용.
  * @returns 저장 성공 여부 (false = storage 없음 또는 quota exceeded)
  */
 export function saveLegacyBackup(
   projectId: string,
   elements: Element[],
+  schemaVersion: BackupSchemaVersion = "legacy-1.0",
 ): boolean {
   const storage = getStorage();
   if (!storage) return false;
@@ -62,6 +87,7 @@ export function saveLegacyBackup(
   const payload: BackupPayload = {
     version: "1.0",
     savedAt: new Date().toISOString(),
+    schemaVersion,
     elements,
   };
 
@@ -124,5 +150,45 @@ export function clearLegacyBackup(projectId: string): void {
     storage.removeItem(backupKey(projectId));
   } catch {
     // ignore
+  }
+}
+
+/**
+ * Canonical primary status 조회 — backup 존재 + schemaVersion + canRollback
+ * 일괄 검증 (ADR-916 Phase 3 G4 sub-phase 3-D, D19=B 채택).
+ *
+ * `canRollback === true` 는 mutation reverse 가 완료되어 backup 이
+ * `canonical-primary-1.0` schemaVersion 으로 저장된 상태를 의미. legacy primary
+ * 시점 backup (`legacy-1.0`) 은 `canRollback: false` (rollback 불필요).
+ *
+ * @param projectId - 대상 project id
+ */
+export function getCanonicalPrimaryStatus(
+  projectId: string,
+): CanonicalPrimaryStatus {
+  const storage = getStorage();
+  if (!storage) {
+    return { hasBackup: false, canRollback: false };
+  }
+
+  const raw = storage.getItem(backupKey(projectId));
+  if (!raw) {
+    return { hasBackup: false, canRollback: false };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<BackupPayload>;
+    if (!parsed || !Array.isArray(parsed.elements)) {
+      return { hasBackup: false, canRollback: false };
+    }
+    const schemaVersion = parsed.schemaVersion;
+    return {
+      hasBackup: true,
+      schemaVersion,
+      savedAt: parsed.savedAt,
+      canRollback: schemaVersion === "canonical-primary-1.0",
+    };
+  } catch {
+    return { hasBackup: false, canRollback: false };
   }
 }
