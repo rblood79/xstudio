@@ -20,7 +20,14 @@ export const LEGACY_ELEMENT_PROPS_METADATA_TYPE =
  * 이 "ref" 로 변환되므로 원본 element.type 보존 없이 LayerTree 분기 불가).
  * 추가 필드 (componentRole / slot_name 등) 는 canonical 변환에서 별도 metadata 로 보존.
  *
- * spread 순서: `...element.props` 먼저 → top-level fields 가 props 의 동명 키 덮어씀.
+ * **ADR-916 Phase 5 G7 transition 추가 보존** (2026-05-01):
+ * `element.events` / `element.dataBinding` 도 metadata.legacyProps 에 보존 —
+ * 기존에는 spread 안 되어 round-trip 시 손실 (element.events / element.dataBinding 은
+ * top-level field, props 안이 아님). G7 본격 cutover 시점에 `x-composition`
+ * extension 으로 이전 — 본 transition 단계는 metadata.legacyProps dual-storage.
+ *
+ * spread 순서: `...element.props` 먼저 → top-level fields (events/dataBinding 포함)
+ * 가 props 의 동명 키 덮어씀.
  */
 export function buildLegacyElementMetadata(element: Element): {
   type: typeof LEGACY_ELEMENT_PROPS_METADATA_TYPE;
@@ -37,6 +44,12 @@ export function buildLegacyElementMetadata(element: Element): {
       order_num: element.order_num,
       fills: element.fills,
       type: element.type,
+      // ADR-916 Phase 5 G7 transition — events/dataBinding 보존 (round-trip 정합).
+      // 정의된 경우만 spread (undefined 키 노출 회피).
+      ...(element.events !== undefined ? { events: element.events } : {}),
+      ...(element.dataBinding !== undefined
+        ? { dataBinding: element.dataBinding }
+        : {}),
     },
   };
 }

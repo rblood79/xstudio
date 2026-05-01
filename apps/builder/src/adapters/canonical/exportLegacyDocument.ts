@@ -33,6 +33,9 @@ interface LegacyPropsShape {
   order_num?: number;
   fills?: FillItem[];
   type?: string;
+  // ADR-916 Phase 5 G7 transition — events/dataBinding round-trip 보존.
+  events?: unknown[];
+  dataBinding?: unknown;
   [propKey: string]: unknown;
 }
 
@@ -91,7 +94,7 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
 
   const legacyProps = meta.legacyProps;
 
-  // 7 top-level fields 분리 — 나머지는 props.
+  // 7 top-level fields + events/dataBinding (G7 transition) 분리 — 나머지는 props.
   const {
     id,
     parent_id,
@@ -100,6 +103,8 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
     order_num,
     fills,
     type,
+    events,
+    dataBinding,
     ...restProps
   } = legacyProps;
 
@@ -122,6 +127,14 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
 
   if (fills !== undefined) {
     element.fills = fills as FillItem[];
+  }
+
+  // ADR-916 Phase 5 G7 transition — events/dataBinding round-trip 복원.
+  if (events !== undefined) {
+    element.events = events as unknown[];
+  }
+  if (dataBinding !== undefined) {
+    element.dataBinding = dataBinding as Element["dataBinding"];
   }
 
   return element;

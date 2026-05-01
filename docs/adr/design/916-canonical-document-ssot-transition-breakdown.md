@@ -1120,6 +1120,65 @@ design §10.2.2 추정 = ~2-3d MED. 실 baseline 측정 결과:
 - **G6-3 (Slot/Ref/Descendants/Frame Parity)** — ADR-911 P3 / ADR-913 P5 base cleanup 의존, prerequisite 미충족 시 진입 회피
 - **write boundary cleanup** (별 sub-phase, G7 closure 진정 work): `updateNodeExtension` API caller migration
 
+#### 10.2.10 G7 transition first slice land (2026-05-01) — events/dataBinding round-trip 보존 (`buildLegacyElementMetadata` + `exportLegacyDocument`)
+
+**framing**: write boundary cleanup 영역 진정 진척 — design §10.2.4 footnote 의 `updateNodeExtension` API caller migration 후속 권장 영역에서 baseline 측정 결과 **caller 0건** 확인 (G6-1 first slice §10.2.4 framing 재조정 동일 결과). **진정 진척 영역 재발굴** = legacy `Element.events` / `Element.dataBinding` 의 canonical adapter round-trip 보존 (write-through sync 가 자동 cover 하기 위한 prerequisite).
+
+**fork checkpoint 4 질문 lock-in**:
+
+1. **base/응용 분류**: G7 transition first slice = adapter layer (read-through projection + reverse export). G6-1/G6-2 (read backbone 의 canonical primary fallback) 와 직교 — adapter 변환 layer.
+2. **schema 직교성**: events/dataBinding (legacy top-level field) ⊥ props (component canonical primary). adapter 가 양쪽 모두 metadata.legacyProps 에 spread 보존.
+3. **baseline framing reverse**: G6-1 closure + G6-2 first slice prerequisite 충족. 본 transition step = G7 본격 cutover (`x-composition` extension only) prerequisite. 의존 방향 정확.
+4. **codex 3차 미루지 말 것**: LOW scope (~30분 작업), adapter 양방향 + isolated round-trip vitest 13건. 회귀 영역 0 (events/dataBinding 미정의 시 spread skip 으로 backward compat).
+
+**transition framing — dual-storage 단계**:
+
+본 단계 = `metadata.legacyProps` 에 events/dataBinding 보존 (legacy adapter 패턴 유지). G7 본격 cutover 시점:
+
+- events/dataBinding 를 `x-composition` extension (CompositionExtendedNode) 으로 분리
+- `metadata.legacyProps` 에서 events/dataBinding 제거
+- exportLegacyDocument 가 extension → element.events / element.dataBinding 복원
+- canonicalNodeToElement (read backbone) 도 extension 에서 복원
+
+본 first slice 는 transition path 의 **존재성 확보** — round-trip 손실 0 보장 + write-through sync 가 events/dataBinding 자동 cover 가능하게.
+
+**land 내용**:
+
+- **`buildLegacyElementMetadata` (legacyMetadata.ts:25)** — `metadata.legacyProps` 에 element.events / element.dataBinding 보존 추가:
+  - 정의된 경우만 conditional spread (undefined 키 노출 회피)
+  - top-level field 가 props 의 동명 키 덮어씀 (spread 순서 보존)
+  - docstring 갱신 (G7 transition 명시)
+- **`exportLegacyDocument.extractLegacyElement` (exportLegacyDocument.ts:76)** — `metadata.legacyProps` → element 변환 시 events / dataBinding 복원 추가:
+  - top-level fields destructure 에 events / dataBinding 추가
+  - 복원 시 element.events / element.dataBinding 로 분리 (props 안 잔존 안 함)
+  - `LegacyPropsShape` 인터페이스에 events / dataBinding 필드 명시
+- **`legacyExtensionRoundtrip.test.ts` 신규** (13/13 PASS):
+  - **A. buildLegacyElementMetadata 보존 (5건)**: events / dataBinding 양쪽 / 동시 / undefined skip / props 동명 키 덮어쓰기
+  - **B. exportLegacyDocument 복원 (4건)**: events / dataBinding 보존 노드 reverse / 미보존 노드 → undefined / props 안 events/dataBinding 잔존 안 함
+  - **C. round-trip 동등성 (4건)**: Button + events / ListBox + dataBinding / 양쪽 동시 / 미정의 element
+
+**검증 evidence**:
+
+- `pnpm type-check` 3/3 PASS (FULL TURBO cache)
+- vitest `legacyExtensionRoundtrip.test.ts` **13/13 PASS**
+- adapter 영역 광역 회귀 0 검증: `pnpm vitest run src/adapters/canonical` **161/161 PASS** (11 file 모두 PASS)
+- **본 work 회귀 0 ✅** — adapter logic 변경 영역 isolated 검증 PASS
+
+**G7 transition 진척 marker**:
+
+- ✅ first slice — events/dataBinding round-trip 보존 (`metadata.legacyProps` dual-storage)
+- ⏭️ second slice — write-through sync 의 events/dataBinding 자동 cover 검증 (canonicalDocumentSync.test.ts pre-existing setup fail debug 후)
+- ⏭️ G7 본격 cutover — `x-composition` extension only 전환 (별 sub-phase, ~MED 1-2d)
+
+**다음 sub-phase 권장**:
+
+- **G7 transition second slice** (LOW, ~0.5d): canonicalDocumentSync setup fail debug + write-through events/dataBinding cover 검증 vitest
+- **G7 본격 cutover** (MED, ~1-2d): `legacyToCanonical buildNode` 가 events/dataBinding 를 `x-composition` extension 으로 변환 + reverse export + `canonicalNodeToElement` 도 extension 복원 + 광역 회귀 evidence
+
+**framing 의문 명시 — write boundary cleanup 영역 재정의**:
+
+design §10.2.4 footnote 의 "write boundary cleanup" 정의 (`inspectorActions:285-286` payload write / `createElement` AI tool / undo-redo 복원 — `updateNodeExtension` API caller migration) 가 baseline 측정으로 **caller 0건** 확인 후 무효화. 본 G7 transition first slice 는 진정 진척 영역 재발굴 결과 — adapter layer 의 round-trip 보존이 write-through sync 의 events/dataBinding 자동 cover prerequisite. inspector dual-write / AI tool migration 은 G7 본격 cutover 시점에 재평가 (canonical primary write 진입 시점).
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
