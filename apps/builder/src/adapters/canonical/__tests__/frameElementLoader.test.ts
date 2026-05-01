@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Element } from "../../types/core/store.types";
+import type { Element } from "@/types/core/store.types";
 import {
+  collectHydratedFrameElements,
+  hasHydratedFrameElements,
+  isFrameElementForFrame,
   loadFrameElements,
   type FrameElementLoaderDb,
-} from "./frameElementLoader";
+} from "../frameElementLoader";
 
 function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
@@ -30,7 +33,7 @@ function makeDb(
   };
 }
 
-describe("loadFrameElements", () => {
+describe("frameElementLoader canonical adapter", () => {
   it("uses canonical descendants when they include the frame body", async () => {
     const body = makeElement("body-1", {
       parent_id: "frame-1",
@@ -46,7 +49,7 @@ describe("loadFrameElements", () => {
     expect(db.elements.getAll).not.toHaveBeenCalled();
   });
 
-  it("falls back to layout_id elements when parent_id descendants are empty", async () => {
+  it("falls back to layout_id mirror elements when parent_id descendants are empty", async () => {
     const body = makeElement("body-1", {
       parent_id: null,
       type: "body",
@@ -79,5 +82,28 @@ describe("loadFrameElements", () => {
     const db = makeDb([body], [body, slot]);
 
     await expect(loadFrameElements(db, "frame-1")).resolves.toEqual([slot]);
+  });
+
+  it("reports hydrated frame elements without exposing legacy field matching to callers", () => {
+    const elementsMap = new Map<string, Element>([
+      ["page-button", makeElement("page-button", { page_id: "page-1" })],
+      ["deleted", makeElement("deleted", { deleted: true })],
+      ["frame-slot", makeElement("frame-slot")],
+    ]);
+
+    expect(hasHydratedFrameElements(elementsMap, "frame-1")).toBe(true);
+    expect(hasHydratedFrameElements(elementsMap, "frame-2")).toBe(false);
+    expect(collectHydratedFrameElements(elementsMap, "frame-1")).toEqual([
+      expect.objectContaining({ id: "frame-slot" }),
+    ]);
+    expect(isFrameElementForFrame(makeElement("frame-slot"), "frame-1")).toBe(
+      true,
+    );
+    expect(
+      isFrameElementForFrame(
+        makeElement("page-button", { page_id: "page-1" }),
+        "frame-1",
+      ),
+    ).toBe(false);
   });
 });

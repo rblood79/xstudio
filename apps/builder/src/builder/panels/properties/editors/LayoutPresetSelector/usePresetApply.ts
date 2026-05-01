@@ -20,9 +20,9 @@ import type {
   SlotDefinition,
 } from "./types";
 import type { Element } from "../../../../../types/builder/unified.types";
+import { isFrameElementForFrame } from "../../../../../adapters/canonical/frameElementLoader";
 import {
   getLegacySlotName,
-  matchesLegacyLayoutId,
   withLegacyLayoutId,
 } from "../../../../../adapters/canonical/legacyElementFields";
 
@@ -78,11 +78,7 @@ export function usePresetApply({
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
-      if (
-        el.type === "Slot" &&
-        matchesLegacyLayoutId(el, layoutId) &&
-        !el.deleted
-      ) {
+      if (el.type === "Slot" && isFrameElementForFrame(el, layoutId)) {
         const slotChildren = childrenMap.get(el.id) ?? [];
         const slotName =
           ((el.props as { name?: string })?.name as string) || "unnamed";

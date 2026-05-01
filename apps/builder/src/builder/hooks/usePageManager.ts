@@ -21,7 +21,7 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 import { applyCollectionItemsMigration } from "@composition/shared";
 import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
 import { scheduleNextFrame } from "../utils/scheduleTask";
-import { loadFrameElements } from "../utils/frameElementLoader";
+import { loadFrameElements } from "../../adapters/canonical/frameElementLoader";
 import type { Layout } from "../../types/builder/layout.types";
 import type { FrameNode } from "@composition/shared";
 
@@ -241,11 +241,11 @@ export const usePageManager = ({
           const currentPage = pages.find((p) => p.id === pageId);
           const allElements = [...elementsData];
 
-          const currentLayoutId = getLegacyLayoutId(currentPage);
-          if (currentLayoutId) {
-            const layoutElements = await loadFrameElements(db, currentLayoutId);
+          const pageFrameId = getLegacyLayoutId(currentPage);
+          if (pageFrameId) {
+            const layoutElements = await loadFrameElements(db, pageFrameId);
             console.log(
-              `📥 [fetchElements] Layout ${currentLayoutId.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`,
+              `📥 [fetchElements] Layout ${pageFrameId.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`,
             );
             // Layout 요소들 추가 (중복 제거)
             const existingIds = new Set(allElements.map((el) => el.id));

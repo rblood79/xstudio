@@ -10,16 +10,15 @@ describe("BuilderCore frame refresh hydration contract", () => {
     );
 
     expect(source).toContain(
-      'import { loadFrameElements } from "../utils/frameElementLoader";',
+      'import { loadFrameElements } from "@/adapters/canonical/frameElementLoader";',
     );
     expect(source).toMatch(/if \(editMode === "layout"\) \{/);
     expect(source).toMatch(/await fetchLayouts\(projectId\);/);
-    expect(source).toMatch(
-      /const activeFrameId = selectedReusableFrameId \?\? currentLayoutId;/,
-    );
+    expect(source).toMatch(/const activeFrameId = selectedReusableFrameId;/);
     expect(source).toMatch(/const frameIds = Array\.from\(/);
     expect(source).toMatch(/layouts\.map\(\(layout\) => layout\.id\)/);
     expect(source).toMatch(/elements: await loadFrameElements\(db, frameId\)/);
+    expect(source).not.toContain("currentLayoutId");
     expect(source).not.toContain("getDescendants(currentLayoutId)");
   });
 
@@ -31,7 +30,7 @@ describe("BuilderCore frame refresh hydration contract", () => {
 
     expect(source).toMatch(/if \(layoutElements\.length > 0\) \{/);
     expect(source).toMatch(
-      /if \(layoutElements\.length > 0\) \{[\s\S]*setElements\(mergedElements\);[\s\S]*\}/,
+      /if \(layoutElements\.length > 0\) \{[\s\S]*setElementsCanonicalPrimary\(mergedElements\);[\s\S]*\}/,
     );
   });
 });

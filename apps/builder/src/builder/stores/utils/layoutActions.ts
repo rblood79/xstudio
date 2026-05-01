@@ -18,17 +18,15 @@ import type {
   LayoutsStoreActions,
 } from "../../../types/builder/layout.types";
 import type { Element } from "../../../types/builder/unified.types";
-import { getDefaultProps } from "../../../types/builder/unified.types";
 import { selectCanonicalDocument } from "../elements";
 import { getLiveElementsState } from "../rootStoreAccess";
-// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
 import {
-  getLegacyLayoutId,
-  LEGACY_LAYOUT_ID_FIELD,
-  matchesLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../../adapters/canonical/legacyElementFields";
+  applyDeleteReusableFrameCanonicalPrimary,
+  createFrameBodyElement,
+  duplicateReusableFrameElementsCanonicalPrimary,
+  getPageIdsUsingFrameMirror,
+} from "../../../adapters/canonical/frameLayoutCascade";
 import type { FrameNode } from "@composition/shared";
 
 // Type aliases for set/get
@@ -164,23 +162,8 @@ export const createFetchLayoutsAction =
         projectId,
       );
 
-      // P3-B: selectedReusableFrameId (canonical) 우선, currentLayoutId fallback
-      // ADR-903 P3-B 안전망 #4 — dev-only migration 경고 logging
-      const { selectedReusableFrameId, currentLayoutId } = get();
-      if (
-        process.env.NODE_ENV === "development" &&
-        currentLayoutId !== null &&
-        selectedReusableFrameId === null
-      ) {
-        console.warn(
-          "[ADR-903 P3-B] currentLayoutId 직접 접근 감지. " +
-            "selectedReusableFrameId 로 마이그레이션 필요. " +
-            "P3-D 완료 후 currentLayoutId 참조 제거 예정.",
-        );
-      }
-
-      // P3-B: selectedReusableFrameId 우선 사용
-      const activeFrameId = selectedReusableFrameId ?? currentLayoutId;
+      const { selectedReusableFrameId } = get();
+      const activeFrameId = selectedReusableFrameId;
 
       // 저장된 id가 실제 레이아웃 목록에 있는지 확인
       const isCurrentLayoutValid =
@@ -201,9 +184,7 @@ export const createFetchLayoutsAction =
       set({
         layouts: nextLayouts,
         isLoading: false,
-        // P3-B: 양쪽 동기화 (backward-compat)
         selectedReusableFrameId: newFrameId,
-        currentLayoutId: newFrameId,
       });
     } catch (error) {
       console.error("❌ Layout 목록 조회 실패:", error);
@@ -238,33 +219,21 @@ export const createCreateLayoutAction =
       ).layouts.insert(newLayout);
 
       // ⭐ Layout/Slot System: Layout용 body 요소 생성
-      const bodyElement: Element = withLegacyLayoutId(
-        {
-          id: crypto.randomUUID(),
-          type: "body",
-          props: getDefaultProps("body") as Element["props"],
-          parent_id: null,
-          page_id: null, // Layout 요소는 page_id 없음
-          order_num: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        newLayout.id,
-      );
+      const bodyElement = createFrameBodyElement(newLayout.id);
 
       await db.elements.insert(bodyElement);
 
-      // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
-      mergeElementsCanonicalPrimary([bodyElement]);
-
-      // 메모리 상태 업데이트
       const { layouts } = get();
       set({
         layouts: [...layouts, newLayout],
         selectedReusableFrameId: newLayout.id,
-        currentLayoutId: newLayout.id,
         isLoading: false,
       });
+
+      // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
+      // layouts state 갱신 후 canonical merge 를 호출해야 새 reusable frame
+      // shell 이 canonical document 에 함께 반영된다.
+      mergeElementsCanonicalPrimary([bodyElement]);
 
       return newLayout;
     } catch (error) {
@@ -323,84 +292,29 @@ export const createDeleteLayoutAction =
     try {
       const db = await getDB();
 
-      // ADR-903 P3-D-3: canonical document 가드.
-      // canonical tree 에 해당 reusable frame 이 존재할 때만 cascade 실행.
-      // (frame 미존재 = stale layout 또는 이미 detach 된 노드 → cascade skip)
-      const elementsStateForGuard = getLiveElementsState();
       const layoutsForGuard = get().layouts;
-      const canonicalDoc = selectCanonicalDocument(
-        elementsStateForGuard,
-        elementsStateForGuard.pages,
-        layoutsForGuard,
-      );
-      const frameExists = canonicalDoc.children.some(
-        (n): n is FrameNode =>
-          n.type === "frame" &&
-          n.reusable === true &&
-          frameMatchesLegacyLayoutId(n, id),
-      );
 
-      // 1. ⭐ Layout을 사용하는 Page들의 legacy layout binding을 null로 설정.
-      // canonical frame projection 이 없어서 element cascade 를 skip 하더라도,
-      // 삭제되는 layout row 를 가리키는 page ref 는 orphan 으로 남기지 않는다.
-      const allPages = await db.pages.getAll();
-      const pagesUsingLayout = allPages.filter(
-        (p) => getLegacyLayoutId(p) === id,
-      );
+      const { setPages, setElements } = getLiveElementsState();
+      await applyDeleteReusableFrameCanonicalPrimary({
+        frameId: id,
+        layouts: layoutsForGuard,
+        getElementsState: getLiveElementsState,
+        setPages,
+        setElements,
+      });
 
-      if (pagesUsingLayout.length > 0) {
-        await Promise.all(
-          pagesUsingLayout.map((page) =>
-            db.pages.update(page.id, { [LEGACY_LAYOUT_ID_FIELD]: null }),
-          ),
-        );
-
-        // 메모리 상태의 pages도 업데이트
-        const { pages, setPages } = getLiveElementsState();
-        const updatedPages = pages.map((p) =>
-          pagesUsingLayout.some((up) => up.id === p.id)
-            ? withLegacyLayoutId(p, null)
-            : p,
-        );
-        setPages(updatedPages);
-      }
-
-      if (frameExists) {
-        // 2. ⭐ Layout의 모든 elements 삭제
-        // P3-D 과도기: legacy layout binding 기반 DB 로딩 cascade 유지
-        const allElements = await db.elements.getAll();
-        const layoutElements = allElements.filter((el) =>
-          matchesLegacyLayoutId(el, id),
-        );
-
-        if (layoutElements.length > 0) {
-          await Promise.all(
-            layoutElements.map((el) => db.elements.delete(el.id)),
-          );
-
-          // 메모리 상태의 elements도 업데이트
-          const { removeElements } = getLiveElementsState();
-          await removeElements(layoutElements.map((el) => el.id));
-        }
-      }
-
-      // 3. Layout 삭제 (frame 존재 여부와 무관하게 항상 진행 — stale layout row 정리)
+      // Layout 삭제 (frame 존재 여부와 무관하게 항상 진행 — stale layout row 정리)
       await (
         db as unknown as { layouts: { delete: (id: string) => Promise<void> } }
       ).layouts.delete(id);
 
       // 메모리 상태 업데이트
-      const { layouts, selectedReusableFrameId, currentLayoutId } = get();
+      const { layouts, selectedReusableFrameId } = get();
       const nextFrameId =
-        (selectedReusableFrameId ?? currentLayoutId) === id
-          ? null
-          : (selectedReusableFrameId ?? currentLayoutId);
+        selectedReusableFrameId === id ? null : selectedReusableFrameId;
       set({
         layouts: layouts.filter((layout) => layout.id !== id),
-        // P3-B: 양쪽 동기화 — 삭제된 frame이면 선택 해제
         selectedReusableFrameId: nextFrameId,
-        // @deprecated backward-compat
-        currentLayoutId: nextFrameId,
         isLoading: false,
       });
     } catch (error) {
@@ -445,44 +359,18 @@ export const createDuplicateLayoutAction =
         }
       ).layouts.insert(newLayout);
 
-      // 3. 원본 Layout의 elements 복제 (IndexedDB에서 가져오기)
-      const allElements = await db.elements.getAll();
-      const originalElements = allElements.filter((el) =>
-        matchesLegacyLayoutId(el, id),
-      );
+      set({
+        layouts: [...get().layouts, newLayout],
+      });
 
-      if (originalElements && originalElements.length > 0) {
-        // ID 매핑 (원본 ID → 새 ID)
-        const idMap = new Map<string, string>();
-
-        // 새 ID 생성
-        originalElements.forEach((el) => {
-          idMap.set(el.id, crypto.randomUUID());
-        });
-
-        // Elements 복제 (새 ID와 새 legacy layout binding 사용)
-        const newElements = originalElements.map((el) =>
-          withLegacyLayoutId(
-            {
-              ...el,
-              id: idMap.get(el.id)!,
-              parent_id: el.parent_id ? idMap.get(el.parent_id) || null : null,
-              page_id: null, // Layout element는 page_id 없음
-            },
-            newLayout.id,
-          ),
-        );
-
-        await db.elements.insertMany(newElements as Element[]);
-
-        // 복제 직후 Frames 탭/Skia authoring surface 에 새 body/slot 이 즉시
-        // 보이도록 DB write-through 와 메모리 store 를 같은 턴에 동기화한다.
-        mergeElementsCanonicalPrimary(newElements as Element[]);
-      }
+      // 3. 원본 reusable frame subtree 복제.
+      await duplicateReusableFrameElementsCanonicalPrimary({
+        sourceFrameId: id,
+        targetFrameId: newLayout.id,
+      });
 
       // 4. 메모리 상태 업데이트
       set({
-        layouts: [...get().layouts, newLayout],
         isLoading: false,
       });
 
@@ -500,20 +388,11 @@ export const createDuplicateLayoutAction =
 
 /**
  * 현재 편집 중인 Layout 설정
- *
- * P3-B: selectedReusableFrameId (canonical) + currentLayoutId (backward-compat) 양쪽 동기화.
  */
 export const createSetCurrentLayoutAction =
   (set: SetState) =>
   (layoutId: string | null): void => {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        "[ADR-903 P3-B] setCurrentLayout 호출 감지. " +
-          "P3-D 완료 후 selectedReusableFrameId 직접 설정으로 교체 예정.",
-      );
-    }
-    // P3-B: 양쪽 동기화
-    set({ selectedReusableFrameId: layoutId, currentLayoutId: layoutId });
+    set({ selectedReusableFrameId: layoutId });
   };
 
 // ============================================
@@ -581,13 +460,7 @@ export const createValidateLayoutDeleteAction =
     id: string,
   ): Promise<{ canDelete: boolean; usedByPages: string[] }> => {
     try {
-      const db = await getDB();
-      const allPages = await db.pages.getAll();
-      const pagesUsingLayout = allPages.filter(
-        (p) => getLegacyLayoutId(p) === id,
-      );
-
-      const pageIds = pagesUsingLayout.map((p) => p.id);
+      const pageIds = await getPageIdsUsingFrameMirror(id);
 
       return {
         canDelete: pageIds.length === 0,

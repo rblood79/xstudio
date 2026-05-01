@@ -12,6 +12,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // canonical adapter / resolver mocks
 import * as elementsStoreModule from "../../elements";
 
+const canonicalMutationMocks = vi.hoisted(() => ({
+  mergeElementsCanonicalPrimary: vi.fn(),
+}));
+
 import {
   createFetchLayoutsAction,
   createGetLayoutSlotsAction,
@@ -70,6 +74,7 @@ async function mockElementsState(elements: Element[] = [], pages: Page[] = []) {
     elementsMap: new Map(elements.map((element) => [element.id, element])),
     pages,
     removeElements: vi.fn(),
+    setElements: vi.fn(),
     setPages: vi.fn(),
     mergeElements: vi.fn(),
   };
@@ -98,6 +103,7 @@ vi.mock("../../elements", async (importOriginal) => {
         elementsMap: new Map<string, Element>(),
         pages: [] as Page[],
         removeElements: vi.fn(),
+        setElements: vi.fn(),
         setPages: vi.fn(),
         mergeElements: vi.fn(),
       })),
@@ -130,6 +136,11 @@ vi.mock("../../../../lib/db", () => {
   return { getDB: vi.fn(async () => mockDb) };
 });
 
+vi.mock("../../../../adapters/canonical/canonicalMutations", () => ({
+  mergeElementsCanonicalPrimary:
+    canonicalMutationMocks.mergeElementsCanonicalPrimary,
+}));
+
 // ─── test suite ─────────────────────────────────────────────────────────────
 
 describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
@@ -140,7 +151,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
   type LayoutFetchState = {
     layouts: Layout[];
     selectedReusableFrameId: string | null;
-    currentLayoutId: string | null;
     isLoading: boolean;
     error: Error | null;
   };
@@ -172,7 +182,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
     const harness = createFetchHarness({
       layouts: [],
       selectedReusableFrameId: null,
-      currentLayoutId: null,
       isLoading: false,
       error: null,
     });
@@ -184,7 +193,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
         ...harness.state,
         layouts: [newLayout],
         selectedReusableFrameId: newLayout.id,
-        currentLayoutId: newLayout.id,
       });
       return [];
     });
@@ -195,7 +203,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
       "new-frame",
     ]);
     expect(harness.state.selectedReusableFrameId).toBe("new-frame");
-    expect(harness.state.currentLayoutId).toBe("new-frame");
   });
 
   it("fetch 중 삭제된 frame layout을 stale fetch 결과로 되살리지 않는다", async () => {
@@ -203,7 +210,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
     const harness = createFetchHarness({
       layouts: [oldLayout],
       selectedReusableFrameId: oldLayout.id,
-      currentLayoutId: oldLayout.id,
       isLoading: false,
       error: null,
     });
@@ -215,7 +221,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
         ...harness.state,
         layouts: [],
         selectedReusableFrameId: null,
-        currentLayoutId: null,
       });
       return [oldLayout];
     });
@@ -224,7 +229,6 @@ describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
 
     expect(harness.state.layouts).toEqual([]);
     expect(harness.state.selectedReusableFrameId).toBeNull();
-    expect(harness.state.currentLayoutId).toBeNull();
   });
 });
 
@@ -260,7 +264,6 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
       selectedReusableFrameId: layoutId,
-      currentLayoutId: layoutId,
     })) as unknown as Parameters<typeof createGetLayoutSlotsAction>[0];
 
     const getElements = vi.fn(() => [] as Element[]);
@@ -278,7 +281,6 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
       selectedReusableFrameId: layoutId,
-      currentLayoutId: layoutId,
     })) as unknown as Parameters<typeof createGetLayoutSlotsAction>[0];
 
     const getElements = vi.fn(() => [] as Element[]);
@@ -294,7 +296,6 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
     const mockGet = vi.fn(() => ({
       layouts: [],
       selectedReusableFrameId: layoutId,
-      currentLayoutId: layoutId,
     })) as unknown as Parameters<typeof createGetLayoutSlotsAction>[0];
 
     const getElements = vi.fn(() => [] as Element[]);
@@ -318,7 +319,6 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
       selectedReusableFrameId: "other-frame",
-      currentLayoutId: "other-frame",
     })) as unknown as Parameters<typeof createGetLayoutSlotsAction>[0];
 
     const getElements = vi.fn(() => [] as Element[]);
@@ -350,6 +350,7 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       elementsMap: new Map<string, Element>(),
       pages,
       removeElements,
+      setElements: vi.fn(),
       setPages,
       mergeElements: vi.fn(),
     }));
@@ -359,6 +360,7 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       elementsMap: new Map<string, Element>(),
       pages,
       removeElements,
+      setElements: vi.fn(),
       setPages,
       mergeElements: vi.fn(),
     } as Partial<ReturnType<typeof actualElementsModule.useStore.getState>>);
@@ -371,7 +373,6 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
       selectedReusableFrameId: null,
-      currentLayoutId: null,
     })) as unknown as Parameters<typeof createDeleteLayoutAction>[0];
 
     const deleteLayout = createDeleteLayoutAction(mockSet, mockGet);
@@ -388,7 +389,7 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     ]);
   });
 
-  it("layout_id 기반 elements 를 여전히 DB에서 로드하여 cascade 삭제한다 (P3-D 과도기)", async () => {
+  it("canonical document mirror 로 frame subtree 를 제거하고 DB mirror 를 삭제한다", async () => {
     const layoutId = "layout-del-2";
 
     const layoutEl1 = makeElement("el-1", "body", { layout_id: layoutId });
@@ -400,6 +401,7 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     db.pages.getAll.mockResolvedValue([]);
 
     const removeElements = vi.fn(async () => {});
+    const setElements = vi.fn();
     vi.mocked(elementsStoreModule.useStore).getState = vi.fn(() => ({
       elementsMap: new Map<string, Element>([
         ["el-1", layoutEl1],
@@ -407,6 +409,7 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       ]),
       pages: [] as Page[],
       removeElements,
+      setElements,
       setPages: vi.fn(),
       mergeElements: vi.fn(),
     }));
@@ -419,6 +422,7 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       ]),
       pages: [] as Page[],
       removeElements,
+      setElements,
       setPages: vi.fn(),
       mergeElements: vi.fn(),
     } as Partial<ReturnType<typeof actualElementsModule.useStore.getState>>);
@@ -427,16 +431,15 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
       selectedReusableFrameId: null,
-      currentLayoutId: null,
     })) as unknown as Parameters<typeof createDeleteLayoutAction>[0];
 
     const deleteLayout = createDeleteLayoutAction(mockSet, mockGet);
     await deleteLayout(layoutId);
 
-    // layout elements 가 cascade 삭제되어야 함
-    expect(removeElements).toHaveBeenCalledWith(
-      expect.arrayContaining(["el-1", "el-2"]),
-    );
+    expect(removeElements).not.toHaveBeenCalled();
+    expect(setElements).toHaveBeenCalledWith([]);
+    expect(db.elements.delete).toHaveBeenCalledWith("el-1");
+    expect(db.elements.delete).toHaveBeenCalledWith("el-2");
   });
 });
 
@@ -487,6 +490,7 @@ describe("P3-D-3: createDuplicateLayoutAction cascade", () => {
       ]),
       pages: [] as Page[],
       removeElements: vi.fn(),
+      setElements: vi.fn(),
       setPages: vi.fn(),
       mergeElements,
     };
@@ -504,7 +508,6 @@ describe("P3-D-3: createDuplicateLayoutAction cascade", () => {
     let state = {
       layouts: [sourceLayout],
       selectedReusableFrameId: sourceLayout.id,
-      currentLayoutId: sourceLayout.id,
       isLoading: false,
       error: null,
     };
@@ -545,7 +548,9 @@ describe("P3-D-3: createDuplicateLayoutAction cascade", () => {
         parent_id: "slot-copy",
       }),
     ]);
-    expect(mergeElements).toHaveBeenCalledWith([
+    expect(
+      canonicalMutationMocks.mergeElementsCanonicalPrimary,
+    ).toHaveBeenCalledWith([
       expect.objectContaining({ id: "body-copy" }),
       expect.objectContaining({ id: "slot-copy", parent_id: "body-copy" }),
       expect.objectContaining({ id: "text-copy", parent_id: "slot-copy" }),

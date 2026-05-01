@@ -3,7 +3,7 @@ import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
 import type { ScenePageSnapshot, SceneStructureSnapshot } from "../scene";
 import type { FrameAreaGroup } from "../skia/workflowEdges";
 import { resolveCanonicalRefTree } from "../../../utils/canonicalRefResolution";
-import { matchesLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
 
 export interface PixiPageRendererInput {
   bodyElement: Element | null;
@@ -126,9 +126,7 @@ export function buildFrameRendererInput({
   const pageElements: Element[] = [];
 
   for (const el of elementById.values()) {
-    if (el.deleted) continue;
-    if (!matchesLegacyLayoutId(el, frameId)) continue;
-    if (el.page_id != null) continue;
+    if (!isFrameElementForFrame(el, frameId)) continue;
     if (el.type === "body") {
       if (!bodyElement) bodyElement = el;
       // body element 는 pageElements 에 포함하지 않음 — page 경로의 nonBodyElements

@@ -6,11 +6,11 @@
  *
  * P3-C 변경 사항:
  * - frame 목록: `useLayoutsStore.layouts` (legacy bridge — P3-D에서 canonical store로 교체)
- * - frame selection: `selectedReusableFrameId` (P3-B canonical selector, currentLayoutId backward-compat 제거)
+ * - frame selection: `selectedReusableFrameId` (canonical selector)
  * - frame 생성: `createLayout` bridge (P3-D에서 canonical document mutation으로 전환 예정)
  * - UI 레이블: "Layouts" → "Frames"
  *
- * @deprecated-path `currentLayoutId` direct access 제거됨. `selectedReusableFrameId` 사용.
+ * @deprecated-path legacy layout selection direct access 제거됨. `selectedReusableFrameId` 사용.
  */
 
 import React, { useCallback, useEffect, useMemo } from "react";
@@ -32,14 +32,17 @@ import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
-import { matchesLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import {
+  collectHydratedFrameElements,
+  hasHydratedFrameElements,
+  loadFrameElements,
+} from "../../../../adapters/canonical/frameElementLoader";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
 import { MessageService } from "../../../../utils/messaging";
 import { getDB } from "../../../../lib/db";
 import { useTreeExpandState } from "@/builder/hooks";
-import { loadFrameElements } from "../../../utils/frameElementLoader";
 import {
   isWebGLCanvas,
   isCanvasCompareMode,
@@ -54,22 +57,6 @@ interface FramesTabProps {
   projectId?: string;
 }
 
-function hasHydratedFrameElements(
-  elementsMap: ReadonlyMap<string, Element>,
-  frameId: string,
-): boolean {
-  for (const element of elementsMap.values()) {
-    if (
-      !element.deleted &&
-      matchesLegacyLayoutId(element, frameId) &&
-      element.page_id == null
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export function FramesTab({
   selectedElementId,
   setSelectedElement,
@@ -80,7 +67,7 @@ export function FramesTab({
   const { projectId: projectIdFromParams } = useParams<{ projectId: string }>();
   const projectId = projectIdProp || projectIdFromParams;
 
-  // P3-B canonical selector: selectedReusableFrameId (currentLayoutId alias 제거됨)
+  // canonical selector: selectedReusableFrameId
   const selectedReusableFrameId = useSelectedReusableFrameId();
 
   // CRUD 는 ADR-911 P2-a frameActions wrapper (PR-A) 로 위임.
@@ -254,20 +241,10 @@ export function FramesTab({
     loadMissingFrameElements();
   }, [reusableFrames, elementsMap]);
 
-  // ADR-040: elementsMap 순회로 legacy layout binding 필터링
+  // ADR-040: elementsMap 순회로 frame mirror binding 필터링
   const frameElements = useMemo(() => {
     if (!currentFrame) return [];
-    const filtered: Element[] = [];
-    elementsMap.forEach((el) => {
-      if (
-        !el.deleted &&
-        matchesLegacyLayoutId(el, currentFrame.id) &&
-        el.page_id == null
-      ) {
-        filtered.push(el);
-      }
-    });
-    return filtered;
+    return collectHydratedFrameElements(elementsMap, currentFrame.id);
   }, [elementsMap, currentFrame]);
 
   // Frame 요소 트리 빌드

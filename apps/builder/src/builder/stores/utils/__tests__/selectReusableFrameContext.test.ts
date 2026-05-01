@@ -20,7 +20,6 @@ describe("ADR-911 P3-γ selectReusableFrame → selectedReusableFrameId 갱신",
   beforeEach(() => {
     useLayoutsStore.setState({
       selectedReusableFrameId: null,
-      currentLayoutId: null,
     });
   });
 
@@ -33,7 +32,6 @@ describe("ADR-911 P3-γ selectReusableFrame → selectedReusableFrameId 갱신",
   it("null 전달 시 selectedReusableFrameId 가 해제", () => {
     useLayoutsStore.setState({
       selectedReusableFrameId: "frame-existing",
-      currentLayoutId: "frame-existing",
     });
 
     selectReusableFrame(null);
@@ -49,9 +47,9 @@ describe("ADR-911 P3-γ selectReusableFrame → selectedReusableFrameId 갱신",
     expect(useLayoutsStore.getState().selectedReusableFrameId).toBe("frame-C");
   });
 
-  it("currentLayoutId backward-compat alias 도 동시 갱신 (P3-B 정책)", () => {
+  it("store 에 currentLayoutId backward-compat alias 를 다시 만들지 않는다", () => {
     selectReusableFrame("frame-X");
 
-    expect(useLayoutsStore.getState().currentLayoutId).toBe("frame-X");
+    expect("currentLayoutId" in useLayoutsStore.getState()).toBe(false);
   });
 });

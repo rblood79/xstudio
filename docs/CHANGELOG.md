@@ -17,13 +17,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `PanelSlot.tsx` / `BottomPanelSlot.tsx` → `PanelArea.tsx` / `BottomPanelArea.tsx`
   - CSS class 도 `panel-area` / `bottom-panel-area` 로 변경
   - FramesTab/PageLayoutSelector read path 는 canonical reusable FrameNode projection 으로 고정
+  - Layout selection state 의 `currentLayoutId` backward-compat alias 를 제거하고 `selectedReusableFrameId` 단일 상태로 고정
+  - PageLayoutSelector 의 page-frame binding write 를 `pageFrameBinding` canonical adapter 로 이동해 canonical document store 를 먼저 갱신하고, legacy `pages.layout_id` 는 adapter 내부 mirror/persistence payload 로 격리
+  - `layoutActions` 의 reusable frame create/delete/duplicate cascade 에서 legacy `layout_id` field 접근을 `frameLayoutCascade` canonical adapter 로 격리하고, delete 는 canonical document mirror export 를 통해 live elements 를 갱신
+  - Frame element read/hydration fallback 과 runtime frame matching predicate 를 `frameElementLoader` canonical adapter 로 이동해 FramesTab/BuilderCore/usePageManager/properties/canvas caller 의 legacy frame mirror 판정을 adapter 경계로 격리
 - ADR-913 Phase 4 를 DB migration 없이 direct cutover 로 닫았다.
   - `normalizeLegacyElement` read-through helper 제거
   - `runTagTypeMigration` 및 관련 dry-run entry/test 제거
+  - `descendants` runtime access gate 를 추가해 non-adapter 접근을 canonical resolver/store/type validation allowlist 로 제한
 
 ### Verification
 
 - `pnpm -F @composition/builder exec vitest run ...` — targeted 7 files / 75 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/layoutActions.test.ts src/builder/stores/utils/__tests__/selectReusableFrameContext.test.ts src/builder/main/BuilderCore.static.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts` — 4 files / 19 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/pageFrameBinding.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts` — 2 files / 3 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/layoutActions.test.ts` — 1 file / 9 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/adr913DescendantsGrepGate.test.ts` — 1 file / 1 test PASS
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/frameElementLoader.test.ts src/adapters/canonical/__tests__/pageFrameBinding.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/main/BuilderCore.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/hooks/__tests__/usePageManager.canonical.test.ts` — 6 files / 29 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/frameElementLoader.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/selection/selectionHitTest.test.ts src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.static.test.ts` — 7 files / 36 tests PASS
+- `pnpm run codex:typecheck` — PASS
 
 ## [ADR-916 Phase 3 G4 wrapper 진정 reverse logic land ✅ — drift #1 본질 해소 (§8.7)] - 2026-05-02
 

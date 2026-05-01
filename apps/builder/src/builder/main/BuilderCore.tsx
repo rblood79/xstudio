@@ -61,7 +61,7 @@ import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
 import { useDataTableStore } from "../stores/datatable";
 import { useDataStore } from "../stores/data";
-import { loadFrameElements } from "../utils/frameElementLoader";
+import { loadFrameElements } from "@/adapters/canonical/frameElementLoader";
 
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
@@ -324,7 +324,7 @@ export const BuilderCore: React.FC = () => {
       }
 
       // ⭐ Layout/Slot System: editMode가 'layout'이면 Layout 요소도 로드
-      // (새로고침 시 editMode와 currentLayoutId가 localStorage에서 복원됨)
+      // (새로고침 시 editMode와 selectedReusableFrameId가 localStorage에서 복원됨)
       const editMode = useEditModeStore.getState().mode;
 
       if (editMode === "layout") {
@@ -332,14 +332,14 @@ export const BuilderCore: React.FC = () => {
           const db = await getDB();
 
           // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
-          // refresh 직후 persisted selectedReusableFrameId/currentLayoutId 가
+          // refresh 직후 persisted selectedReusableFrameId 가
           // 실제 frame 목록과 동기화된 뒤 active frame elements 를 복원한다.
           const { fetchLayouts } = useLayoutsStore.getState();
           await fetchLayouts(projectId);
 
-          const { selectedReusableFrameId, currentLayoutId, layouts } =
+          const { selectedReusableFrameId, layouts } =
             useLayoutsStore.getState();
-          const activeFrameId = selectedReusableFrameId ?? currentLayoutId;
+          const activeFrameId = selectedReusableFrameId;
           const frameIds = Array.from(
             new Set([
               ...(activeFrameId ? [activeFrameId] : []),
@@ -571,17 +571,18 @@ export const BuilderCore: React.FC = () => {
     // 단일 helper 로 추출. legacy/canonical 양쪽 mode 가 동일 logic 으로 publish.
     const publishElements = (sourceElements: Element[]): void => {
       const editMode = useEditModeStore.getState().mode;
-      const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
+      const selectedReusableFrameId =
+        useLayoutsStore.getState().selectedReusableFrameId;
 
       // editMode에 따라 필터링
       // ADR-903 P3-D-5 step 5e-2: doc 전달 → belongsToLegacyLayout canonical 활용.
       let filteredElements = sourceElements;
-      if (editMode === "layout" && currentLayoutId) {
+      if (editMode === "layout" && selectedReusableFrameId) {
         const layouts = useLayoutsStore.getState().layouts;
         const state = useStore.getState();
         const doc = selectCanonicalDocument(state, state.pages, layouts);
         filteredElements = sourceElements.filter((el) =>
-          belongsToLegacyLayout(el, currentLayoutId, doc),
+          belongsToLegacyLayout(el, selectedReusableFrameId, doc),
         );
       }
 

@@ -64,7 +64,7 @@ describe("P3-D-4: useIframeMessenger UPDATE_ELEMENTS schema 전환 (RED phase)",
         "UPDATE_PAGE_INFO effect block 추출 실패 — 시그니처 변경 시 regex 동기화",
       ).not.toBeNull();
       expect(effectBlock![0]).toMatch(/currentEditMode/);
-      expect(effectBlock![0]).toMatch(/currentLayoutId/);
+      expect(effectBlock![0]).toMatch(/selectedReusableFrameId/);
     });
 
     it("elements 변경 시 UPDATE_ELEMENTS 를 다시 전송하는 effect 가 존재한다", async () => {

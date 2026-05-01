@@ -26,7 +26,7 @@ import { debounce, DebouncedFunc } from "lodash";
 import { markBegin, markEnd } from "../utils/perfMarks";
 import { useStore } from "../stores";
 import { useEditModeStore } from "../stores/editMode";
-import { useLayoutsStore } from "../stores/layouts";
+import { useLayoutsStore, useSelectedReusableFrameId } from "../stores/layouts";
 import {
   useDataTables,
   useApiEndpoints,
@@ -145,7 +145,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
   // ⭐ Nested Routes & Slug System: Layouts 구독
   const layouts = useLayoutsStore((state) => state.layouts);
-  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
+  const selectedReusableFrameId = useSelectedReusableFrameId();
 
   // ⭐ DataTables 구독 (PropertyDataBinding용)
   const dataTables = useDataTables();
@@ -216,7 +216,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ Layout/Slot System: editMode에 따라 pageInfo 결정
     const currentEditMode = useEditModeStore.getState().mode;
-    const layoutStoreLayoutId = useLayoutsStore.getState().currentLayoutId;
+    const selectedReusableFrameId =
+      useLayoutsStore.getState().selectedReusableFrameId;
     const { currentPageId, pages } = useStore.getState();
     const currentPage = pages.find((p) => p.id === currentPageId);
     const scopedElements =
@@ -224,14 +225,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         ? elementsToSend
         : elementsToSend.filter((element) => element.page_id === currentPageId);
 
-    // Layout 편집 모드: pageId=null, layoutId=currentLayoutId
+    // Layout 편집 모드: pageId=null, layoutId=selectedReusableFrameId
     // Page 모드: pageId=currentPageId, layoutId=page legacy layout binding
     // ADR-903 P3-D-4 Phase B: reusableFrameId 신규 field — canonical model 의
     // reusable frame 식별자. 현 시점 layoutId 와 동일 의미 (alias). Preview 가
     // version 으로 분기해 신규 field 우선 사용 가능. legacy layoutId 는 BC 위해 유지.
     const layoutId =
       currentEditMode === "layout"
-        ? layoutStoreLayoutId
+        ? selectedReusableFrameId
         : getLegacyLayoutId(currentPage);
     const pageInfo = {
       pageId: currentEditMode === "layout" ? null : currentPageId,
@@ -985,7 +986,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const pageId = currentEditMode === "layout" ? null : currentPageId;
     const layoutId =
       currentEditMode === "layout"
-        ? currentLayoutId
+        ? selectedReusableFrameId
         : getLegacyLayoutId(currentPage);
 
     // 이전 값과 같으면 스킵
@@ -1024,9 +1025,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     };
   }, [
     currentEditMode,
-    currentLayoutId,
     currentPageId,
     pages,
+    selectedReusableFrameId,
     sendPageInfoToIframe,
   ]);
 

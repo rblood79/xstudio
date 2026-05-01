@@ -24,8 +24,8 @@ import {
   getElementSlotName,
   getLegacyLayoutId,
   getLegacySlotName,
-  matchesLegacyLayoutId,
 } from "../../../../adapters/canonical/legacyElementFields";
+import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
 
 export interface ResolvePageWithFrameInput {
   /** 현재 page (layout_id 가 set 되어 있으면 frame 합성) */
@@ -231,9 +231,7 @@ export function resolvePageWithFrame(
 
   const frameElements: Element[] = [];
   for (const el of elementsMap.values()) {
-    if (!matchesLegacyLayoutId(el, layoutId)) continue;
-    if (el.page_id != null) continue;
-    if (el.deleted) continue;
+    if (!isFrameElementForFrame(el, layoutId)) continue;
     frameElements.push(el);
   }
 

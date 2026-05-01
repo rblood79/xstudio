@@ -22,7 +22,7 @@ describe("FramesTab frame selection race guard", () => {
     const source = await readFile(resolve(__dirname, "FramesTab.tsx"), "utf-8");
 
     expect(source).toContain(
-      'import { loadFrameElements } from "../../../utils/frameElementLoader";',
+      'loadFrameElements,\n} from "../../../../adapters/canonical/frameElementLoader";',
     );
     expect(source).toMatch(/const frameElements = await loadFrameElements\(/);
     expect(source).toMatch(/mergeElementsCanonicalPrimary\(frameElements\);/);

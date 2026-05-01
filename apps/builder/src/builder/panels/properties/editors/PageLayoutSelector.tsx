@@ -10,9 +10,6 @@
  * id 정규화: canonical FrameNode.id 는 `"layout-<legacyId>"` 접두사 → `metadata.layoutId`
  * 우선 사용. legacy page layout binding 과 정합 유지.
  *
- * write (`handleLayoutChange`) 는 legacy bridge 를 통한다.
- * P3-D 이후 canonical document mutation (page RefNode.ref 변경) 으로 전환.
- *
  * @deprecated-path `useLayoutsStore` direct access → canonical reusableFrames
  */
 
@@ -22,17 +19,11 @@ import { PropertySelect, PropertySection } from "../../../components";
 import { useLayouts, useLayoutsStore } from "../../../stores/layouts";
 import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
-import { getDB } from "../../../../lib/db";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
-import { enqueuePagePersistence } from "../../../utils/pagePersistenceQueue";
-// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
-import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import {
-  getLegacyLayoutId,
-  LEGACY_LAYOUT_ID_FIELD,
-  withLegacyLayoutId,
-} from "../../../../adapters/canonical/legacyElementFields";
-import { loadFrameElements } from "../../../utils/frameElementLoader";
+  applyPageFrameBindingCanonicalPrimary,
+  getPageFrameBindingId,
+} from "../../../../adapters/canonical/pageFrameBinding";
 import type { FrameNode } from "@composition/shared";
 
 interface PageLayoutSelectorProps {
@@ -84,10 +75,10 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     // elementsMap 변경 시 canonical projection 도 갱신 (selectCanonicalDocument 가 elements 소비)
   }, [layouts, pages, elementsMap]);
 
-  const currentLayoutId = getLegacyLayoutId(page) || "";
+  const selectedFrameId = getPageFrameBindingId(page);
   const currentLayout = useMemo(
-    () => reusableFrames.find((f) => f.id === currentLayoutId),
-    [reusableFrames, currentLayoutId],
+    () => reusableFrames.find((f) => f.id === selectedFrameId),
+    [reusableFrames, selectedFrameId],
   );
 
   const layoutOptions = useMemo(() => {
@@ -99,40 +90,15 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
   }, [reusableFrames]);
 
   const handleLayoutChange = useCallback(
-    async (layoutId: string) => {
+    async (frameId: string) => {
       try {
-        const { pages, setPages } = useStore.getState();
-        const db = await getDB();
-        const nextLayoutId = layoutId || null;
-
-        if (layoutId) {
-          const layoutElements = await loadFrameElements(db, layoutId);
-          mergeElementsCanonicalPrimary(layoutElements);
-        }
-
-        const updatedPages = pages.map((p) =>
-          p.id === pageId ? withLegacyLayoutId(p, nextLayoutId) : p,
-        );
-        const updatedPage = updatedPages.find((p) => p.id === pageId);
-        setPages(updatedPages);
-
-        await enqueuePagePersistence(async () => {
-          const persistenceDb = await getDB();
-          const existingPage = await persistenceDb.pages.getById(pageId);
-
-          if (existingPage) {
-            await persistenceDb.pages.update(pageId, {
-              [LEGACY_LAYOUT_ID_FIELD]: nextLayoutId,
-            });
-            return;
-          }
-
-          if (updatedPage) {
-            await persistenceDb.pages.insert({
-              ...withLegacyLayoutId(updatedPage, nextLayoutId),
-              updated_at: new Date().toISOString(),
-            });
-          }
+        const state = useStore.getState();
+        await applyPageFrameBindingCanonicalPrimary({
+          pageId,
+          frameId: frameId || null,
+          layouts,
+          getElementsState: () => useStore.getState(),
+          setPages: state.setPages,
         });
       } catch (error) {
         console.error(
@@ -141,7 +107,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         );
       }
     },
-    [pageId],
+    [layouts, pageId],
   );
 
   if (reusableFrames.length === 0) return null;
@@ -150,7 +116,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     <PropertySection title="Frame" icon={Layout}>
       <PropertySelect
         label="Apply Frame"
-        value={currentLayoutId}
+        value={selectedFrameId}
         onChange={handleLayoutChange}
         options={layoutOptions}
         icon={Layout}

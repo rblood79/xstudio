@@ -41,10 +41,18 @@ In Progress — 2026-05-02 (Phase 4 direct cutover 완료, 잔여는 Phase 5 hyb
   - 사용자 결정에 따라 기존 dev 데이터 보존, DB migration, backup, feature flag 를 모두 폐기했다. `runTagTypeMigration` / `migrationTagType.test` 를 삭제하고 `usePageManager.initializeProject` 의 dry-run entry 도 제거했다.
   - IDB read-through helper `normalizeLegacyElement` 를 제거했다. 기존 tag-only row 는 보존 대상이 아니며, 현행 runtime/persistence format 은 `Element.type` 단일 기준이다.
   - Phase 4 Step 4-4/4-5/4-6 은 별도 migration 단계가 아니라 direct cutover 로 종결한다.
+- **2026-05-02 — Phase 5-A/C/D runtime access sweep**:
+  - `slot_name` sweep: non-adapter / non-test / non-type runtime code 의 직접 field access 0건. page/frame slot fill 경로는 `getLegacySlotName()` / `getElementSlotName()` helper 로 이미 격리되어 있다.
+  - `componentRole` / `masterId` / `overrides` sweep: non-adapter runtime direct access 0건. `elementIndexer`, Skia `StoreRenderBridge`, `useResolvedElement` 는 `isMasterElement()` / `isInstanceElement()` / `getInstanceMasterRef()` helper 또는 canonical resolver param 을 사용한다.
+  - 검증: `g5LegacyFieldGrepGate.test.ts` 1 file / 3 tests PASS. 잔여 Phase 5 는 type schema/comment/test fixture 정리와 `descendants` schema sweep 이다.
+- **2026-05-02 — Phase 5-E `descendants` runtime schema sweep**:
+  - `descendants` 는 canonical `RefNode.descendants` 필드로 합법 잔존하므로 raw grep 0이 목표가 아니다. 새 `adr913DescendantsGrepGate.test.ts` 가 non-adapter runtime 접근을 canonical resolver (`resolvers/canonical/index.ts`), canonical store (`canonicalDocumentStore.ts`), shared type validator (`composition-vocabulary.ts`) allowlist 로 제한한다.
+  - legacy `Element.descendants` 직접 access 는 adapter boundary 밖 runtime code 에서 0건으로 고정했다. comment/type schema/test fixture 는 별도 cleanup 대상으로만 남긴다.
+  - 검증: `adr913DescendantsGrepGate.test.ts` 1 file / 1 test PASS.
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - ~~Phase 4 (DB schema migration DB_VERSION 8→9)~~ — **direct cutover 로 종결 (2026-05-02)**. Step 4-4 write-through / 4-5 normalize helper / 4-6 validation 은 별도 migration 없이 제거 완료.
-  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — 2d, **HIGH risk**. componentRole 43 / masterId 61 / slot_name 38 / overrides 37 / descendants 100 = 279 ref. sub-Phase 5-A~5-E 분할. **ADR-916 G5 Legacy Field Quarantine 의 하위 작업으로만 진행**. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
+  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — runtime access gate 는 5-A/C/D/E 기준으로 통과. 잔여는 type schema/comment/test fixture 정리와 필요 시 docs/inventory 갱신. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
 
 ## Context
 

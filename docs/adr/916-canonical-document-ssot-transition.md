@@ -125,6 +125,27 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - ADR-911 정리: `PanelSlot`/`BottomPanelSlot` 파일·컴포넌트·CSS class 를 `PanelArea`/`BottomPanelArea` 로 즉시 rename 하고, FramesTab/PageLayoutSelector read path 는 flag 없이 canonical reusable FrameNode projection 으로 고정했다.
   - ADR-913 정리: `normalizeLegacyElement` read-through helper 와 tag→type runtime migration path 를 제거했다. 기존 dev IndexedDB 의 tag-only row 는 보존 대상이 아니며, 신규/현행 format 은 `type` 단일 기준이다.
   - 검증: targeted vitest 7 files / 75 tests PASS (`persistenceWriteThroughStub`, `usePageManager.canonical`, `canonicalDocumentSync`, `exportSsotGrepGate`, `g5LegacyFieldGrepGate`, `FramesTab`, `canonicalElementsBridge`).
+- **2026-05-02 — ADR-911/916 G5 first cleanup slice**:
+  - `currentLayoutId` backward-compat alias 제거. Layout selection state 는 `selectedReusableFrameId` 단일 기준으로 고정했고, persist payload / fetch auto-select / create-delete selection update / iframe pageInfo / BuilderCore layout publish / ComponentsPanel add-element path 를 갱신했다.
+  - 검증: targeted vitest 4 files / 19 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — ADR-911/916 G5 second cleanup slice**:
+  - `PageLayoutSelector` page-frame binding write boundary 를 canonical adapter helper 로 이동했다. 컴포넌트는 더 이상 legacy `layout_id` field/persistence helper 를 직접 다루지 않고, `applyPageFrameBindingCanonicalPrimary()` 가 canonical document store 를 먼저 갱신한 뒤 current DB mirror 로 필요한 `pages.layout_id` payload 만 adapter 내부에서 persist 한다.
+  - 전체 canonical document DB persistence/export pages adapter 는 아직 별도 후속이다. 이번 slice 의 범위는 legacy field write 를 component layer 밖 adapter boundary 로 격리하는 G5 cleanup 이다.
+  - 검증: targeted vitest `pageFrameBinding.test.ts` + `PageLayoutSelector.static.test.ts` 2 files / 3 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — ADR-911/916 G5 third cleanup slice**:
+  - `layoutActions` reusable frame cascade 의 legacy field 접근을 `frameLayoutCascade` canonical adapter 로 이동했다. create body 생성, duplicate subtree remap, delete page binding clear/element mirror persistence 는 adapter boundary 에 격리한다.
+  - `deleteLayout` 은 canonical document 를 `nextPages + nextLayouts` 로 먼저 재구성하고 `exportLegacyDocument()` 결과를 live `elements` mirror 로 반영한다. current DB 의 `layout_id` payload 는 schema 유지용 mirror 로만 삭제/정리한다.
+  - 검증: targeted vitest `layoutActions.test.ts` 1 file / 9 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — ADR-913/916 G5 descendants runtime gate**:
+  - `descendants` 는 canonical core 필드이므로 raw grep 0 대신 allowlist gate 로 관리한다. 새 `adr913DescendantsGrepGate.test.ts` 가 adapter 밖 runtime access 를 canonical resolver/store/shared type validator 로 제한한다.
+  - legacy `Element.descendants` direct access 는 adapter boundary 밖 runtime code 에서 0건으로 고정했다.
+  - 검증: targeted vitest `adr913DescendantsGrepGate.test.ts` 1 file / 1 test PASS.
+- **2026-05-02 — ADR-911/916 G5 fourth cleanup slice**:
+  - Frame element read/hydration fallback 을 `frameElementLoader` canonical adapter 로 이동했다. `FramesTab`/`BuilderCore`/`usePageManager` 는 frame mirror load API 만 호출하고, legacy `layout_id` matching 은 adapter 내부로 격리한다.
+  - 검증: targeted vitest `frameElementLoader.test.ts` + `pageFrameBinding.test.ts` + `FramesTab.static.test.ts` + `BuilderCore.static.test.ts` + `FramesTab.test.tsx` + `usePageManager.canonical.test.ts` 6 files / 29 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 fifth cleanup slice**:
+  - properties/canvas runtime 의 frame membership 판정을 `isFrameElementForFrame()` adapter predicate 로 통일했다. `matchesLegacyLayoutId` direct import 는 `apps/builder/src/adapters/canonical/**` 내부만 남는다.
+  - 검증: targeted vitest `frameElementLoader.test.ts` + `resolvePageWithFrame.test.ts` + `buildFrameRendererInput.test.ts` + `selectionHitTest.test.ts` + `useElementHoverInteraction.test.ts` + `ElementSlotSelector.test.tsx` + `usePresetApply.static.test.ts` 7 files / 36 tests PASS.
 
 ## Context
 

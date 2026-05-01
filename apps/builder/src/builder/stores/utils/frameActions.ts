@@ -99,8 +99,7 @@ export async function updateReusableFrameName(
 /**
  * Reusable frame 선택 (canonical semantic).
  *
- * 내부 구현: legacy `setCurrentLayout` 호출. P3-B 정책에 따라
- * `selectedReusableFrameId` + `currentLayoutId` (backward-compat) 양쪽 갱신.
+ * 내부 구현: `selectedReusableFrameId` 갱신.
  *
  * @param frameId - 선택할 frame id, 또는 `null` (선택 해제)
  */

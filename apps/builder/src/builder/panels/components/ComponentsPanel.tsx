@@ -17,7 +17,10 @@ import ComponentList from "./ComponentList";
 import { useStore } from "../../stores";
 import { selectCanonicalDocument } from "../../stores/elements";
 import { useEditModeStore } from "../../stores/editMode";
-import { useLayoutsStore } from "../../stores/layouts";
+import {
+  useLayoutsStore,
+  useSelectedReusableFrameId,
+} from "../../stores/layouts";
 import { useElementCreator } from "@/builder/hooks";
 import { belongsToLegacyLayout } from "../../../adapters/canonical";
 
@@ -46,7 +49,7 @@ function ComponentsPanelContent() {
 
   // ⭐ Layout/Slot System: Edit Mode 상태
   const editMode = useEditModeStore((state) => state.mode);
-  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
+  const selectedReusableFrameId = useSelectedReusableFrameId();
 
   const { handleAddElement: rawHandleAddElement } = useElementCreator();
 
@@ -67,12 +70,12 @@ function ComponentsPanelContent() {
       );
 
       // Layout 모드인 경우
-      if (editMode === "layout" && currentLayoutId) {
+      if (editMode === "layout" && selectedReusableFrameId) {
         // 현재 Layout의 요소만 필터링
         // ADR-903 P3-E E-6 후속: write-through 활성화 후 element.layout_id 가 null
         // 이라 canonical reusable frame descendants 매칭 필수. legacy fallback 보존.
         const layoutElements = elements.filter((el) =>
-          belongsToLegacyLayout(el, currentLayoutId, doc),
+          belongsToLegacyLayout(el, selectedReusableFrameId, doc),
         );
 
         // ⭐ Layout/Slot System: selectedElementId가 Layout 요소인지 검증
@@ -92,7 +95,7 @@ function ComponentsPanelContent() {
         }
 
         console.log(
-          `🏗️ [ComponentsPanel] Layout 모드: ${type}를 Layout ${currentLayoutId?.slice(0, 8)}에 추가 (parent: ${(parentId || validSelectedElementId)?.slice(0, 8) || "auto"})`,
+          `🏗️ [ComponentsPanel] Layout 모드: ${type}를 Layout ${selectedReusableFrameId?.slice(0, 8)}에 추가 (parent: ${(parentId || validSelectedElementId)?.slice(0, 8) || "auto"})`,
         );
         await rawHandleAddElement(
           type,
@@ -100,7 +103,7 @@ function ComponentsPanelContent() {
           parentId || validSelectedElementId,
           layoutElements,
           addElement,
-          currentLayoutId, // layoutId 전달
+          selectedReusableFrameId, // layoutId 전달
           doc,
         );
         return;
@@ -126,9 +129,9 @@ function ComponentsPanelContent() {
     },
     [
       currentPageId,
-      currentLayoutId,
       editMode,
       selectedElementId,
+      selectedReusableFrameId,
       addElement,
       rawHandleAddElement,
     ],
