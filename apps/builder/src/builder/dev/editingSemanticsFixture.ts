@@ -1,5 +1,7 @@
 import type { Element, Page } from "../../types/core/store.types";
 import type { ElementsState } from "../stores/elements";
+// ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)
+import { setElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
 
 type SemanticFixtureElement = Element & {
   componentRole?: "master" | "instance";
@@ -175,7 +177,8 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
   } as SemanticFixtureElement;
 
   store.setPages([page]);
-  store.setElements([
+  // ADR-916 G4 wrapper 경유 — mutation reverse pilot
+  setElementsCanonicalPrimary([
     body,
     origin,
     instanceA,

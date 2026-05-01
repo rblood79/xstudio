@@ -7,6 +7,8 @@ import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../stores/utils/elementSanitizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
 import { resolveOwnerPageId } from "../../../adapters/canonical/legacyMetadata";
+// ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)
+import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
 
 /**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성 시 필요한 컨텍스트.
@@ -99,8 +101,8 @@ export function addElementsToStore(
   const currentElements = store.elements;
   const newElements = [...currentElements, parent, ...children];
 
-  // 1. 메모리 스토어 업데이트 (UI 즉시 반영)
-  store.mergeElements([parent, ...children]);
+  // 1. 메모리 스토어 업데이트 (UI 즉시 반영) — ADR-916 G4 wrapper 경유
+  mergeElementsCanonicalPrimary([parent, ...children]);
 
   // 2. 히스토리 기록
   const { saveSnapshot } = store as unknown as {

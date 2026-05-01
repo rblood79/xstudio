@@ -40,11 +40,13 @@ const VIOLATION_PATTERN =
  * 본 단축 단계 (3-C 부분) 시점 baseline. 후속 sub-phase 에서 0 도달 목표.
  * 증가 시 regression — 본 test fail.
  *
- * 2026-05-01 측정: 18 site (BuilderCore + dev fixture + stores/elements +
- * factories + hooks + layoutActions + FramesTab + PageLayoutSelector +
- * TableEditor + useMessageCoalescing 주석).
+ * 2026-05-01 측정 추적:
+ * - 18: 3-C 초기 baseline (3-B/C/D 단축 직후)
+ * - 16: mutation reverse pilot land (factories/utils/elementCreation +
+ *   dev/editingSemanticsFixture 2 caller → mergeElementsCanonicalPrimary /
+ *   setElementsCanonicalPrimary wrapper 경유)
  */
-const BASELINE_VIOLATION_COUNT = 18;
+const BASELINE_VIOLATION_COUNT = 16;
 
 // ─────────────────────────────────────────────
 // Helpers
