@@ -21,6 +21,8 @@ import type { Element, Page } from "../../../types/builder/unified.types";
 import { getDefaultProps } from "../../../types/builder/unified.types";
 import { selectCanonicalDocument } from "../elements";
 import { getLiveElementsState } from "../rootStoreAccess";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
 import type { FrameNode } from "@composition/shared";
 
 // Type aliases for set/get
@@ -245,8 +247,7 @@ export const createCreateLayoutAction =
       await db.elements.insert(bodyElement);
 
       // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
-      const { mergeElements } = getLiveElementsState();
-      mergeElements([bodyElement]);
+      mergeElementsCanonicalPrimary([bodyElement]);
 
       // 메모리 상태 업데이트
       const { layouts } = get();
@@ -460,8 +461,7 @@ export const createDuplicateLayoutAction =
 
         // 복제 직후 Frames 탭/Skia authoring surface 에 새 body/slot 이 즉시
         // 보이도록 DB write-through 와 메모리 store 를 같은 턴에 동기화한다.
-        const { mergeElements } = getLiveElementsState();
-        mergeElements(newElements as Element[]);
+        mergeElementsCanonicalPrimary(newElements as Element[]);
       }
 
       // 4. 메모리 상태 업데이트

@@ -34,6 +34,8 @@ import {
 import { canonicalDocumentToElements } from "../stores/canonical/canonicalElementsView";
 // ADR-916 Phase 3 G4 sub-phase 3-B — Canonical primary backup bootstrap
 import { saveLegacyBackup } from "@/adapters/canonical/restoreFromLegacyBackup";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { setElementsCanonicalPrimary } from "@/adapters/canonical/canonicalMutations";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import {
   ToastContainer,
@@ -371,7 +373,7 @@ export const BuilderCore: React.FC = () => {
                 ),
             );
             const mergedElements = [...otherElements, ...layoutElements];
-            setElements(mergedElements);
+            setElementsCanonicalPrimary(mergedElements);
           }
 
           // ⭐ DataStore 초기화 (Variables, DataTables, ApiEndpoints, Transformers)

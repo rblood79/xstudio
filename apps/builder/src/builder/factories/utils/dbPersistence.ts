@@ -1,5 +1,7 @@
 import { Element } from "../../../types/core/store.types";
 import { elementsApi } from "../../../services/api/ElementsApiService";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { createElementCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { updateElementId } from "./elementCreation";
 import { supabase } from "../../../env/supabase.client";
@@ -152,7 +154,7 @@ export async function saveElementsToDb(
       ),
     };
 
-    const savedParent = await elementsApi.createElement(parentToSave);
+    const savedParent = await createElementCanonicalPrimary(parentToSave);
 
     // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
     updateElementId(parent.id, savedParent.id);
@@ -163,7 +165,7 @@ export async function saveElementsToDb(
         ...children[i],
         parent_id: savedParent.id,
       };
-      const savedChild = await elementsApi.createElement(childToSave);
+      const savedChild = await createElementCanonicalPrimary(childToSave);
 
       // 스토어에서 자식 요소 ID 업데이트
       updateElementId(children[i].id, savedChild.id);

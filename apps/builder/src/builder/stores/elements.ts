@@ -77,6 +77,8 @@ import {
 import type { LegacyAdapterInput } from "@/adapters/canonical/types";
 import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
 import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { updateElementCanonicalPrimary } from "@/adapters/canonical/canonicalMutations";
 import type { CompositionDocument } from "@composition/shared";
 import type { Layout } from "../../types/builder/layout.types";
 
@@ -804,7 +806,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           .filter((el): el is Element => Boolean(el));
 
         Promise.all(
-          elementsToPersist.map((el) => elementsApi.updateElement(el.id, el)),
+          elementsToPersist.map((el) =>
+            updateElementCanonicalPrimary(el.id, el),
+          ),
         )
           .then(() => {
             console.log(

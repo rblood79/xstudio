@@ -6,6 +6,8 @@ import { type Page, getDefaultProps } from "../../types/builder/unified.types";
 import { getDB } from "../../lib/db";
 import { useStore } from "../stores";
 import { selectCanonicalDocument } from "../stores/elements";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { mergeElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
 import { selectCanonicalReusableFrames } from "../../adapters/canonical";
 import { runLegacyToCanonicalMigration } from "../../lib/db/migration";
 import { runTagTypeMigration } from "../../lib/db/migrationTagType";
@@ -260,7 +262,7 @@ export const usePageManager = ({
           mergedElements = Array.from(mergedMap.values());
           loadedPageElements = elementsData;
 
-          useStore.getState().mergeElements(allElements);
+          mergeElementsCanonicalPrimary(allElements);
         }
 
         setSelectedPageId(pageId);

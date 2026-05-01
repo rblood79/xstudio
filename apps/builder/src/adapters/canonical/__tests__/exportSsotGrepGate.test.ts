@@ -37,16 +37,22 @@ const VIOLATION_PATTERN =
   /elementsApi\.(create|update|insert|delete)|setElements\(|mergeElements\(/;
 
 /**
- * 본 단축 단계 (3-C 부분) 시점 baseline. 후속 sub-phase 에서 0 도달 목표.
- * 증가 시 regression — 본 test fail.
+ * **G4 grep gate PASS 도달 (2026-05-01)**: BASELINE_VIOLATION_COUNT = 0.
+ * 모든 legacy `elements[]` direct write site 가 `apps/builder/src/adapters/
+ * canonical/canonicalMutations.ts` 의 wrapper API 경유로 전환됨 (D18=A 단일
+ * SSOT 격리 검증). 후속 regression detection — 신규 caller 가 wrapper 우회 시
+ * 본 test 가 즉시 fail.
  *
  * 2026-05-01 측정 추적:
  * - 18: 3-C 초기 baseline (3-B/C/D 단축 직후)
- * - 16: mutation reverse pilot land (factories/utils/elementCreation +
- *   dev/editingSemanticsFixture 2 caller → mergeElementsCanonicalPrimary /
- *   setElementsCanonicalPrimary wrapper 경유)
+ * - 16: mutation reverse pilot land (2 caller — factories/utils/elementCreation
+ *   + dev/editingSemanticsFixture)
+ * - 0: mutation reverse 광역 완료 (16 caller 추가 변환 — BuilderCore +
+ *   stores/elements + 2 useIframeMessenger + usePageManager + 2 dbPersistence
+ *   + 2 layoutActions + 3 FramesTab + PageLayoutSelector + 2 TableEditor +
+ *   useMessageCoalescing JSDoc) → **G4 grep gate PASS**.
  */
-const BASELINE_VIOLATION_COUNT = 16;
+const BASELINE_VIOLATION_COUNT = 0;
 
 // ─────────────────────────────────────────────
 // Helpers

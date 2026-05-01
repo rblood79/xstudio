@@ -30,6 +30,8 @@ import {
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
@@ -99,7 +101,6 @@ export function FramesTab({
   const elementsMap = useStore((state) => state.elementsMap);
   const pages = useStore((state) => state.pages);
   const removeElement = useStore((state) => state.removeElement);
-  const mergeElements = useStore((state) => state.mergeElements);
 
   // ADR-911 P2-a PR-C: dual-mode read path.
   // - legacy: useLayoutsStore.layouts[] 직접 소비
@@ -182,7 +183,7 @@ export function FramesTab({
           selectedReusableFrameId,
         );
         if (frameElements.length > 0) {
-          mergeElements(frameElements);
+          mergeElementsCanonicalPrimary(frameElements);
           loadedFrameIdsRef.current.add(selectedReusableFrameId);
         }
       } catch (error) {
@@ -193,7 +194,7 @@ export function FramesTab({
     };
 
     loadSelectedFrameElements();
-  }, [selectedReusableFrameId, elementsMap, mergeElements]);
+  }, [selectedReusableFrameId, elementsMap]);
 
   // 새로고침 직후 전역 hydrate race 로 selected frame 이외의 body/slot 이
   // 메모리에 없을 수 있다. Frames 탭 목록이 로드되면 등록된 frame 전체 중
@@ -242,7 +243,7 @@ export function FramesTab({
           (group) => group.elements,
         );
         if (frameElements.length > 0) {
-          mergeElements(frameElements);
+          mergeElementsCanonicalPrimary(frameElements);
         }
 
         liveFrameElementGroups.forEach((group) => {
@@ -260,7 +261,7 @@ export function FramesTab({
     };
 
     loadMissingFrameElements();
-  }, [reusableFrames, elementsMap, mergeElements]);
+  }, [reusableFrames, elementsMap]);
 
   // ADR-040: elementsMap 순회로 layout_id 필터링
   const frameElements = useMemo(() => {
@@ -357,7 +358,7 @@ export function FramesTab({
         }
 
         if (frameElements.length > 0) {
-          mergeElements(frameElements);
+          mergeElementsCanonicalPrimary(frameElements);
           loadedFrameIdsRef.current.add(frameId);
         }
       } catch (error) {
@@ -369,7 +370,7 @@ export function FramesTab({
         loadingFrameIdsRef.current.delete(frameId);
       }
     },
-    [setEditModeLayoutId, elementsMap, mergeElements],
+    [setEditModeLayoutId, elementsMap],
   );
 
   // Frame 삭제 핸들러 — frameActions.deleteReusableFrame 위임

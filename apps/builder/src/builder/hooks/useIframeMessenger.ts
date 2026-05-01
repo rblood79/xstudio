@@ -39,6 +39,11 @@ import { Element } from "../../types/core/store.types";
 // ElementUtils는 현재 사용되지 않음
 import { MessageService } from "../../utils/messaging";
 import { elementsApi } from "../../services/api";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import {
+  mergeElementsCanonicalPrimary,
+  createMultipleElementsCanonicalPrimary,
+} from "../../adapters/canonical/canonicalMutations";
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from "../utils/canvasDeltaMessenger";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
@@ -172,12 +177,11 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       return;
     }
 
-    const { mergeElements } = useStore.getState();
-    mergeElements(queuedElements);
+    mergeElementsCanonicalPrimary(queuedElements);
 
     void (async () => {
       try {
-        await elementsApi.createMultipleElements(queuedElements);
+        await createMultipleElementsCanonicalPrimary(queuedElements);
       } catch (error) {
         console.error("❌ Preview generated elements DB 저장 실패:", error);
       }

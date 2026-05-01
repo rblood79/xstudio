@@ -130,6 +130,24 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ lan
   - **grep gate baseline 18 → 16** — `exportSsotGrepGate.test.ts` 의 `BASELINE_VIOLATION_COUNT` 16 으로 update + 2026-05-01 측정 추적 history 명시. baseline 감소가 mutation reverse 진척 자동 추적 도구.
   - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 143/143 PASS. factories + stores 영역 vitest 수행 시 16 fail 발견되었으나 **caller 변환 전후 stash 비교로 동일 fail set 확정** = 모두 pre-existing (supabaseUrl env 미설정 / jsdom 환경 / @/builder/stores/layouts alias 등 환경 의존 fail). 본 변환 회귀 0.
   - **G4 잔존 mutation reverse caller 16 site (다음 세션 진입점)**: BuilderCore (1) / stores/elements (1) / hooks/useIframeMessenger (2) / hooks/usePageManager (1) / factories/utils/dbPersistence (2) / stores/utils/layoutActions (2) / panels/nodes/FramesTab (3) / panels/properties/editors/PageLayoutSelector (1) / panels/properties/editors/TableEditor (2) / hooks/useMessageCoalescing (1 — JSDoc 주석, false positive). 각 caller 변환 = baseline 1 감소 → 0 도달 시 G4 grep gate PASS.
+- **2026-05-01 — Phase 3 G4 grep gate PASS 도달 ✅ (mutation reverse 광역 완료, 16 caller 변환)**:
+  - **사용자 명시 진행 신호** "phase 3 완료까지 진행해" + auto mode → Phase 3 G4 PASS marker 도달 진행.
+  - **wrapper API 3개 확장** — `apps/builder/src/adapters/canonical/canonicalMutations.ts` 에 `createElementCanonicalPrimary(element)` / `updateElementCanonicalPrimary(id, patch)` / `createMultipleElementsCanonicalPrimary(elements)` 추가. 본 단계 wrapper 내부 = 단순 elementsApi 호출 (BC 보존). 후속 단계에서 wrapper 내부 reverse — canonical store mutation 우선 + DB persist 자동.
+  - **caller 16 site 광역 변환**:
+    - `apps/builder/src/builder/main/BuilderCore.tsx:374` — `setElements(mergedElements)` → `setElementsCanonicalPrimary(mergedElements)`
+    - `apps/builder/src/builder/stores/elements.ts:807` — `elementsApi.updateElement(el.id, el)` → `updateElementCanonicalPrimary(el.id, el)`
+    - `apps/builder/src/builder/hooks/useIframeMessenger.ts:175,180` — `mergeElements(queuedElements)` + `elementsApi.createMultipleElements(queuedElements)` → wrapper 2 (selector 변수 제거 포함)
+    - `apps/builder/src/builder/hooks/usePageManager.ts:263` — `useStore.getState().mergeElements(allElements)` → `mergeElementsCanonicalPrimary(allElements)`
+    - `apps/builder/src/builder/factories/utils/dbPersistence.ts:155,166` — `elementsApi.createElement(parentToSave/childToSave)` → `createElementCanonicalPrimary(...)` × 2
+    - `apps/builder/src/builder/stores/utils/layoutActions.ts:249,464` — `mergeElements([bodyElement])` + `mergeElements(newElements as Element[])` → wrapper 2 (selector destructure 제거)
+    - `apps/builder/src/builder/panels/nodes/FramesTab/FramesTab.tsx:185,245,360` — `mergeElements(frameElements)` × 3 → wrapper × 3 + `mergeElements` selector 변수 제거 + 3 useEffect deps array 정리
+    - `apps/builder/src/builder/panels/properties/editors/PageLayoutSelector.tsx:113` — `mergeElements(layoutElements)` → wrapper + selector destructure 제거
+    - `apps/builder/src/builder/panels/properties/editors/TableEditor.tsx:193,265` — `mergeElements([...])` × 2 → wrapper × 2 + selector 변수 제거
+    - `apps/builder/src/builder/hooks/useMessageCoalescing.ts:234` (JSDoc 주석) — 주석 `setElements` → `setElementsCanonicalPrimary` 의미 동일 변경 (false positive 해소)
+  - **grep gate baseline 18 → 0 도달** — `exportSsotGrepGate.test.ts` 의 `BASELINE_VIOLATION_COUNT` 0 으로 update + 측정 추적 history 명시. 모든 legacy `elements[]` direct write site 가 `apps/builder/src/adapters/canonical/canonicalMutations.ts` 의 wrapper API 경유로 전환됨 (D18=A 단일 SSOT 격리 검증 PASS).
+  - **Gate G4 grep gate PASS 시그널 도달 ✅** — design §8.3 G4 PASS 정의 ("4 sub-phase 모두 land + grep gate 0건") 의 grep gate 부분 충족. Phase 4 G5 prerequisite 정합 도달.
+  - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 143/143 PASS (회귀 0).
+  - **G4 잔존 작업 (Phase 4 G5 prerequisite 외)**: (1) **wrapper 내부 진정 reverse** — 본 단계 wrapper 내부는 단순 BC 호출. 후속 단계에서 canonical store mutation 우선 + legacy mirror 자동으로 reverse. caller 변경 0. (2) **production destructive=0 evidence** — 사용자 dev 환경 1-2주 + sample project 100건 round-trip (Phase 3-A monitoring 단축 사유 명시). (3) **schemaVersion 실 bump** — wrapper 내부 reverse 완료 후 신규 backup default schemaVersion 을 `canonical-primary-1.0` 으로 변경.
 
 ## Context
 

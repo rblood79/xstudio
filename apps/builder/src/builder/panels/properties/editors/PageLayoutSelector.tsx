@@ -27,6 +27,8 @@ import { getDB } from "../../../../lib/db";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 import { isFramesTabCanonical } from "../../../../utils/featureFlags";
 import { enqueuePagePersistence } from "../../../utils/pagePersistenceQueue";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import { loadFrameElements } from "../../../utils/frameElementLoader";
 import type { FrameNode } from "@composition/shared";
 
@@ -104,13 +106,13 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
   const handleLayoutChange = useCallback(
     async (layoutId: string) => {
       try {
-        const { pages, setPages, mergeElements } = useStore.getState();
+        const { pages, setPages } = useStore.getState();
         const db = await getDB();
         const nextLayoutId = layoutId || null;
 
         if (layoutId) {
           const layoutElements = await loadFrameElements(db, layoutId);
-          mergeElements(layoutElements);
+          mergeElementsCanonicalPrimary(layoutElements);
         }
 
         const updatedPages = pages.map((p) =>

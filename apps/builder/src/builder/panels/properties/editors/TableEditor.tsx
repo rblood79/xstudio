@@ -27,6 +27,8 @@ import { useStore } from "../../../stores";
 import { Element } from "../../../../types/core/store.types";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { TableElementProps } from "../../../../types/builder/unified.types";
+// ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
+import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import { useCallback, memo, useMemo } from "react";
 import { generateCustomId } from "../../../utils/idGeneration";
 import "./styles/TableEditor.css";
@@ -46,7 +48,6 @@ export const TableEditor = memo(
     const element = useStore((state) => state.elementsMap.get(elementId));
     const elementsMap = useStore((state) => state.elementsMap);
     const childrenMap = useStore((state) => state.childrenMap);
-    const mergeElements = useStore((state) => state.mergeElements);
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const customId = useMemo(() => {
@@ -190,7 +191,7 @@ export const TableEditor = memo(
         }
 
         // 메모리 상태 업데이트
-        mergeElements([newRowElement, ...cellsToCreate]);
+        mergeElementsCanonicalPrimary([newRowElement, ...cellsToCreate]);
 
         console.log("✅ 테이블 행 추가 완료");
       } catch (error) {
@@ -262,7 +263,7 @@ export const TableEditor = memo(
         }
 
         // 메모리 상태 업데이트
-        mergeElements([newGroupElement]);
+        mergeElementsCanonicalPrimary([newGroupElement]);
 
         console.log("✅ Column Group 추가 완료");
       } catch (error) {

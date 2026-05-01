@@ -20,15 +20,15 @@
 // ============================================
 
 export type CoalescibleMessageType =
-  | 'UPDATE_ELEMENTS'
-  | 'UPDATE_ELEMENT_PROPS'
-  | 'ELEMENT_SELECTED'
-  | 'ELEMENT_COMPUTED_STYLE'
-  | 'UPDATE_LAYOUTS'
-  | 'UPDATE_DATA_TABLES'
-  | 'UPDATE_API_ENDPOINTS'
-  | 'UPDATE_VARIABLES'
-  | 'UPDATE_PAGE_INFO';
+  | "UPDATE_ELEMENTS"
+  | "UPDATE_ELEMENT_PROPS"
+  | "ELEMENT_SELECTED"
+  | "ELEMENT_COMPUTED_STYLE"
+  | "UPDATE_LAYOUTS"
+  | "UPDATE_DATA_TABLES"
+  | "UPDATE_API_ENDPOINTS"
+  | "UPDATE_VARIABLES"
+  | "UPDATE_PAGE_INFO";
 
 export interface CoalescedMessage {
   type: CoalescibleMessageType;
@@ -36,7 +36,10 @@ export interface CoalescedMessage {
   timestamp: number;
 }
 
-export type MessageHandler = (type: CoalescibleMessageType, payload: unknown) => void;
+export type MessageHandler = (
+  type: CoalescibleMessageType,
+  payload: unknown,
+) => void;
 
 // ============================================
 // Message Priority (낮을수록 먼저 처리)
@@ -44,23 +47,23 @@ export type MessageHandler = (type: CoalescibleMessageType, payload: unknown) =>
 
 const MESSAGE_PRIORITY: Record<CoalescibleMessageType, number> = {
   // 1순위: 선택 상태 (즉각적인 피드백 필요)
-  'ELEMENT_SELECTED': 1,
+  ELEMENT_SELECTED: 1,
 
   // 2순위: 페이지/레이아웃 정보 (렌더링에 필요)
-  'UPDATE_PAGE_INFO': 2,
-  'UPDATE_LAYOUTS': 3,
+  UPDATE_PAGE_INFO: 2,
+  UPDATE_LAYOUTS: 3,
 
   // 3순위: 데이터 (렌더링에 필요)
-  'UPDATE_DATA_TABLES': 4,
-  'UPDATE_API_ENDPOINTS': 5,
-  'UPDATE_VARIABLES': 6,
+  UPDATE_DATA_TABLES: 4,
+  UPDATE_API_ENDPOINTS: 5,
+  UPDATE_VARIABLES: 6,
 
   // 4순위: 요소 업데이트
-  'UPDATE_ELEMENTS': 7,
-  'UPDATE_ELEMENT_PROPS': 8,
+  UPDATE_ELEMENTS: 7,
+  UPDATE_ELEMENT_PROPS: 8,
 
   // 5순위: computedStyle (지연 가능)
-  'ELEMENT_COMPUTED_STYLE': 99,
+  ELEMENT_COMPUTED_STYLE: 99,
 };
 
 // ============================================
@@ -143,17 +146,17 @@ export class MessageCoalescer {
 
     // 우선순위 순으로 정렬
     const sortedMessages = Array.from(batch.values()).sort(
-      (a, b) => MESSAGE_PRIORITY[a.type] - MESSAGE_PRIORITY[b.type]
+      (a, b) => MESSAGE_PRIORITY[a.type] - MESSAGE_PRIORITY[b.type],
     );
 
     // 처리
     for (const msg of sortedMessages) {
       // computedStyle은 idle 시간에 처리
-      if (msg.type === 'ELEMENT_COMPUTED_STYLE') {
-        if ('requestIdleCallback' in window) {
+      if (msg.type === "ELEMENT_COMPUTED_STYLE") {
+        if ("requestIdleCallback" in window) {
           requestIdleCallback(
             () => this.handler(msg.type, msg.payload),
-            { timeout: 100 } // 최대 100ms 대기
+            { timeout: 100 }, // 최대 100ms 대기
           );
         } else {
           // fallback: setTimeout
@@ -204,7 +207,7 @@ export class MessageCoalescer {
     this.pending.clear();
 
     const sortedMessages = Array.from(batch.values()).sort(
-      (a, b) => MESSAGE_PRIORITY[a.type] - MESSAGE_PRIORITY[b.type]
+      (a, b) => MESSAGE_PRIORITY[a.type] - MESSAGE_PRIORITY[b.type],
     );
 
     for (const msg of sortedMessages) {
@@ -217,7 +220,7 @@ export class MessageCoalescer {
 // React Hook
 // ============================================
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect } from "react";
 
 /**
  * 메시지 코얼레싱 훅
@@ -231,7 +234,7 @@ import { useRef, useCallback, useEffect } from 'react';
  * const enqueue = useMessageCoalescing((type, payload) => {
  *   switch (type) {
  *     case 'UPDATE_ELEMENTS':
- *       setElements(payload as Element[]);
+ *       setElementsCanonicalPrimary(payload as Element[]); // ADR-916 G4
  *       break;
  *     case 'ELEMENT_SELECTED':
  *       setSelectedElement(payload);
@@ -252,7 +255,7 @@ import { useRef, useCallback, useEffect } from 'react';
  */
 export function useMessageCoalescing(
   handler: MessageHandler,
-  enabled: boolean = true
+  enabled: boolean = true,
 ): (type: CoalescibleMessageType, payload: unknown) => void {
   const coalescerRef = useRef<MessageCoalescer | null>(null);
   const handlerRef = useRef(handler);
@@ -280,9 +283,12 @@ export function useMessageCoalescing(
   }, [enabled]);
 
   // enqueue 함수 (메모이즈)
-  const enqueue = useCallback((type: CoalescibleMessageType, payload: unknown) => {
-    coalescerRef.current?.enqueue(type, payload);
-  }, []);
+  const enqueue = useCallback(
+    (type: CoalescibleMessageType, payload: unknown) => {
+      coalescerRef.current?.enqueue(type, payload);
+    },
+    [],
+  );
 
   return enqueue;
 }
@@ -296,7 +302,9 @@ const COALESCIBLE_TYPES = new Set<string>(Object.keys(MESSAGE_PRIORITY));
 /**
  * 메시지 타입이 코얼레싱 가능한지 확인
  */
-export function isCoalescibleMessage(type: string): type is CoalescibleMessageType {
+export function isCoalescibleMessage(
+  type: string,
+): type is CoalescibleMessageType {
   return COALESCIBLE_TYPES.has(type);
 }
 
@@ -315,7 +323,7 @@ interface ElementPropsUpdate {
  * 같은 elementId에 대한 props는 병합됨
  */
 export function mergeElementPropsUpdates(
-  updates: ElementPropsUpdate[]
+  updates: ElementPropsUpdate[],
 ): Map<string, Record<string, unknown>> {
   const merged = new Map<string, Record<string, unknown>>();
 
