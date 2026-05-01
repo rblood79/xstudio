@@ -601,16 +601,49 @@ rg -n "elementsApi\.(create|update|insert|delete)|setElements\(|mergeElements\("
 
 ADR-913 Phase 5와 ADR-911 잔여 layout cleanup을 본 ADR의 final gate로 묶는다. ADR-914의 독립 imports resolver/cache 계획은 2026-04-30 superseded 처리됐으므로, `imports` 자체는 canonical core hook으로 유지하되 fetch/cache/resolver 실행 경계는 본 ADR의 adapter/import/export 단계에서 다시 확정한다.
 
-| 필드                       | 담당 ADR          | ADR-916 종결 기준                            |
-| -------------------------- | ----------------- | -------------------------------------------- |
-| `slot_name`                | ADR-913 Phase 5-A | adapter 밖 read/write 0건                    |
-| `overrides`                | ADR-913 Phase 5-B | `RefNode.descendants` patch mode로 통합      |
-| `componentRole`            | ADR-913 Phase 5-C | `reusable`/`type:"ref"`만 사용               |
-| `masterId`                 | ADR-913 Phase 5-D | `RefNode.ref`만 사용                         |
-| `descendants` legacy shape | ADR-913 Phase 5-E | canonical `DescendantOverride` union만 사용  |
-| `layout_id`                | ADR-911 Phase 3/4 | reusable frame + page ref/descendants로 통합 |
+### 9.0 Fork Checkpoint (4 질문 lock-in, 2026-05-01)
 
-완료 기준:
+Phase 4 G5 진입 시점 fork checkpoint 4 질문 통과 — 본 sub-section 1-line lock-in. adr-writing.md 정책 의무.
+
+1. **base / 응용 분류**: ADR-911 P3 잔여 (`layout_id` cleanup) + ADR-913 Phase 5 (`slot_name`/`overrides`/`componentRole`/`masterId`/legacy `descendants` cleanup) = **base cleanup work** (실 mutation work, runtime read/write 0 도달이 목적). ADR-916 G5 = **응용 closure aggregator** (base ADR 의 cleanup work 진행도 marker + grep gate 0 도달 시 closure 신호). §11 명시 "ADR-911/913 cleanup 을 ADR-916 G5 에 연결" 정합.
+2. **schema 직교성**: G5 6 필드 (structural cleanup) ⊥ G7 `events`/`dataBinding` (extension boundary, §10 Phase 5 영역) ⊥ `componentName` (ADR-913 P5 별도, §9 표 outside). 9 필드 통합은 직교성 위반이므로 본 phase 는 **6 필드만**. ADR Phase 0 G1 시점 9 필드 marker 는 cleanup target 표식일 뿐, G5 phase scope 는 아니다.
+3. **baseline framing reverse 검증**: ADR-911 Status `In Progress (잔여는 ADR-916 이후 재개)` + ADR-913 Status `In Progress (잔여 Phase 4/5 는 ADR-916 이후 재개)` framing 은 **stale**. 본 §11 명시 "ADR-911/913 cleanup 을 ADR-916 G5 에 연결" 가 valid 한 framing — 두 ADR 의 cleanup work 를 ADR-916 G5 work scope **안에서** 진행, ADR-911/913 의 cleanup phase 는 ADR-916 G5 closure 시점에 동시 closure (Implemented). "ADR-916 이후 재개" 는 별도 재개 가정인데 cleanup work 가 ADR-916 G5 본질이라 별도 재개가 아닌 본 phase 가 그 재개 자체. 이 reverse 가 R4 (cleanup 기준 흩어짐) 대응의 본질.
+4. **codex 3차 미루지 말 것**: 본 §9 보강 (sub-phase 분리 + baseline + caller 영역) lock-in 직후 codex review 1차 진입. 본문 정합 (Risk/Gate 매핑) 은 codex round 위임, framing reverse 의 valid 성은 본 시점 design 본문 명문화.
+
+### 9.1 sub-phase 분리 (G5-A / G5-B)
+
+6 필드를 schema 직교성 기준 2 sub-phase 로 분리. base ADR 정합 + scope 분리로 R5 cascade risk 분산.
+
+| sub-phase                            | 필드                                                                            | base ADR            | baseline matches         | 종결 기준                                                                                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------- | ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **G5-A** (ADR-911 layout_id closure) | `layout_id`                                                                     | ADR-911 Phase 3/4   | **165**                  | `page.layout_id` reference 가 reusable frame + page ref/descendants 구조로 마이그레이션. adapter 외부 runtime read/write 0건. ADR-911 P3 잔여 cleanup work 흡수.                                       |
+| **G5-B** (ADR-913 P5 5필드 closure)  | `slot_name` / `overrides` / `componentRole` / `masterId` / legacy `descendants` | ADR-913 Phase 5-A~E | **195** (23+25+41+50+56) | 5 필드 모두 adapter 외부 runtime read/write 0건. canonical `DescendantOverride` union + `RefNode.ref` + `reusable`/`type:"ref"` + `RefNode.descendants` patch mode 통합. ADR-913 P5 cleanup work 흡수. |
+
+**진입 순서**: G5-A → G5-B (base/응용 분류 결과). layout_id 가 더 광역 + ADR-911 frame canvas authoring 본질과 결합 → G5-A 가 base. G5-B 는 ADR-913 P5-A~E sub-phase 별 5 sub-step (`slot_name` → `componentRole` → `masterId` → `overrides` → `descendants`) 로 추가 분해 가능.
+
+### 9.2 6 필드별 baseline + caller 영역 분류 (2026-05-01 측정, main HEAD `e5719bdf6` 기준)
+
+design §9 grep 패턴 (runtime field access/write 만, adapter/test/migration exclude) 측정 결과:
+
+| 필드            | matches | sub-phase | 핵심 caller 영역 (top files)                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------- | ------: | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout_id`     |     165 | G5-A      | panels/properties/editors (PageParentSelector 13 / PageLayoutSelector 5 / ElementSlotSelector 3 / LayoutPresetSelector 3 = **24**), hooks (usePageManager 13 / useIframeMessenger 7 = **20**), preview (CanvasRouter 7 / layoutResolver 6 / App 6 = **19**), workspace/canvas (resolvePageWithFrame 7 / skiaOverlayBuilder 3 / rendererInput 3 = **16**), stores/utils (layoutActions 8 / elementSanitizer 7 = **15**), utils (canonicalRefResolution 7 / projectSync 4 = **11**) |
+| `slot_name`     |      23 | G5-B      | stores/utils (elementSanitizer 6), workspace/canvas (resolvePageWithFrame 5), packages/shared (element.utils 3), panels/properties (PropertiesPanel 3), preview (layoutResolver 2 / App 2)                                                                                                                                                                                                                                                                                        |
+| `componentRole` |      41 | G5-B      | services/api (ElementsApiService 11) **DB-facing**, stores/utils (instanceActions 9 / elementSanitizer 4 / elementIndexer 2), stores/elements 4, utils (editingSemantics 5 / multiElementCopy 1 / canonicalRefResolution 1)                                                                                                                                                                                                                                                       |
+| `masterId`      |      50 | G5-B      | services/api (ElementsApiService 11) **DB-facing**, stores (elements 9 / instanceActions 8 / elementSanitizer 4 / elementIndexer 4), utils (editingSemantics 3 / canonicalRefResolution 1), workspace/canvas (useResolvedElement 2 / StoreRenderBridge 2)                                                                                                                                                                                                                         |
+| `overrides`     |      25 | G5-B      | stores/utils (instanceActions 9 / elementSanitizer 8 = **17/25 = 68%**), utils (instanceResolver 3), resolvers (storeBridge 1 / cache 1)                                                                                                                                                                                                                                                                                                                                          |
+| `descendants`   |      56 | G5-B      | stores/utils (instanceActions 12 / elementSanitizer 8 = **20/56 = 36%**), panels/properties (ComponentSlotFillSection 8), utils (canonicalRefResolution 6 / editingSemantics 2 / instanceResolver 1), resolvers (canonical/index 5 / cache 1), packages/shared types (composition-vocabulary 3 / canonical-resolver.types 2 / composition-document 1)                                                                                                                             |
+| **G5 합계**     | **360** | —         | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+**hot path 식별** (sub-phase 작업 우선순위 결정 도구):
+
+- **`elementSanitizer.ts`** = 6 필드 모두 (slot_name 6 / componentRole 4 / masterId 4 / overrides 8 / descendants 8 / layout_id 7 = **37**). single point of cleanup — sanitizer 가 canonical 변환 진입점이면 6 필드 동시 closure 가능.
+- **`instanceActions.ts`** = ADR-913 P5 핵심 (componentRole 9 / masterId 8 / overrides 9 / descendants 12 = **38**). instance ref/override 처리 핵심.
+- **`ElementsApiService.ts`** = DB-facing (componentRole 11 / masterId 11 = **22**). DB schema 면 — ADR-913 Phase 4 DB schema migration (별 phase, design §913-phase4 breakdown) 와 결합 검토.
+- **`canonicalRefResolution.ts`** + **`editingSemantics.ts`** = ref resolution 영역 (모든 필드 등장).
+- **`PageParentSelector.tsx`** + **`usePageManager.ts`** = layout_id 광역 (각 13). G5-A page→frame ref 마이그레이션 핵심.
+
+### 9.3 완료 기준 (CI grep gate 가능)
 
 ```bash
 # runtime field access/write only. broad word grep 금지.
@@ -629,6 +662,26 @@ rg -n "\\b(layout_id|slot_name|component_role|master_id)\\b" \
 ```
 
 결과는 0건이 원칙이다. 불가피한 잔존은 adapter/shim 디렉터리로 이동하고 파일명에 `legacy`를 포함해야 한다. test fixture, markdown, 일반 변수명 `overrides`는 gate failure로 세지 않고 별도 bucket에 기록한다.
+
+### 9.4 prerequisite + ADR-911/913 closure 동시 마감
+
+G5-A 종결 시 ADR-911 P3 잔여 (`layout_id` cleanup) closure marker → ADR-911 도 closure 가능 (Phase 3 frame canvas authoring + page→frame ref 마이그레이션 모두 land 후).
+
+G5-B 종결 시 ADR-913 P5-A~E 5 필드 closure marker → ADR-913 P5 도 closure 가능. ADR-913 Phase 4 (DB schema migration, `913-phase4-db-schema-migration-breakdown.md` 별 design) 는 ADR-913 P5 와 직교 — 별도 진행. ADR-913 closure 는 P4 + P5 모두 land 시점.
+
+ADR-916 G5 closure 시점 = G5-A + G5-B 모두 grep gate 0 도달. **Phase 5 G6 (Runtime Parity) + G7 (Extension Boundary) 진입 prerequisite**.
+
+### 9.5 R5 cascade risk 대응 (HIGH)
+
+R5: "legacy field quarantine 이 과도하게 빨리 진행되어 기존 프로젝트 read-through 가 깨질 수 있음".
+
+**대응 절차**:
+
+1. 각 sub-phase 진입 시 adapter (`apps/builder/src/adapters/canonical/legacyMetadata.ts` + `legacyToCanonical.ts`) 의 read-through 보존 — runtime read/write 만 0 도달, adapter read 는 유지.
+2. migration marker 유지 — `metadata.legacyProps` 가 `id` / `parent_id` / `page_id` / `layout_id` / `order_num` / `fills` / `type` 7 fields 보존 (ADR-916 G1 §3 결정).
+3. destructive migration 없이 shadow 검증 → fixture 100건 + 사용자 dev 환경 1-2주 monitoring (G4 monitoring 패턴 재사용).
+4. **single point of cleanup 우선** — `elementSanitizer.ts` 같은 6 필드 모두 등장 site 부터 cleanup 진입 시 cascade 영향 가시성 ↑.
+5. caller chain 추적 — top files 의 hot path 변경이 하류 caller (panels / hooks / workspace) 에 영향 줄 때마다 type-check + vitest 회귀 0 검증.
 
 ## 10. Phase 5 — Runtime Parity + Extension Closure
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ land)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + Phase 4 G5 design 보강 + sub-phase 분리 ✅ land)
 
 ### 진행 로그
 
@@ -148,6 +148,14 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ lan
   - **Gate G4 grep gate PASS 시그널 도달 ✅** — design §8.3 G4 PASS 정의 ("4 sub-phase 모두 land + grep gate 0건") 의 grep gate 부분 충족. Phase 4 G5 prerequisite 정합 도달.
   - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 143/143 PASS (회귀 0).
   - **G4 잔존 작업 (Phase 4 G5 prerequisite 외)**: (1) **wrapper 내부 진정 reverse** — 본 단계 wrapper 내부는 단순 BC 호출. 후속 단계에서 canonical store mutation 우선 + legacy mirror 자동으로 reverse. caller 변경 0. (2) **production destructive=0 evidence** — 사용자 dev 환경 1-2주 + sample project 100건 round-trip (Phase 3-A monitoring 단축 사유 명시). (3) **schemaVersion 실 bump** — wrapper 내부 reverse 완료 후 신규 backup default schemaVersion 을 `canonical-primary-1.0` 으로 변경.
+- **2026-05-01 — Phase 4 G5 진입 prerequisite land: design §9 보강 + sub-phase 분리 + framing reverse lock-in**:
+  - **fork checkpoint 4 질문 lock-in (design §9.0)**: (1) base/응용 분류 = ADR-911 P3 잔여 + ADR-913 Phase 5 가 base cleanup work, ADR-916 G5 = 응용 closure aggregator. (2) schema 직교성 = G5 6 필드 ⊥ G7 events/dataBinding ⊥ componentName. 9 필드 통합은 직교성 위반이므로 G5 phase scope = **6 필드만**. (3) baseline framing reverse = ADR-911/913 의 "ADR-916 이후 재개" framing **stale** 처리, 두 ADR cleanup work 를 ADR-916 G5 work scope **안에서** 진행 + 동시 closure (R4 cleanup 기준 흩어짐 대응). (4) codex 1차 진입 prerequisite 도달.
+  - **sub-phase 분리 (design §9.1)** — G5-A (`layout_id` 165 matches, ADR-911 Phase 3/4 base) → G5-B (`slot_name`/`overrides`/`componentRole`/`masterId`/legacy `descendants` 195 matches, ADR-913 Phase 5-A~E base). 진입 순서 = G5-A 먼저 (광역 + ADR-911 frame canvas authoring 본질 결합).
+  - **6 필드 baseline + caller 영역 분류 codify (design §9.2)** — main HEAD `e5719bdf6` 기준 design §9 grep 패턴 측정. G5 합계 360 matches. hot path 식별: `elementSanitizer.ts` 6 필드 모두 (37) / `instanceActions.ts` ADR-913 P5 핵심 (38) / `ElementsApiService.ts` DB-facing (22) / `canonicalRefResolution.ts` + `editingSemantics.ts` ref resolution / `PageParentSelector.tsx` + `usePageManager.ts` layout_id 광역. single point cleanup 우선 전략 (R5 cascade 분산).
+  - **R5 cascade risk 대응 절차 명문화 (design §9.5)** — adapter read-through 보존 / `metadata.legacyProps` 7 fields marker 유지 / destructive migration 없이 shadow 검증 / single point cleanup 우선 / caller chain 회귀 검증.
+  - **ADR-911/913 closure 동시 마감 framing 명시 (design §9.4)** — G5-A 종결 시 ADR-911 closure marker, G5-B 종결 시 ADR-913 P5 closure marker. ADR-913 Phase 4 (DB schema migration) 는 P5 와 직교, 별도 진행. ADR-916 G5 closure = G5-A + G5-B 모두 grep gate 0 도달 시점, Phase 5 G6/G7 진입 prerequisite.
+  - **Phase 4 G5 진입 mutation work 미진행** — 본 land 는 design 보강 + 진행 로그 entry only (LOW risk, mutation scope = 0). 다음 sub-phase 진입점 = G5-A first work (`elementSanitizer.ts` single point cleanup 우선 검토 또는 ADR-911 P3 잔여 frame canvas authoring 진행).
+  - **검증** — `pnpm type-check` 3/3 PASS (design+ADR markdown 변경, 코드 영향 0).
 
 ## Context
 
