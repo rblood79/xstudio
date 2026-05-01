@@ -211,6 +211,33 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **검증** — `pnpm type-check` 3/3 PASS (BaseApiService.ts dead code 제거 후 cache miss 332ms, unused import 정리 후 회귀 0). 영향 영역 vitest = 본 변경 영향 file 의 test 없음 (BaseApiService 자체 test 없음, dead code 였으므로 caller 영향 0).
   - **본 세션 phase 4 진척 종결**: G5 baseline 360 → 301 (-59 누적, 16% 감소) + DB snake_case component_role/master_id 0 도달 + dead duplicate 정리 + design §9.6/§9.7 next-session 진입 전략 명문화. 본 세션 LOW risk mechanical refactor 영역 모두 land. **본격 sub-step (P5-B 부터) 진입 = 별 세션 ~3-4h MED scope**, 다음 세션 surface 후 결정.
   - **본 ADR-916 Status `In Progress` 유지** — phase 4 G5 closure 미도달 (다중 세션 plan), Phase 5 G6/G7 진입 prerequisite 미충족.
+- **2026-05-01 — Phase 4 G5-B P5-B `overrides` cleanup (read-through fallback marker + write site initial cleanup, baseline 17 → 16)**:
+  - **fork checkpoint 4 질문 재확인** (design §9.0 lock-in 적용): (1) base/응용 = ADR-913 P5-B base cleanup 의 ADR-916 G5-B 흡수. (2) schema 직교성 = `overrides` ⊥ G5 5 다른 필드. (3) baseline framing reverse = ADR-913 P5 cleanup 을 ADR-916 G5-B 안에서 진행. (4) codex 회피 (ADR 본문 변경만, framing reverse 적용 base ADR 본문 미수정).
+  - **사용자 신호 "ADR 916 부터 진행해, 911,913 진행하지마" 정합** — ADR-916 §9 본문 + design §9.6/§9.7 update only, ADR-911/913 본문 closure marker 미적용. ADR-911 영역 (`componentRole === "instance"` 분기, `instance.overrides` Record read site) 침범 없이 P5-B 진행 가능 영역 한정.
+  - **P5-B scope 결정 (D2=b read-through fallback)**: design §3.2 line 73 "migration script: 기존 IndexedDB legacy overrides → canonical descendants 변환 (Step 4-4 write-through 와 별도, Phase 5-B 진입 시점에 결정)" 결정 분기에서 **D2=b read-through fallback 채택** — destructive migration 회피, R5 cascade risk 최소화. legacy IndexedDB 의 `overrides` Record 는 transition bridge 로 그대로 read 보존 (점근적 0 도달).
+  - **type field marker 강화** (`apps/builder/src/types/builder/unified.types.ts`):
+    - `Element.overrides?: Record<string, unknown>` JSDoc 강화 — 기존 `@deprecated ADR-913 Phase 5-B + ADR-916 G5 cleanup target` 에 **read-through fallback only (ADR-916 G5-B P5-B)** 명시 추가. 신규 write 는 canonical `RefNode.descendants[path].props` 만 사용. legacy `componentRole === "instance"` 분기 자체는 ADR-911 P3 cleanup 영역 — 본 필드 cleanup 은 ADR-911 P3 cleanup 후 점근적 0 도달 명문화.
+  - **write site initial cleanup** (`apps/builder/src/builder/stores/utils/instanceActions.ts:629`):
+    - `createInstance()` 의 initial value `overrides: {}` (empty Record) → `overrides: undefined` 로 변경. 신규 legacy instance 가 IndexedDB 에 `overrides` field 자체를 저장하지 않도록 정리. read site 의 `isRecord(...)` graceful fallback 패턴 그대로 안전.
+    - 본 변경의 점근 효과: 신규 legacy instance write = `overrides` field 0 → 시간 경과에 따라 IndexedDB 의 legacy data 도 점근적으로 0 도달 (사용자 detach / clear / migration 시 cleanup).
+  - **legacy public API JSDoc deprecation marker** (`apps/builder/src/utils/component/instanceResolver.ts`):
+    - `resolveInstanceProps(instance, master)` JSDoc — `@deprecated ADR-916 G5-B P5-B — read-through fallback only` 추가. 신규 canonical 경로는 `resolveInstanceWithSharedCache` (`resolvers/canonical/storeBridge.ts`) 또는 `resolveCanonicalRefElement` (`builder/utils/canonicalRefResolution.ts`) 사용 명문화. legacy 분기 caller migration 도 ADR-911 P3 cleanup 과 동시 진행 marker.
+    - `resolveInstanceElement(instance, master)` JSDoc — 동일 marker (thin wrapper of `resolveInstanceProps`).
+    - `resolveDescendantOverrides(childElement, instanceDescendants)` JSDoc — 동일 marker (legacy `instance.descendants[childId]` flat Record 경로 전용, 신규 canonical 경로는 `resolveCanonicalDescendantOverride` 사용).
+  - **grep gate baseline 재측정**:
+    | 필드 | 이전 | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 158 | 158 | 0 |
+    | slot_name | 17 | 17 | 0 |
+    | componentRole | 26 | 26 | 0 |
+    | masterId | 35 | 35 | 0 |
+    | overrides | 17 | 16 | -1 |
+    | descendants | 48 | 48 | 0 |
+    | **G5 합계** | **301** | **300** | **-1 ✅** |
+  - **본 phase 한계 framing (P5-B 본격 cleanup 의 ADR-911 영역 결합)**: design §9.7 P5-B 가 추정한 "instance 시스템 logic 본질 변경 ~1-2d MED-HIGH" scope 는 본 시점에서 **ADR-911 P3 영역과 결합** (legacy `componentRole === "instance"` 분기 자체 cleanup 필요). 본 phase 는 marker / strategy 명문화 + write site initial cleanup 만 land (read-through fallback 유지). 진정한 baseline 0 도달은 ADR-911 P3 cleanup 진행 시점 또는 P5-C `componentRole` cleanup 과 동시 진행 시점에 가능 — design §9.7 reorder 권장 (P5-B → P5-C → P5-D → P5-E → P5-A → G5-A) 정합.
+  - **검증** — `pnpm type-check` 3/3 PASS (cache miss 314ms) + vitest canonical 73/73 test PASS (1 file load 단계 fail = canonicalDocumentSync.test.ts 의 settings slice zustand init pre-existing, stash 비교로 본 변경 영향 0 확정).
+  - **R5 cascade risk 대응 evidence** — JSDoc/주석 변경 + 1 line write site (`{}` → `undefined`) 만, runtime caller logic 변경 0, adapter read-through 보존, `metadata.legacyProps` 7 fields marker 영향 0.
+  - **다음 sub-step 진입점**: P5-C `componentRole` cleanup (~2d MED, ADR-911 `componentRoleAdapter.ts` 활용 가능, instance 시스템 logic 변경 영역 분리). 또는 P5-D `masterId` cleanup (~2-3d MED-HIGH, RefNode.ref 전환). design §9.7 reorder 권장 정합.
 
 ## Context
 

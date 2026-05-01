@@ -123,9 +123,17 @@ export interface Element {
    */
   masterId?: string;
   /**
-   * @deprecated ADR-913 Phase 5-B + ADR-916 G5 cleanup target.
+   * @deprecated ADR-913 Phase 5-B + ADR-916 G5-B P5-B cleanup target.
    * canonical `RefNode.descendants[slotPath]` (DescendantOverride 3-mode) 로 대체.
    * 기존 `Record<string, unknown>` flat shape 은 path-based 으로 변환.
+   *
+   * **read-through fallback only (ADR-916 G5-B P5-B)**: 본 필드는 read-through
+   * fallback 만 보장 — legacy IndexedDB 데이터의 `overrides` Record 를 graceful
+   * 하게 read 하기 위한 transition bridge. 신규 write 는 canonical
+   * `RefNode.descendants[path].props` (또는 `metadata.legacyProps` transition
+   * 형태) 만 사용. legacy `componentRole === "instance"` 분기 자체는 ADR-911 P3
+   * cleanup 영역 — 본 필드 cleanup 은 ADR-911 P3 cleanup 후 점근적으로 0 도달.
+   *
    * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건.
    */
   overrides?: Record<string, unknown>;
