@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 closure 시그널 도달 ✅** (read site cleanup 47 → 0 = 100%, helper 2종 + 'legacy-only' priority + Element.actions 영역 0 도달 검증). 잔존 31 = write site / write-adjacent / already-resolved derived prop / type schema / comment 영역 — 모두 helper 적용 의도 외. 후속 = G6-1 second work (Props canonical primary 렌더 회귀) 또는 G6-2 (History + Preview/Publish) 또는 write boundary cleanup. 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
+In Progress — 2026-05-02 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 closure 시그널 도달 ✅** (read site cleanup 47 → 0 = 100%) + **Phase 5 G6-1 second work ✅** (canonical primary fallback + spec consumer parity evidence) + **Phase 5 G6-2 first slice ✅** (Preview canonical 렌더 fallback, extractLegacyPropsFromResolved G6-1 정합) + **Phase 5 G7 transition first slice ✅** (events/dataBinding round-trip 보존, buildLegacyElementMetadata + exportLegacyDocument) + **Phase 5 G7 본격 cutover ✅** (`x-composition` extension only 전환) + **Phase 5 G7 closure marker ✅** (직렬화 contract + write boundary 분류) + **Phase 5 G6-2 second slice ✅** (history parity 자동 cover, canonicalDocumentSync 회로 isolated evidence) + **Phase 5 G6-2 third slice ⏭️** (진정 unbounded scope 확정, transitive circular import 별 sub-phase). 잔존 = G6-2 third slice fix (unbounded debug) / Phase 4 G5 P5-B overrides (MED-HIGH) / Phase 3 G4 canonical primary write (HIGH, 11+ caller migration). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
 
 ### 진행 로그
 
@@ -447,6 +447,99 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **docstring 정정 land**: `apps/builder/src/adapters/canonical/legacyExtensionFields.ts` head 의 `Element.actions` 참조 제거 (stale, design 초기 G7 scope 작성 시점 `CompositionExtension.actions` 와 혼동 흔적). `actions` 가 nested (events sub-field / canonical extension) 만 존재 명시.
   - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
   - **Phase 5 G6-1 closure 시그널 도달 ✅** — read site cleanup 47 → 0 (100%), Element.actions 영역 0 도달, write site 영역은 별 sub-phase. 후속 = G6-1 second work (Props canonical primary 렌더 회귀, fixture + visual evidence) 또는 G6-2 (History + Preview/Publish) 또는 write boundary 영역 cleanup (별 G7 closure 진정 work).
+- **2026-05-01 — Phase 5 G6-1 second work: canonical primary fallback + spec consumer parity evidence** (commit `0d39b3068`):
+  - **scope 정의** — G6-1 closure 시그널 도달 후속. Props canonical primary 렌더 경로 codify. `canonicalNodeToElement` 에 `metadata.legacyProps` 미보유 시 `node.props` 직접 사용 fallback 분기 추가.
+  - **land 내용**:
+    - `canonicalElementsView.ts`: fallback 분기 추가 (`node.props` 정의 시 진입) + docstring 갱신 (두 경로 분기 + null skip 조건 명시)
+    - `canonicalElementsView.test.ts`: B-1 fallback 5건 + B-2 spec parity 3건 신규 (기존 16 → **23/23 PASS**)
+    - design §10.2.8 land 기록 + G6-1 closure 시그널 도달 marker
+  - **framing checkpoint 4 질문 lock-in** (design §10.2.8):
+    1. G6-1 first work 와 second work 는 직교 sibling slice
+    2. events/dataBinding (extension) ⊥ props (component canonical primary) — schema 직교
+    3. read backbone fallback 추가, first work 영역 분리 — baseline framing valid
+    4. LOW scope, 회귀 영역 0 — codex 3차 진입 불필요
+  - **측정**: 광역 회귀 0 검증 — baseline 264/265 PASS → 본 work 적용 274/275 PASS (+10 신규, pre-existing fail 1 = resolver TC1 유지)
+  - **검증** — `pnpm type-check` 3/3 PASS (FULL TURBO) + vitest canonicalElementsView 23/23 PASS
+  - **G6-1 closure 완료** — Extension Boundary + Props Parity 양 sub-phase 모두 완료. Phase 5 G6-2 (History + Preview/Publish Parity) 진입 prerequisite 충족.
+- **2026-05-01 — Phase 5 G6-2 first slice: Preview canonical 렌더 fallback** (commit `acab96fdf`):
+  - **scope 정확화** — design §10.2.2 G6-2 영역 `~2-3d MED` 추정 대비 실 진척 영역 재분류:
+    - History parity = Step 1a write-through (이미 land) 가 자동 cover ← second slice 검증 대상
+    - Preview parity = ADR-903 P2 옵션 C `CanonicalNodeRenderer` (이미 land) + `extractLegacyPropsFromResolved` fallback 추가만 필요 ← **본 first slice**
+    - Publish parity = `apps/publish/` canonical 미사용, 본 ADR scope 외
+  - **land 내용**:
+    - `extractLegacyPropsFromResolved`: 3 metadata/props 패턴 대응 (legacy adapter > ref-resolve > canonical primary fallback). Case 2 조건 (`Object.keys(rest).length > 0`) 으로 backward compat 100% 보존
+    - `extractLegacyProps.ts` 신규 split file: `storeBridge.ts` 의 store import chain (vitest mock 함정) 우회. `storeBridge.ts` 는 backward compat re-export 유지 — production caller import path 무변경
+    - `extractLegacyPropsFromResolved.canonical.test.ts` 신규: TC9~TC13 fallback 5건 + TC14~TC16 G6-1 정합 evidence 3건 = **8/8 PASS**
+    - design §10.2.9 land
+  - **측정**: 광역 회귀 0 — baseline 274/275 → 적용 282/283 (+8 신규, pre-existing fail 1 유지)
+  - **검증** — `pnpm type-check` 3/3 PASS (FULL TURBO) + vitest extractLegacyPropsFromResolved.canonical 8/8 PASS
+  - **G6-2 진척 marker**: ✅ first slice (Preview canonical 렌더 fallback) / ⏭️ second slice (History parity 회귀 codify) / ⏭️ Publish parity (scope 외)
+- **2026-05-01 — Phase 5 G7 transition first slice: events/dataBinding round-trip 보존** (commit `5618c6a5a`):
+  - **scope 재발굴** — design §10.2.4 footnote 의 `updateNodeExtension` API caller migration baseline = 0건 확인 후 무효화. 진정 진척 영역 = adapter layer 의 events/dataBinding round-trip 보존 (write-through sync 의 자동 cover prerequisite). transition framing 정의 — dual-storage 단계:
+    - 본 단계: `metadata.legacyProps` 에 events/dataBinding 보존 (legacy adapter 패턴)
+    - G7 본격 cutover: `x-composition` extension 으로 분리 (별 sub-phase)
+  - **land 내용**:
+    - `legacyMetadata.ts` (`buildLegacyElementMetadata`): `element.events` / `element.dataBinding` 보존 추가 + conditional spread (undefined skip) + spread 순서 보존 (top-level 이 props 동명 키 덮어씀)
+    - `exportLegacyDocument.ts` (`extractLegacyElement`): events/dataBinding reverse 변환 추가. `LegacyPropsShape` 인터페이스 events/dataBinding 추가 + props 안 잔존 안 함 (top-level 분리)
+    - `legacyExtensionRoundtrip.test.ts` 신규 (A. 보존 5건 + B. 복원 4건 + C. round-trip 동등성 4건 = **13/13 PASS**)
+    - design §10.2.10 land
+  - **framing 의문 명시**: write boundary cleanup 재정의 — inspector dual-write / AI tool migration 은 G7 본격 cutover 시점 재평가 (canonical primary write 진입 시점)
+  - **측정**: adapter 광역 161/161 PASS (11 file, 회귀 0)
+  - **검증** — `pnpm type-check` 3/3 PASS + vitest legacyExtensionRoundtrip 13/13 PASS
+  - **G7 transition first slice 완료** — round-trip 손실 0 보장 + write-through sync events/dataBinding cover prerequisite 충족.
+- **2026-05-01 — Phase 5 G7 본격 cutover: `x-composition` extension only 전환** (commit `8c68a86ce`):
+  - **scope** — events/dataBinding 를 `x-composition` namespaced extension 으로 분리. transition first slice (`metadata.legacyProps` dual-storage) 의 진정 진척 — extension 이 단일 SSOT.
+  - **land 내용 (5 file)**:
+    - `adapters/canonical/index.ts` (`legacyToCanonical buildNode`): `buildCompositionExtensionField()` helper 로 events/dataBinding conditional spread (양쪽 미정의 시 extension key 미노출)
+    - `slotAndLayoutAdapter.ts` (`convertElementToCanonical` / `convertElementWithSlotHoisting`): 동일 helper 적용
+    - `legacyMetadata.ts` (`buildLegacyElementMetadata`): events/dataBinding spread 제거 (transition first slice dual-storage 종결)
+    - `exportLegacyDocument.ts` (`extractLegacyElement`): `node["x-composition"]` 에서 reverse 추출하여 element top-level 로 분리. `LegacyPropsShape` 에서 events/dataBinding 제거
+    - `canonicalElementsView.ts` (`canonicalNodeToElement`): `extractExtensionFields()` helper 로 양 분기 (legacy adapter 경유 + canonical primary fallback) 모두 spread 적용
+    - design §10.2.11 land
+  - **측정**: legacyExtensionRoundtrip.test.ts 13건 → cutover 검증 **17/17 PASS** (+4건) + adapter 광역 165/165 PASS (161 → 165) + canonicalElementsView 23/23 PASS
+  - **검증** — `pnpm type-check` 3/3 PASS (FULL TURBO) + vitest G7 cutover 인접 (exportSsotGrepGate / persistenceWriteThroughStub / canonicalDocumentStore / FrameSlotSection) 81/81 PASS
+  - **G7 cutover 완료** — events/dataBinding 이 `x-composition.events` / `x-composition.dataBinding` 단일 위치로 이동. `metadata.legacyProps` dual-storage 종결.
+- **2026-05-01 — Phase 5 G7 closure marker: canonical document 직렬화 형태 contract + write boundary 분류** (commit `df6a4bf4e`):
+  - **scope** — G7 closure 의 진정 marker = canonical document 직렬화 형태 검증 (events/dataBinding 가 `x-composition` extension 단일 위치에만 존재). G7 본격 cutover 직후 baseline 측정 결과 — write boundary cleanup 영역은 G7 closure 의 일부가 아니라 Phase 3 G4 canonical primary write 영역으로 framing 재조정.
+  - **land 내용**:
+    - `legacyExtensionRoundtrip.test.ts` G. closure marker 4건 신규:
+      - E-1: 모든 `metadata.legacyProps` 에 events/dataBinding 키 0건 (DFS 전수)
+      - E-2: events 정의 element → `x-composition.events` 단일 위치
+      - E-3: dataBinding 정의 element → `x-composition.dataBinding` 단일 위치
+      - E-4: 미정의 element → `x-composition` 자체 미노출
+    - design §10.2.12 land — closure marker contract + baseline 측정 결과 표 + write boundary 11+ caller 분류 (Phase 3 G4 영역) + framing 재조정 명시
+  - **baseline 측정** (`8c68a86ce` 시점): Inspector mapper 1 / history undo-redo 6 / Events Panel 1 / AI tool 1 / factory 2 = Phase 3 G4 canonical primary write 진입 시점 migration (⏭️ 후속)
+  - **측정**: legacyExtensionRoundtrip.test.ts 17 → **21/21 PASS** (+4 marker) + adapter 광역 169/169 PASS (165 → 169). 본 work 회귀 0 — closure contract 검증만 추가, logic 변경 0
+  - **검증** — `pnpm type-check` 3/3 PASS (FULL TURBO)
+  - **G7 closure marker 완료** — `x-composition` extension 단일 SSOT 직렬화 계약 확정. write boundary 11+ caller = Phase 3 G4 별 영역.
+- **2026-05-02 — Phase 5 G6-2 second slice: history parity 자동 cover (canonicalDocumentSync 회로)** (commit `4023806bf`):
+  - **scope** — design §10.2.9 G6-2 second slice. history parity 회귀 codify = isolated vitest 패턴 (memory `feedback-vitest-mock-path-resolution.md` 재활용) 으로 land. setup fail debug 는 unbounded scope (`elements.ts:1935` dead useStore + circular import 가능성) 로 별 sub-phase 분리.
+  - **land 내용**:
+    - `legacyExtensionRoundtrip.test.ts` F. history parity section 6건 신규:
+      - F-1: forward mutation (events 추가) → `x-composition.events` 직렬화
+      - F-2: reverse mutation (events 제거 = history.undo) → `x-composition` 미노출
+      - F-3: re-mutation (events 재추가 = history.redo) → `x-composition.events` 재직렬화
+      - F-4: dataBinding mutation forward/reverse 회로 동일 cover
+      - F-5: multi-element 동시 mutation (`metadata.legacyProps` 미spread, G7 cutover 정합)
+      - F-6: round-trip 보장 (forward → reverse → forward 동등)
+    - design §10.2.13 land — fork checkpoint 4 질문 + setup fail unbounded 분석 + framing 재조정 + isolated 검증 패턴 명시 + G6-2 진척 marker
+  - **framing 재조정**: `canonicalDocumentSync.test.ts` setup fail = 진정 unbounded scope (별 G6-2 third slice 분리). isolated 검증 패턴 = `legacyToCanonical` + `exportLegacyDocument` 만 import (store 무경유) 로 회로 핵심 단계 단독 검증 → history parity 자동 cover evidence 도달
+  - **측정**: legacyExtensionRoundtrip.test.ts closure 21 → history **27/27 PASS** (+6) + adapter 광역 175/175 PASS (169 → 175). 본 work 회귀 0 — logic 변경 0, 검증 evidence 만 추가
+  - **검증** — `pnpm type-check` 3/3 PASS (FULL TURBO)
+  - **G6-2 진척 marker**: ✅ first slice (Preview canonical 렌더 fallback) / ✅ second slice (history parity 자동 cover) / ⏭️ third slice (unbounded debug, 별 sub-phase) / ⏭️ Publish parity (scope 외)
+- **2026-05-02 — Phase 5 G6-2 third slice: debug attempt + 진정 unbounded scope 확정** (commit `b7d75f3e4`):
+  - **scope** — design §10.2.13 추정 third slice = setup fail debug (LOW ~0.5d). memory tier3-entry 명시 "elements.ts:1935 dead useStore + circular import 가능성". 본 세션 진정 fix 시도 결과 = dead useStore 와 무관, transitive circular import chain 이 진정 root cause — **진정 unbounded scope 확정**.
+  - **debug attempt 진단** (3 시도 모두 동일 fail):
+    - (a) dead useStore 제거 (`elements.ts:1935` + 4 dead selector) — 동일 setup fail
+    - (b) test caller inline create — 동일 영역
+    - (c) test caller lazy init (let useStore + beforeEach init) — 동일 영역
+  - **진정 root cause 추정**: `elements.ts` evaluation chain 이 transitively `stores/index.ts` 진입 → `createElementsSlice` still loading → undefined → fail. 후보 chain: history / utils/elementReorder / historyActions / elementUtils / api / panels (`fillExternalIngress`)
+  - **framing 재정의**:
+    - 본 세션 logic 변경 모두 revert (production 회귀 0 보장)
+    - design §10.2.14 land — debug attempt 진단 결과 + framing 재정의 + G6-2 closure 시점 third slice 진정 fix 진입 결정 영역 (별 sub-phase / 별 hygiene work)
+  - **측정**: land 내용 = design §10.2.14 only. logic 변경 0, revert 완료.
+  - **G6-2 third slice scope 확정**: 진정 unbounded debug — 별 sub-phase / 별 hygiene work. G6-2 closure 시점 결정 영역.
+  - **다음 sub-phase 권장**: Phase 4 G5 P5-B `overrides` (MED-HIGH ~1-2d, design §9.7 reorder) / Phase 3 G4 진입 (HIGH ~3-5d, write 경로 cutover, 11+ caller migration codified)
 
 ## Context
 
