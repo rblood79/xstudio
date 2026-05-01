@@ -7,7 +7,7 @@
 import { getDB } from "../lib/db";
 import { projectsApi } from "../services/api/ProjectsApiService";
 import { pagesApi } from "../services/api/PagesApiService";
-import { elementsApi } from "../services/api/ElementsApiService";
+import { elementsApi } from "../adapters/canonical/legacyElementsApiService";
 
 /**
  * 로컬 프로젝트를 클라우드에 동기화

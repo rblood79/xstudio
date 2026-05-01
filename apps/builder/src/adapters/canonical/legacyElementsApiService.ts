@@ -1,4 +1,4 @@
-import { BaseApiService } from "./BaseApiService";
+import { BaseApiService } from "../../services/api/BaseApiService";
 import { Element } from "../../types/core/store.types";
 
 export class ElementsApiService extends BaseApiService {
@@ -6,7 +6,7 @@ export class ElementsApiService extends BaseApiService {
     this.validateInput(
       pageId,
       (id) => typeof id === "string" && id.length > 0,
-      "fetchElements"
+      "fetchElements",
     );
 
     const elements = await this.handleApiCall("fetchElements", async () => {
@@ -18,24 +18,22 @@ export class ElementsApiService extends BaseApiService {
     });
 
     // Supabase snake_case를 camelCase로 변환
-    return elements.map(
-      (el: Record<string, unknown>) => ({
-        ...el,
-        customId: el.custom_id,
-        dataBinding: el.data_binding,
-        componentRole: el.component_role,
-        masterId: el.master_id,
-        componentName: el.component_name,
-        variableBindings: el.variable_bindings,
-      })
-    ) as Element[];
+    return elements.map((el: Record<string, unknown>) => ({
+      ...el,
+      customId: el.custom_id,
+      dataBinding: el.data_binding,
+      componentRole: el.component_role,
+      masterId: el.master_id,
+      componentName: el.component_name,
+      variableBindings: el.variable_bindings,
+    })) as Element[];
   }
 
   async createElement(element: Partial<Element>): Promise<Element> {
     this.validateInput(
       element,
       (el) => el && typeof el === "object",
-      "createElement"
+      "createElement",
     );
 
     // camelCase → snake_case 변환
@@ -46,7 +44,8 @@ export class ElementsApiService extends BaseApiService {
       component_role: (element as { componentRole?: string }).componentRole,
       master_id: (element as { masterId?: string }).masterId,
       component_name: (element as { componentName?: string }).componentName,
-      variable_bindings: (element as { variableBindings?: string[] }).variableBindings,
+      variable_bindings: (element as { variableBindings?: string[] })
+        .variableBindings,
     };
 
     // camelCase 필드 제거 (snake_case로 변환되었으므로)
@@ -67,7 +66,7 @@ export class ElementsApiService extends BaseApiService {
 
     // 응답을 camelCase로 변환
     if (!result) {
-      throw new Error('createElement returned null');
+      throw new Error("createElement returned null");
     }
     const data = result as Record<string, unknown>;
     return {
@@ -81,11 +80,13 @@ export class ElementsApiService extends BaseApiService {
     } as Element;
   }
 
-  async createMultipleElements(elements: Partial<Element>[]): Promise<Element[]> {
+  async createMultipleElements(
+    elements: Partial<Element>[],
+  ): Promise<Element[]> {
     this.validateInput(
       elements,
       (els) => Array.isArray(els) && els.length > 0,
-      "createMultipleElements"
+      "createMultipleElements",
     );
 
     // 각 element에 대해 camelCase → snake_case 변환
@@ -97,7 +98,8 @@ export class ElementsApiService extends BaseApiService {
         component_role: (element as { componentRole?: string }).componentRole,
         master_id: (element as { masterId?: string }).masterId,
         component_name: (element as { componentName?: string }).componentName,
-        variable_bindings: (element as { variableBindings?: string[] }).variableBindings,
+        variable_bindings: (element as { variableBindings?: string[] })
+          .variableBindings,
       };
       delete converted.customId;
       delete converted.dataBinding;
@@ -108,12 +110,15 @@ export class ElementsApiService extends BaseApiService {
       return converted;
     });
 
-    const result = await this.handleApiCall("createMultipleElements", async () => {
-      return await this.supabase
-        .from("elements")
-        .insert(elementsToSave)
-        .select("*");
-    });
+    const result = await this.handleApiCall(
+      "createMultipleElements",
+      async () => {
+        return await this.supabase
+          .from("elements")
+          .insert(elementsToSave)
+          .select("*");
+      },
+    );
 
     // 응답을 camelCase로 변환
     if (Array.isArray(result)) {
@@ -132,17 +137,17 @@ export class ElementsApiService extends BaseApiService {
 
   async updateElement(
     elementId: string,
-    updates: Partial<Element>
+    updates: Partial<Element>,
   ): Promise<Element> {
     this.validateInput(
       elementId,
       (id) => typeof id === "string" && id.length > 0,
-      "updateElement"
+      "updateElement",
     );
     this.validateInput(
       updates,
       (u) => u && typeof u === "object",
-      "updateElement"
+      "updateElement",
     );
 
     // camelCase → snake_case 변환
@@ -152,11 +157,15 @@ export class ElementsApiService extends BaseApiService {
       delete updatesToSave.customId;
     }
     if ((updates as { dataBinding?: unknown }).dataBinding !== undefined) {
-      updatesToSave.data_binding = (updates as { dataBinding?: unknown }).dataBinding;
+      updatesToSave.data_binding = (
+        updates as { dataBinding?: unknown }
+      ).dataBinding;
       delete updatesToSave.dataBinding;
     }
     if ((updates as { componentRole?: string }).componentRole !== undefined) {
-      updatesToSave.component_role = (updates as { componentRole?: string }).componentRole;
+      updatesToSave.component_role = (
+        updates as { componentRole?: string }
+      ).componentRole;
       delete updatesToSave.componentRole;
     }
     if ((updates as { masterId?: string }).masterId !== undefined) {
@@ -164,11 +173,18 @@ export class ElementsApiService extends BaseApiService {
       delete updatesToSave.masterId;
     }
     if ((updates as { componentName?: string }).componentName !== undefined) {
-      updatesToSave.component_name = (updates as { componentName?: string }).componentName;
+      updatesToSave.component_name = (
+        updates as { componentName?: string }
+      ).componentName;
       delete updatesToSave.componentName;
     }
-    if ((updates as { variableBindings?: string[] }).variableBindings !== undefined) {
-      updatesToSave.variable_bindings = (updates as { variableBindings?: string[] }).variableBindings;
+    if (
+      (updates as { variableBindings?: string[] }).variableBindings !==
+      undefined
+    ) {
+      updatesToSave.variable_bindings = (
+        updates as { variableBindings?: string[] }
+      ).variableBindings;
       delete updatesToSave.variableBindings;
     }
 
@@ -183,7 +199,7 @@ export class ElementsApiService extends BaseApiService {
 
     // 응답을 camelCase로 변환
     if (!result) {
-      throw new Error('updateElement returned null');
+      throw new Error("updateElement returned null");
     }
     const data = result as Record<string, unknown>;
     return {
@@ -199,17 +215,17 @@ export class ElementsApiService extends BaseApiService {
 
   async updateElementProps(
     elementId: string,
-    props: Record<string, unknown>
+    props: Record<string, unknown>,
   ): Promise<Element> {
     this.validateInput(
       elementId,
       (id) => typeof id === "string" && id.length > 0,
-      "updateElementProps"
+      "updateElementProps",
     );
     this.validateInput(
       props,
       (p) => p && typeof p === "object",
-      "updateElementProps"
+      "updateElementProps",
     );
 
     return this.handleApiCall("updateElementProps", async () => {
@@ -226,7 +242,7 @@ export class ElementsApiService extends BaseApiService {
     this.validateInput(
       elementId,
       (id) => typeof id === "string" && id.length > 0,
-      "deleteElement"
+      "deleteElement",
     );
 
     await this.handleDeleteCall("deleteElement", async () => {
@@ -238,7 +254,7 @@ export class ElementsApiService extends BaseApiService {
     this.validateInput(
       elementIds,
       (ids) => Array.isArray(ids) && ids.length > 0,
-      "deleteMultipleElements"
+      "deleteMultipleElements",
     );
 
     await this.handleDeleteCall("deleteMultipleElements", async () => {

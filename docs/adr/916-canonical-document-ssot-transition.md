@@ -172,6 +172,30 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **검증** — `pnpm type-check` 3/3 PASS (cache miss 314ms) + vitest canonical 9 file **145 PASS** (이전 143 + sanitizer test 흡수, 회귀 0). stores/utils 광역 vitest = 6 fail / 3 pass / 31 tests (main HEAD baseline 6 fail / 4 pass / 33 tests 와 비교: pass file count 4 → 3 = sanitizer test 가 canonical/**tests** 로 이동, **본 변경 신규 fail 0 확정**, pre-existing 6 fail 그대로).
   - **R5 cascade risk 대응 evidence** — file move = mechanical refactor, runtime caller logic 변경 0, adapter read-through 보존 (sanitizer 가 Element ↔ SupabaseElement 변환 보존). `metadata.legacyProps` 7 fields marker 영향 0.
   - **다음 sub-phase 진입점** — G5-A 본격 cleanup 진입 (`page.layout_id → page.bodyElement (frame ref)` 마이그레이션, ADR-911 P3 잔여 본질 결합) 또는 G5-B 진입 (ADR-913 P5-A `slot_name` cleanup 부터). instanceActions.ts (38 matches) 가 ADR-913 P5 핵심 hot path 로 single point cleanup 후속 검토 가치 있음.
+- **2026-05-01 — Phase 4 G5 second work: ElementsApiService adapter 영역 격리 (baseline 323 → 301, -22 ✅ + DB snake_case 0 도달)**:
+  - **single point cleanup 후속 정합** — `apps/builder/src/services/api/ElementsApiService.ts` (22 matches: componentRole 11 + masterId 11) 정독 결과 = sanitizer 와 동일 DB-facing serialization layer (Supabase CRUD + camelCase ↔ snake_case 변환 + 캐시 무효화). service 영역이지만 본질 = adapter-like role. design §9 footnote "불가피한 잔존은 adapter/shim 디렉터리로 이동하고 파일명에 `legacy` 를 포함" 정합.
+  - **file move + rename land** — `apps/builder/src/services/api/ElementsApiService.ts` → `apps/builder/src/adapters/canonical/legacyElementsApiService.ts`. Singleton `elementsApi` export 유지.
+  - **caller import path 5 site 갱신** — `services/api/index.ts` ×2 (export re-export + internal import for static) + `utils/projectSync.ts` + `builder/factories/utils/dbPersistence.ts` + `adapters/canonical/canonicalMutations.ts`. dashboard/index.tsx 는 `services/api` index 경유라 변경 0.
+  - **stale duplicate 식별 (Phase 4 G5 scope 외)**: `apps/builder/src/services/api/BaseApiService.ts:224-330` 에 별도 ElementsApiService 클래스 + elementsApi 싱글톤 정의 존재 — 모든 caller 가 `./ElementsApiService` 경유 import 하므로 BaseApiService 의 정의는 dead code. 6 필드 변환 logic 도 없어 grep gate 영향 0. 별 cleanup task 권장.
+  - **grep gate baseline 재측정**:
+    | 필드 | 이전 | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 158 | 158 | 0 |
+    | slot_name | 17 | 17 | 0 |
+    | componentRole | 37 | 26 | -11 |
+    | masterId | 46 | 35 | -11 |
+    | overrides | 17 | 17 | 0 |
+    | descendants | 48 | 48 | 0 |
+    | **G5 합계** | **323** | **301** | **-22 ✅** |
+  - **DB snake_case 측정 (design §9 두번째 grep)**:
+    - `component_role`: **0 도달** ✅ (이전 미측정 — ElementsApiService 가 핵심 caller, 본 이동으로 services/lib/schemas 영역 0)
+    - `master_id`: **0 도달** ✅ (동일)
+    - `layout_id`: 29 잔존 (다른 service file — PagesApiService 등 / lib/db)
+    - `slot_name`: 1 잔존 (PagesApiService)
+  - **검증** — `pnpm type-check` 3/3 PASS (cache miss 313ms) + vitest canonical **145 PASS** (회귀 0, ElementsApiService test 가 canonical 영역에 없어 영향 0). caller 5 site mechanical refactor.
+  - **R5 cascade risk 대응 evidence** — file move + import path 갱신만, runtime caller logic 변경 0. service 영역 보존 (services/api/index.ts re-export 유지, dashboard 등 caller 무수정).
+  - **G5 누적 진척 (2 commit)**: 360 (codify) → 323 (sanitizer 격리, -37) → 301 (ElementsApiService 격리, -22) = **누적 -59 ✅**. componentRole / masterId DB snake_case 영역 0 도달 (ADR-913 P5-C/D base cleanup 의 DB-facing 진척 marker).
+  - **다음 sub-phase 진입점** — instanceActions.ts (componentRole 9 + masterId 8 + overrides 9 + descendants 12 = 38 matches, ADR-913 P5 hot path) single point cleanup 검토 또는 G5-A 본격 (`page.layout_id → page.bodyElement` 마이그레이션).
 
 ## Context
 

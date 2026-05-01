@@ -20,7 +20,7 @@
 
 import type { Element } from "@/types/builder/unified.types";
 import { useStore } from "@/builder/stores";
-import { elementsApi } from "@/services/api/ElementsApiService";
+import { elementsApi } from "@/adapters/canonical/legacyElementsApiService";
 
 // ─────────────────────────────────────────────
 // In-memory store wrapper API
