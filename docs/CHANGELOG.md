@@ -5,6 +5,26 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-916/911/913 direct cutover — flags, backup, runtime migrations 제거] - 2026-05-02
+
+### Architecture
+
+- Canonical primary 전환을 feature flag 없이 기본 경로로 고정했다.
+  - 제거: `VITE_ADR916_DOCUMENT_SYNC`, `VITE_ADR916_CANONICAL_PRIMARY`, `VITE_FRAMES_TAB_CANONICAL`
+  - 제거: legacy backup/rollback API, ADR-903/913 runtime migration helpers, ADR-911 `migrationP911` dev trigger
+  - 변경: canonical document sync 는 Builder 진입 시 항상 시작, in-memory mutation wrapper 는 항상 canonical store 우선
+- ADR-911 명칭 충돌을 정리했다.
+  - `PanelSlot.tsx` / `BottomPanelSlot.tsx` → `PanelArea.tsx` / `BottomPanelArea.tsx`
+  - CSS class 도 `panel-area` / `bottom-panel-area` 로 변경
+  - FramesTab/PageLayoutSelector read path 는 canonical reusable FrameNode projection 으로 고정
+- ADR-913 Phase 4 를 DB migration 없이 direct cutover 로 닫았다.
+  - `normalizeLegacyElement` read-through helper 제거
+  - `runTagTypeMigration` 및 관련 dry-run entry/test 제거
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run ...` — targeted 7 files / 75 tests PASS
+
 ## [ADR-916 Phase 3 G4 wrapper 진정 reverse logic land ✅ — drift #1 본질 해소 (§8.7)] - 2026-05-02
 
 ### Architecture

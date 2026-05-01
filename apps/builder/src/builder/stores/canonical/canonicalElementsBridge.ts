@@ -4,13 +4,10 @@
  * Phase 2 hot path cutover 의 backbone. legacy `elementsMap` 와
  * `useCanonicalDocumentStore` 사이의 단일 read 진입점을 제공.
  *
- * **Sub-Phase A (현재) scope**:
+ * **Sub-Phase A scope**:
  * - canonical store wrap (single source read).
  * - subscribe lifecycle (`useSyncExternalStore` 호환 시그니처).
  * - React hook 2종 (`useCanonicalNode`, `useActiveCanonicalDocument`).
- * - feature flag (`useCanonicalBridge`) — Phase 2 path-by-path cutover 진행
- *   상황 추적용 toggle. default `false`. test 에서 `setCanonicalBridgeEnabled(true)`
- *   로 활성화.
  *
  * **Sub-Phase B (다음 sub-phase) scope (본 파일에서 land 안 함)**:
  * - legacy `elementsMap` fallback 자동 변환 (`legacyToCanonical()` 결과 캐싱).
@@ -33,34 +30,6 @@ import {
   selectCanonicalNode,
   useCanonicalDocumentStore,
 } from "./canonicalDocumentStore";
-
-// ─────────────────────────────────────────────
-// Feature flag — Phase 2 cutover progress tracker
-// ─────────────────────────────────────────────
-
-let canonicalBridgeEnabled = false;
-
-/**
- * bridge 활성화 여부. Phase 2 진행 중에는 default `false` — 각 hot path 가
- * 개별 cutover 시점에 `setCanonicalBridgeEnabled(true)` 로 활성화 (또는 path
- * 별 flag 로 세분화 — Sub-Phase B 에서 결정).
- *
- * **Production 진입 전 필수**: Sub-Phase B 의 5 hot path 모두 cutover 완료 후
- * `true` 로 영구 전환. 본 시점 이후 legacy `elementsMap` 직접 read 는 dead.
- */
-export function isCanonicalBridgeEnabled(): boolean {
-  return canonicalBridgeEnabled;
-}
-
-/**
- * bridge 활성화 toggle. test/runtime 양쪽에서 호출 가능.
- *
- * @internal — production 코드는 default 값 의존. test 가 명시적으로 enable
- *   후 작업하고 cleanup 에서 disable.
- */
-export function setCanonicalBridgeEnabled(value: boolean): void {
-  canonicalBridgeEnabled = value;
-}
 
 // ─────────────────────────────────────────────
 // Read API — store 단일 진입점

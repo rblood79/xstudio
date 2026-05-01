@@ -59,8 +59,8 @@
     stroke: var(--bg-raised);
   }
 
-  /* Panel Slot */
-  .panel-slot {
+  /* Panel Area */
+  .panel-area {
     position: relative;
     /* 🔧 absolute 패널의 기준점 */
     display: flex;

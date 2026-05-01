@@ -1,7 +1,7 @@
 /**
- * BottomPanelSlot - 하단 패널 슬롯
+ * BottomPanelArea - 하단 패널 영역
  *
- * Monitor 등 하단 패널을 위한 리사이즈 가능한 슬롯
+ * Monitor 등 하단 패널을 위한 리사이즈 가능한 영역
  * - 드래그로 높이 조절 (150-600px)
  * - 닫기 버튼
  * - ESC 키로 닫기
@@ -17,12 +17,8 @@ import { PanelRegistry } from "../panels/core/PanelRegistry";
 const MIN_HEIGHT = 150;
 const MAX_HEIGHT = 600;
 
-export const BottomPanelSlot = memo(function BottomPanelSlot() {
-  const {
-    layout,
-    closeBottomPanel,
-    setBottomHeight,
-  } = usePanelLayout();
+export const BottomPanelArea = memo(function BottomPanelArea() {
+  const { layout, closeBottomPanel, setBottomHeight } = usePanelLayout();
 
   const { showBottom, bottomHeight, activeBottomPanels, bottomPanels } = layout;
 
@@ -42,16 +38,19 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
         description: "Close bottom panel",
       },
     ],
-    [showBottom, closeBottomPanel]
+    [showBottom, closeBottomPanel],
   );
 
   // Resize 드래그 핸들러
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    dragStartY.current = e.clientY;
-    dragStartHeight.current = bottomHeight;
-  }, [bottomHeight]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+      dragStartY.current = e.clientY;
+      dragStartHeight.current = bottomHeight;
+    },
+    [bottomHeight],
+  );
 
   // 마우스 이동 및 업 이벤트
   useEffect(() => {
@@ -60,7 +59,10 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
     const handleMouseMove = (e: MouseEvent) => {
       // 위로 드래그하면 높이 증가, 아래로 드래그하면 높이 감소
       const delta = dragStartY.current - e.clientY;
-      const newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, dragStartHeight.current + delta));
+      const newHeight = Math.max(
+        MIN_HEIGHT,
+        Math.min(MAX_HEIGHT, dragStartHeight.current + delta),
+      );
       setBottomHeight(newHeight);
     };
 
@@ -84,7 +86,7 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
 
   return (
     <div
-      className="bottom-panel-slot"
+      className="bottom-panel-area"
       style={{ height: bottomHeight }}
       data-dragging={isDragging}
       role="region"
@@ -168,5 +170,3 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
     </div>
   );
 });
-
-export type { } from "./BottomPanelSlot";

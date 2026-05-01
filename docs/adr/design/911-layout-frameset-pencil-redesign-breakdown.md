@@ -440,18 +440,18 @@ const handleDevMigrate = useCallback(async () => {
 
 총 12h 배분. **2026-04-27 세션 37 진입 시 5-PR 보수 분할 채택** — selectCanonicalDocument 매 render 호출 비용 + zustand selector cache 함정 (memory: `feedback-zustand-selector-cache.md`) 회피용:
 
-| Sub-PR | 내용                                                                                                   | Step 매핑        | 상태                                 |
-| ------ | ------------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------ |
-| **A**  | `frameActions.ts` skeleton (legacy wrapper) + `isFramesTabCanonical()` flag 추가 (default false)       | P2-a 부분 + P2-d | ✅ 2026-04-27 main land (`e9e388ca`) |
-| **B**  | `FramesTab.handleAddFrame/handleDeleteFrame/handleSelectFrame` → `frameActions` 위임 (functional 동등) | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
-| **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                       | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
-| **D**  | `FrameList` 분리 (FrameDetails / SlotList 는 D2/E 로 deferred)                                         | P2-b             | ✅ 2026-04-27 main land (`b391c42a`) |
-| **D2** | `FrameElementTree` 분리 — Layers 헤더 + tree 렌더 + placeholder                                        | P2-b 잔여        | ✅ 2026-04-27 main land (`604b11f3`) |
-| **E1** | `PageLayoutSelector` dual-mode read 전환 + `slotAndLayoutAdapter` description 보존                     | P2-c 부분        | ✅ 2026-04-27 (PR pending)           |
-| **E2** | `usePresetApply.ts` canonical mutation 전환 (write 경로 P3-D 종속 — defer)                             | P2-c 잔여        | 🔄 P3-D 종속 — 별도 ADR 로 처리      |
-| **E3** | dev migration trigger (handleDevMigrate) + Chrome MCP P1-c roundtrip                                   | P2-e             | ✅ 2026-04-27 (PR pending)           |
-| **E4** | cutover (`VITE_FRAMES_TAB_CANONICAL=true` default 전환) — 1주 모니터링 진입                            | P2-f + P2-g      | ✅ 2026-04-27 (PR pending)           |
-| **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                        | P2-f + P2-g      | 후속 세션                            |
+| Sub-PR | 내용                                                                                                            | Step 매핑        | 상태                                 |
+| ------ | --------------------------------------------------------------------------------------------------------------- | ---------------- | ------------------------------------ |
+| **A**  | `frameActions.ts` skeleton (legacy wrapper). `isFramesTabCanonical()` flag 는 2026-05-02 direct cutover 로 제거 | P2-a 부분 + P2-d | ✅ land → flag 제거 완료             |
+| **B**  | `FramesTab.handleAddFrame/handleDeleteFrame/handleSelectFrame` → `frameActions` 위임 (functional 동등)          | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
+| **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                                | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
+| **D**  | `FrameList` 분리 (FrameDetails / SlotList 는 D2/E 로 deferred)                                                  | P2-b             | ✅ 2026-04-27 main land (`b391c42a`) |
+| **D2** | `FrameElementTree` 분리 — Layers 헤더 + tree 렌더 + placeholder                                                 | P2-b 잔여        | ✅ 2026-04-27 main land (`604b11f3`) |
+| **E1** | `PageLayoutSelector` dual-mode read 전환 + `slotAndLayoutAdapter` description 보존                              | P2-c 부분        | ✅ 2026-04-27 (PR pending)           |
+| **E2** | `usePresetApply.ts` canonical mutation 전환 (write 경로 P3-D 종속 — defer)                                      | P2-c 잔여        | 🔄 P3-D 종속 — 별도 ADR 로 처리      |
+| **E3** | dev migration trigger (handleDevMigrate)                                                                        | P2-e             | 폐기 — 2026-05-02 direct cutover     |
+| **E4** | cutover (`VITE_FRAMES_TAB_CANONICAL=true` default 전환)                                                         | P2-f + P2-g      | flag 제거 — canonical read 고정      |
+| **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                                 | P2-f + P2-g      | dual-mode 폐기                       |
 
 | Step       | 내용                                                                                                                      | 시간 | RED/GREEN 사이클                                                                                     |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------- | :--: | ---------------------------------------------------------------------------------------------------- |
@@ -459,10 +459,10 @@ const handleDevMigrate = useCallback(async () => {
 | **P2-a**   | `FramesTab.tsx` canonical-native 재작성 (`useLayoutsStore` → `selectCanonicalDocument`) + `frameActions.ts` CRUD skeleton |  3h  | RED: `useLayoutsStore` import 제거 → type-check fail / GREEN: `reusableFrames` selector 연결 후 PASS |
 | **P2-b**   | `FrameList.tsx` / `FrameDetails.tsx` / `SlotList.tsx` 신규 컴포넌트 + `AddFrameButton`                                    |  2h  | RED: FrameList 렌더 테스트 fail / GREEN: `reusableFrames` prop 전달 후 PASS                          |
 | **P2-c**   | `PageLayoutSelector.tsx` 재작성 (RefNode.ref UI) + `usePresetApply.ts` canonical mutation 전환                            |  2h  | RED: `useLayoutsStore` import 제거 → type-check fail / GREEN: `reusableFrames` 선택 후 PASS          |
-| **P2-d**   | `featureFlags.ts` `FRAMES_TAB_CANONICAL` + dual-mode legacy bridge 격리                                                   | 0.5h | —                                                                                                    |
-| **P2-e**   | dev migration trigger (handleDevMigrate) + Chrome MCP P1-c roundtrip 검증                                                 |  1h  | Chrome MCP: frame 목록 표시 확인                                                                     |
-| **P2-f**   | `mockLargeDataV2` parallel-verify 25/25 PASS + 1주 dual-mode 시작                                                         |  1h  | G2-(a) 시각 회귀 0                                                                                   |
-| **P2-g**   | 1주 후 G2-(b) issue 0건 확인 → P3 진입 승인                                                                               | 0.5h | —                                                                                                    |
+| **P2-d**   | `FRAMES_TAB_CANONICAL` dual-mode bridge                                                                                   | 0.5h | 폐기 — canonical read 고정                                                                           |
+| **P2-e**   | dev migration trigger (handleDevMigrate) + Chrome MCP P1-c roundtrip 검증                                                 |  1h  | 폐기 — DB/dev migration 불필요                                                                       |
+| **P2-f**   | `mockLargeDataV2` parallel-verify 25/25 PASS + 1주 dual-mode 시작                                                         |  1h  | dual-mode 폐기, targeted regression 으로 대체                                                        |
+| **P2-g**   | 1주 후 G2-(b) issue 0건 확인 → P3 진입 승인                                                                               | 0.5h | 폐기 — 즉시 전환                                                                                     |
 | **buffer** | type-check 수정 / 예기치 못한 legacy 의존 해소                                                                            |  1h  | —                                                                                                    |
 
 **vitest 검증 포인트**:

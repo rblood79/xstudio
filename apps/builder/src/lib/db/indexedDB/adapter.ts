@@ -30,26 +30,7 @@ import type {
 import { LRUCache } from "./LRUCache";
 
 const DB_NAME = "composition";
-const DB_VERSION = 9; // ✅ 버전 9: ADR-913 Phase 4 Step 4-1 schema bump (tag → type rename migration prep, _meta.schemaVersion enum "composition-1.1" 추가)
-
-/**
- * ADR-913 P1+P2 read-through compat — legacy `tag` field → canonical `type`.
- *
- * IDB 에 저장된 element row 가 v0.9 legacy schema 인 경우 (`tag` field 만 보유)
- * canonical `type` field 로 정규화. 코드는 모두 `el.type` 만 사용하므로
- * undefined.toLowerCase() 류 runtime error 방지. write-through (P4 = DB_VERSION 9)
- * 이후 legacy row 가 영구 변환되면 본 helper 도 제거 가능.
- */
-function normalizeLegacyElement(el: Element): Element {
-  if (
-    el.type === undefined &&
-    (el as unknown as { tag?: string }).tag !== undefined
-  ) {
-    const legacy = el as unknown as { tag: string };
-    return { ...el, type: legacy.tag };
-  }
-  return el;
-}
+const DB_VERSION = 9; // ADR-913 direct cutover: Element.type is the only runtime field.
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -78,14 +59,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
 
-        // ADR-913 Phase 4 Step 4-1: oldVersion < 9 진입 marker.
-        // 현재 elements store 에 `tag` index 미존재 → schema 변경 없음 (no-op).
-        // tag → type rename 의 실제 데이터 변환은 Step 4-2 (dry-run) ~ Step 4-4
-        // (write-through) 에서 `runTagTypeMigration` 으로 처리. 본 단계는 _meta
-        // schemaVersion enum "composition-1.1" 도입을 위한 version bump 만 수행.
+        // ADR-913 direct cutover: 개발 단계에서는 기존 tag-only row 보존을
+        // 지원하지 않는다. DB schema bump 는 기존 로컬 DB 재초기화 marker.
         if (oldVersion < 9 && oldVersion > 0) {
           console.log(
-            `[IndexedDB] ADR-913 Phase 4 Step 4-1: oldVersion=${oldVersion} → 9 (tag→type migration prep, no schema change)`,
+            `[IndexedDB] ADR-913 direct cutover: oldVersion=${oldVersion} → 9`,
           );
         }
 
@@ -791,7 +769,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         "page_id",
         pageId,
       );
-      return rows.map(normalizeLegacyElement);
+      return rows;
     },
 
     /**
@@ -821,7 +799,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         layoutId,
       );
       console.log(`📥 [IndexedDB] getByLayout 결과: ${elements.length}개 요소`);
-      return elements.map(normalizeLegacyElement);
+      return elements;
     },
 
     getChildren: async (parentId: string): Promise<Element[]> => {
@@ -830,7 +808,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         "parent_id",
         parentId,
       );
-      return rows.map(normalizeLegacyElement);
+      return rows;
     },
 
     getDescendants: async (parentId: string): Promise<Element[]> => {
@@ -848,7 +826,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         for (const child of children) {
           if (seen.has(child.id)) continue;
           seen.add(child.id);
-          result.push(normalizeLegacyElement(child));
+          result.push(child);
           queue.push(child.id);
         }
       }
@@ -869,12 +847,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         "layout_id",
         parentId,
       );
-      return legacy.map(normalizeLegacyElement);
+      return legacy;
     },
 
     getAll: async (): Promise<Element[]> => {
       const rows = await this.getAllFromStore<Element>("elements");
-      return rows.map(normalizeLegacyElement);
+      return rows;
     },
   };
 

@@ -233,10 +233,8 @@ export interface CanonicalLegacyAdapterInput<
 /**
  * canonical → legacy 역방향 adapter contract.
  *
- * **Phase 1 = spec only** — 구현은 Phase 3 (`exportLegacyDocument` /
- * `diffLegacyRoundtrip` / `restoreFromLegacyBackup` 셋 모두 design breakdown
- * §8 의 "Phase 3 진입 전 필수 API"). 본 interface 는 Phase 3 시점의 type
- * lock-in 만 수행.
+ * Canonical primary direct cutover 에서 legacy export 와 roundtrip diff 의
+ * 최소 계약을 고정한다. 개발 단계에서는 rollback backup API 를 두지 않는다.
  */
 export interface CanonicalLegacyAdapter<
   TElement = unknown,
@@ -260,12 +258,4 @@ export interface CanonicalLegacyAdapter<
     before: CanonicalLegacyAdapterInput<TElement, TPage, TLayout>,
     after: CanonicalLegacyExport<TElement, TPage, TLayout>,
   ): CanonicalRoundtripDiff;
-
-  /**
-   * Phase 3 rollback path — local backup 에서 legacy payload 복원.
-   * Phase 1 spec only.
-   */
-  restoreFromLegacyBackup?(
-    projectId: string,
-  ): CanonicalLegacyAdapterInput<TElement, TPage, TLayout> | null;
 }

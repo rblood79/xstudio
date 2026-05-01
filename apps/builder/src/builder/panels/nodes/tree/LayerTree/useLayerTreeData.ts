@@ -5,7 +5,6 @@ import type { ElementTreeItem } from "../../../../../types/builder/stately.types
 import type { ElementProps } from "../../../../../types/integrations/supabase.types";
 import { useStore } from "../../../../stores";
 import { resolveCanonicalRefTree } from "../../../../utils/canonicalRefResolution";
-import { isCanonicalDocumentSyncEnabled } from "../../../../../utils/featureFlags";
 import { useCanonicalElements } from "../../../../stores/canonical/canonicalElementsView";
 import {
   childrenAs,
@@ -19,12 +18,10 @@ import type { LayerTreeNode, VirtualChildType } from "./types";
 export function useLayerTreeData(elements: Element[]) {
   const allElementsMap = useStore((state) => state.elementsMap);
 
-  // ADR-916 Phase 2 G3 Step 1b — flag enabled 시 canonical store 의 active
-  // document 에서 derived Element[] 를 source 로 사용. 미활성/null 시 caller
-  // 가 전달한 legacy elements[] 유지.
+  // ADR-916 direct cutover — canonical store 의 active document 에서 derived
+  // Element[] 를 source 로 사용. 초기 hydration 전에는 caller elements[] fallback.
   const canonicalElements = useCanonicalElements();
   const sourceElements = useMemo(() => {
-    if (!isCanonicalDocumentSyncEnabled()) return elements;
     if (!canonicalElements) return elements;
     return canonicalElements;
   }, [elements, canonicalElements]);

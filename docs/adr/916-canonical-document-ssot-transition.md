@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-02 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 3 G4 wrapper 진정 reverse logic land ✅** (§8.7, drift #1 본질 해소 — flag `VITE_ADR916_CANONICAL_PRIMARY` enable 시 canonical primary path 활성) + Phase 4 G5 §9.3 strict logic-access PASS marker ✅ + Phase 5 G6-1 closure ✅ + Phase 5 G6-2 first/second/third slice closure ✅ + Phase 5 G7 closure marker ✅. 잔존 = drift #2 R4 mitigation framing (사용자 결정 영역) / drift #3 R7 metadata.legacyProps (drift #1 reverse path 가 `exportLegacyDocument` SSOT 사용 — flag enable 시 자동 충족) / Phase 4 G5 P5-B overrides 본격 cleanup / Phase 5 G6-3/G6-4 (ADR-911/913 의존, 회피 영역) / 사용자 dev 환경 destructive=0 evidence (선택)).
+In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 2 G3 / Phase 3 G4 / Phase 5 G6-1·G6-2·G7 closure 는 유지하되, 개발 단계 전제에 맞춰 feature flag / backup / runtime DB migration / rollback marker 를 제거하고 canonical primary 를 즉시 기본 경로로 고정했다. 잔존 = ADR-911/913 의 legacy field quarantine 본격 cleanup (`layout_id`, `slot_name`, `componentRole`, `masterId`, `overrides`, legacy `descendants`) + G6-3/G6-4 parity 확장.
 
 ### 진행 로그
 
@@ -119,6 +119,12 @@ In Progress — 2026-05-02 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **검증** — `pnpm turbo run type-check` 3/3 PASS + vitest canonical 광역 274/274 PASS + setup fail 영역 10/10 PASS + g5 + exportSsot grep gate 5/5 PASS (baseline 0 유지, wrapper 가 `apps/builder/src/adapters/**` exclude 영역 안 배치).
   - **Drift 상태 갱신**: drift #1 logic land ✅ (flag enable 시 canonical primary 활성) / drift #3 자동 충족 path 진입 (reverse path 가 `exportLegacyDocument` SSOT 사용). drift #2 (R4 mitigation framing) = 사용자 결정 영역 변동 없음.
   - **rollback 경로**: `VITE_ADR916_CANONICAL_PRIMARY=false` (default) — 기존 legacy primary path 그대로. 사용자 dev 환경 명시 enable 후 destructive=0 evidence 수집 (선택, fixture coverage 보강용).
+- **2026-05-02 — direct cutover 정정 land (feature flag/backup/migration 제거)**:
+  - 사용자 결정: 현재는 개발 단계이고 기존 사용자/데이터 보존 의무가 없으므로 `VITE_ADR916_DOCUMENT_SYNC`, `VITE_ADR916_CANONICAL_PRIMARY`, `VITE_FRAMES_TAB_CANONICAL`, backup/rollback API, runtime DB migration helper 를 유지하지 않는다.
+  - 코드 정리: canonical sync 는 Builder 진입 시 항상 시작하고, in-memory mutation wrapper 는 항상 canonical primary path 로 동작한다. `restoreFromLegacyBackup`, `createMigrationBackup`, `runLegacyToCanonicalMigration`, `runTagTypeMigration`, `migrationP911` 계열 파일과 테스트를 삭제했다.
+  - ADR-911 정리: `PanelSlot`/`BottomPanelSlot` 파일·컴포넌트·CSS class 를 `PanelArea`/`BottomPanelArea` 로 즉시 rename 하고, FramesTab/PageLayoutSelector read path 는 flag 없이 canonical reusable FrameNode projection 으로 고정했다.
+  - ADR-913 정리: `normalizeLegacyElement` read-through helper 와 tag→type runtime migration path 를 제거했다. 기존 dev IndexedDB 의 tag-only row 는 보존 대상이 아니며, 신규/현행 format 은 `type` 단일 기준이다.
+  - 검증: targeted vitest 7 files / 75 tests PASS (`persistenceWriteThroughStub`, `usePageManager.canonical`, `canonicalDocumentSync`, `exportSsotGrepGate`, `g5LegacyFieldGrepGate`, `FramesTab`, `canonicalElementsBridge`).
 
 ## Context
 
@@ -135,16 +141,16 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 3. **Component props 위치 확정** — `Button`, `TextField`, `Section` 같은 component semantics는 `metadata.legacyProps`가 아니라 `CanonicalNode.props?: Record<string, unknown>`에 저장한다. `metadata.legacyProps`는 transition adapter 출력일 뿐 최종 SSOT가 아니다.
 4. **Hot path projection 금지** — drag, selection, canvas render, preview sync, layer tree update 같은 고빈도 경로에서 `legacyToCanonical()` 전체 문서 재구성을 호출하지 않는다.
 5. **Core vs extension 경계 명시** — canonical core에는 문서 구조 문법과 component props만 둔다. Composition app behavior(`events`, `actions`, `dataBinding`, editor state)는 namespaced extension으로 분리한다.
-6. **하위 호환 read-through** — 기존 프로젝트는 adapter로 읽을 수 있어야 하지만, 신규 write는 canonical document를 우선해야 한다.
+6. **신규 format 직접 전환** — 개발 단계에서는 기존 프로젝트 read-through/rollback 보장을 목표로 두지 않는다. 신규 write는 canonical document를 우선하고, legacy payload는 export/adapter 경계에서만 생성한다.
 7. **역방향 adapter 명시** — canonical primary 저장으로 전환하기 전에 `CompositionDocument -> legacy elements[]/pages[]/layouts[]` export adapter와 roundtrip 검증이 존재해야 한다.
 8. **시각/데이터 회귀 0** — 전환 후 기존 샘플 프로젝트와 사용자 프로젝트의 Skia/Preview/Publish 렌더 결과와 slot/ref editing semantics가 보존되어야 한다.
 9. **ADR-063 경계 유지** — D1(RAC DOM/접근성), D2(RSP Props/API), D3(Spec 시각) SSOT는 canonical document 하위 consumer로 유지하고, 본 ADR은 그 상위 document/source model만 다룬다.
 
 **Soft Constraints**:
 
-- 단계별 feature flag와 shadow write/read verification을 사용한다.
+- feature flag, backup, runtime DB migration 없이 direct cutover 한다. 검증은 targeted fixture/grep/type-check 로 대체한다.
 - ADR-911/913의 기존 phase와 ADR-914의 historical imports scope를 최대한 재사용하되, 최종 cutover gate는 본 ADR에서 통합 관리한다.
-- migration 도중 임시 adapter 최적화는 허용하지만 최종 목표로 삼지 않는다.
+- 임시 adapter 최적화는 허용하지만 최종 목표로 삼지 않는다.
 
 ## Alternatives Considered
 
@@ -217,27 +223,27 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 
 ## Risks
 
-| ID  | 위험                                                                                                         | 심각도 | 대응                                                                                                          |
-| --- | ------------------------------------------------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| R1  | canonical document mutation API가 저장/history/undo 경계를 한 번에 바꾸면서 데이터 손실을 만들 수 있음       | HIGH   | Phase 1은 API + unit test까지만 진행하고, Phase 3에서 shadow write + backup + roundtrip diff 후 write-through |
-| R2  | `legacyToCanonical()` 또는 `selectCanonicalDocument()`가 drag/selection/render hot path에 계속 남을 수 있음  | HIGH   | G3에 hot path projection 0건 grep gate를 두고, cold path/adapter-only 예외를 파일 경로로 제한                 |
-| R3  | `events`/`dataBinding`/`actions`가 canonical core에 섞여 Pencil-compatible 구조 경계를 흐릴 수 있음          | MED    | `x-composition` extension namespace를 먼저 고정하고, function callback serialize를 금지                       |
-| R4  | ADR-911/913/914가 각자 cleanup을 진행하면서 최종 cutover 기준이 다시 흩어질 수 있음                          | HIGH   | ADR-916 G5를 상위 closure gate로 두고 README row와 각 ADR phase 상태를 동시 갱신                              |
-| R5  | legacy field quarantine이 과도하게 빨리 진행되어 기존 프로젝트 read-through가 깨질 수 있음                   | HIGH   | adapter-only read-through와 migration marker를 유지하고, destructive migration 없이 shadow 검증 후 제거       |
-| R6  | canonical primary 전환 후 Skia/Preview/Publish 중 한 경로만 다른 tree를 소비할 수 있음                       | MED    | G6에서 3경로 parity matrix와 history/slot/ref 시나리오를 함께 검증                                            |
-| R7  | component props가 `metadata.legacyProps`에 계속 남아 canonical document가 사실상 legacy wrapper가 될 수 있음 | HIGH   | G1에서 `CanonicalNode.props`를 shared type에 추가하고, `metadata.legacyProps`는 adapter-only로 제한           |
+| ID  | 위험                                                                                                         | 심각도 | 대응                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------- |
+| R1  | canonical document mutation API가 저장/history/undo 경계를 한 번에 바꾸면서 runtime 회귀를 만들 수 있음      | HIGH   | Phase 1 API + unit test, Phase 3 canonical primary wrapper, targeted fixture/grep/type-check 로 즉시 검증       |
+| R2  | `legacyToCanonical()` 또는 `selectCanonicalDocument()`가 drag/selection/render hot path에 계속 남을 수 있음  | HIGH   | G3에 hot path projection 0건 grep gate를 두고, cold path/adapter-only 예외를 파일 경로로 제한                   |
+| R3  | `events`/`dataBinding`/`actions`가 canonical core에 섞여 Pencil-compatible 구조 경계를 흐릴 수 있음          | MED    | `x-composition` extension namespace를 먼저 고정하고, function callback serialize를 금지                         |
+| R4  | ADR-911/913/914가 각자 cleanup을 진행하면서 최종 cutover 기준이 다시 흩어질 수 있음                          | HIGH   | ADR-916 G5를 상위 closure gate로 두고 README row와 각 ADR phase 상태를 동시 갱신                                |
+| R5  | legacy field quarantine이 과도하게 빨리 진행되어 현행 Builder 경로가 깨질 수 있음                            | HIGH   | 사용자 데이터 보존 대신 runtime test/grep gate를 우선하고, 깨지는 경로는 canonical adapter boundary로 즉시 수렴 |
+| R6  | canonical primary 전환 후 Skia/Preview/Publish 중 한 경로만 다른 tree를 소비할 수 있음                       | MED    | G6에서 3경로 parity matrix와 history/slot/ref 시나리오를 함께 검증                                              |
+| R7  | component props가 `metadata.legacyProps`에 계속 남아 canonical document가 사실상 legacy wrapper가 될 수 있음 | HIGH   | G1에서 `CanonicalNode.props`를 shared type에 추가하고, `metadata.legacyProps`는 adapter-only로 제한             |
 
 ## Gates
 
-| Gate                          | 시점    | 통과 조건                                                                                                                            | 실패 시 대안                    |
-| ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
-| G1: Schema Boundary Freeze    | Phase 0 | canonical core, `CanonicalNode.props`, Composition extension, legacy adapter field 분류표가 타입/문서에 고정됨                       | Phase 1 진입 보류               |
-| G2: Canonical Store/API       | Phase 1 | `CompositionDocument` read/write/mutation API와 canonical -> legacy export adapter API가 `elements[]` 직접 mutation 없이 테스트 가능 | adapter write-through 유지      |
-| G3: Hot Path Cutover          | Phase 2 | drag/selection/render/LayerTree/Preview sync 경로에서 full `legacyToCanonical()` 호출 0건                                            | 해당 경로 flag rollback         |
-| G4: Persistence Write-Through | Phase 3 | 신규 저장은 canonical document 우선, legacy 저장은 adapter/shadow로만 유지                                                           | read-through only 연장          |
-| G5: Legacy Field Quarantine   | Phase 4 | `layout_id`, `slot_name`, `componentRole`, `masterId`, legacy `overrides/descendants`가 adapter 디렉터리 밖 runtime read/write 0건   | 필드별 cleanup sub-phase 재분리 |
-| G6: Runtime Parity            | Phase 5 | Skia/Preview/Publish/History/Undo/Redo/slot fill/ref detach 샘플 회귀 0건                                                            | cutover 보류, shadow mode 유지  |
-| G7: Extension Boundary        | Phase 5 | `events`, `actions`, `dataBinding`이 canonical core가 아닌 namespaced Composition extension으로만 serialize됨                        | extension schema 보강           |
+| Gate                          | 시점    | 통과 조건                                                                                                                            | 실패 시 대안                        |
+| ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| G1: Schema Boundary Freeze    | Phase 0 | canonical core, `CanonicalNode.props`, Composition extension, legacy adapter field 분류표가 타입/문서에 고정됨                       | Phase 1 진입 보류                   |
+| G2: Canonical Store/API       | Phase 1 | `CompositionDocument` read/write/mutation API와 canonical -> legacy export adapter API가 `elements[]` 직접 mutation 없이 테스트 가능 | adapter write-through 유지          |
+| G3: Hot Path Cutover          | Phase 2 | drag/selection/render/LayerTree/Preview sync 경로에서 full `legacyToCanonical()` 호출 0건                                            | 해당 경로 fixture 보강 후 수정      |
+| G4: Persistence Write-Through | Phase 3 | 신규 저장은 canonical document 우선, legacy 저장은 adapter/export 경계로만 유지                                                      | canonical wrapper 수정              |
+| G5: Legacy Field Quarantine   | Phase 4 | `layout_id`, `slot_name`, `componentRole`, `masterId`, legacy `overrides/descendants`가 adapter 디렉터리 밖 runtime read/write 0건   | 필드별 cleanup sub-phase 재분리     |
+| G6: Runtime Parity            | Phase 5 | Skia/Preview/Publish/History/Undo/Redo/slot fill/ref detach 샘플 회귀 0건                                                            | fixture 보강 후 canonical 경로 수정 |
+| G7: Extension Boundary        | Phase 5 | `events`, `actions`, `dataBinding`이 canonical core가 아닌 namespaced Composition extension으로만 serialize됨                        | extension schema 보강               |
 
 ## Consequences
 
@@ -249,7 +255,7 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 - slot fill, detach, override reset, origin/ref 관계를 schema 기준으로 판단할 수 있다.
 - import/export adapter와 내부 저장 format 경계가 분리된다.
 
-### restoreFromLegacyBackupNegative
+### Negative
 
 - 저장, history, preview bridge, renderer input, LayerTree, properties panel까지 전환 범위가 넓다.
 - 전환 기간에는 canonical document와 legacy adapter가 계속 병행된다.

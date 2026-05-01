@@ -2,11 +2,10 @@
  * Page Layout Selector
  *
  * ADR-903 P3-C: page 의 layout 연결 → page 노드의 reusable frame ref 선택 UI.
- * ADR-911 P2 PR-E1: read path dual-mode (`isFramesTabCanonical()` flag 분기).
+ * ADR-911 direct cutover: canonical reusable FrameNode read path.
  *
- * - **legacy path** (default false): `useLayouts()` hook (P3-B canonical surface)
- * - **canonical path** (true): `selectCanonicalDocument` 의 reusable FrameNode 추출
- *   (PR-C FramesTab 과 동일한 패턴 — selector cache 함정 회피용 useMemo + getState)
+ * - `selectCanonicalDocument` 의 reusable FrameNode 추출
+ *   (FramesTab 과 동일한 패턴 — selector cache 함정 회피용 useMemo + getState)
  *
  * id 정규화: canonical FrameNode.id 는 `"layout-<legacyId>"` 접두사 → `metadata.layoutId`
  * 우선 사용. legacy page layout binding 과 정합 유지.
@@ -14,7 +13,7 @@
  * write (`handleLayoutChange`) 는 legacy bridge 를 통한다.
  * P3-D 이후 canonical document mutation (page RefNode.ref 변경) 으로 전환.
  *
- * @deprecated-path `useLayoutsStore` direct access → `useLayouts` / dual-mode reusableFrames
+ * @deprecated-path `useLayoutsStore` direct access → canonical reusableFrames
  */
 
 import { memo, useMemo, useCallback, useEffect } from "react";
@@ -25,7 +24,6 @@ import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
 import { getDB } from "../../../../lib/db";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
-import { isFramesTabCanonical } from "../../../../utils/featureFlags";
 import { enqueuePagePersistence } from "../../../utils/pagePersistenceQueue";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
@@ -58,7 +56,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     }
   }, [layouts.length, fetchLayouts, page?.project_id]);
 
-  // ADR-911 P2 PR-E1: dual-mode read path (PR-C FramesTab 패턴 동일).
+  // ADR-911 direct cutover: FramesTab 패턴과 동일한 canonical read path.
   // selector cache 함정 회피 — useMemo 안에서 useStore.getState() 호출.
   const elementsMap = useStore((state) => state.elementsMap);
   const pages = useStore((state) => state.pages);
@@ -66,13 +64,6 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     ReadonlyArray<{ id: string; name: string; description?: string }>
   >(() => {
     void elementsMap;
-    if (!isFramesTabCanonical()) {
-      return layouts.map((l) => ({
-        id: l.id,
-        name: l.name,
-        description: l.description,
-      }));
-    }
     const state = useStore.getState();
     const doc = selectCanonicalDocument(state, pages, layouts);
     return doc.children

@@ -2,10 +2,9 @@
  * @fileoverview canonicalElementsBridge unit tests — ADR-916 Phase 2 G3 Sub-Phase A
  *
  * 검증 영역:
- * 1. Feature flag — default false / set / cleanup
- * 2. Read API — getCanonicalNode / getActiveCanonicalDocument
- * 3. Subscribe API — subscribeCanonicalStore lifecycle
- * 4. React hooks — useCanonicalNode / useActiveCanonicalDocument
+ * 1. Read API — getCanonicalNode / getActiveCanonicalDocument
+ * 2. Subscribe API — subscribeCanonicalStore lifecycle
+ * 3. React hooks — useCanonicalNode / useActiveCanonicalDocument
  *    (useSyncExternalStore D6=i 채택 검증)
  */
 
@@ -18,8 +17,6 @@ import { useCanonicalDocumentStore } from "../canonicalDocumentStore";
 import {
   getActiveCanonicalDocument,
   getCanonicalNode,
-  isCanonicalBridgeEnabled,
-  setCanonicalBridgeEnabled,
   subscribeCanonicalStore,
   useActiveCanonicalDocument,
   useCanonicalNode,
@@ -61,36 +58,14 @@ function resetStore(): void {
 
 beforeEach(() => {
   resetStore();
-  setCanonicalBridgeEnabled(false);
 });
 
 afterEach(() => {
-  setCanonicalBridgeEnabled(false);
+  resetStore();
 });
 
 // ─────────────────────────────────────────────
-// A. Feature flag
-// ─────────────────────────────────────────────
-
-describe("feature flag (canonicalBridgeEnabled)", () => {
-  it("default 값은 false", () => {
-    expect(isCanonicalBridgeEnabled()).toBe(false);
-  });
-
-  it("setCanonicalBridgeEnabled(true) 후 true 반환", () => {
-    setCanonicalBridgeEnabled(true);
-    expect(isCanonicalBridgeEnabled()).toBe(true);
-  });
-
-  it("재호출로 false 복귀 가능", () => {
-    setCanonicalBridgeEnabled(true);
-    setCanonicalBridgeEnabled(false);
-    expect(isCanonicalBridgeEnabled()).toBe(false);
-  });
-});
-
-// ─────────────────────────────────────────────
-// B. Read API — getCanonicalNode
+// A. Read API — getCanonicalNode
 // ─────────────────────────────────────────────
 
 describe("getCanonicalNode", () => {
@@ -131,7 +106,7 @@ describe("getCanonicalNode", () => {
 });
 
 // ─────────────────────────────────────────────
-// C. Read API — getActiveCanonicalDocument
+// B. Read API — getActiveCanonicalDocument
 // ─────────────────────────────────────────────
 
 describe("getActiveCanonicalDocument", () => {
@@ -162,7 +137,7 @@ describe("getActiveCanonicalDocument", () => {
 });
 
 // ─────────────────────────────────────────────
-// D. Subscribe API
+// C. Subscribe API
 // ─────────────────────────────────────────────
 
 describe("subscribeCanonicalStore", () => {
@@ -214,7 +189,7 @@ describe("subscribeCanonicalStore", () => {
 });
 
 // ─────────────────────────────────────────────
-// E. useCanonicalNode hook
+// D. useCanonicalNode hook
 // ─────────────────────────────────────────────
 
 describe("useCanonicalNode hook", () => {

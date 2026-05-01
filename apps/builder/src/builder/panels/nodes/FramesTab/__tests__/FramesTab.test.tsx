@@ -45,8 +45,6 @@ const mockStoreState = {
   mergeElements: vi.fn(),
 };
 
-// PR-C: feature flag + canonical projection mocks
-let mockIsFramesTabCanonical = false;
 const mockSelectCanonicalDocument = vi.fn();
 
 const mockEditModeState = {
@@ -124,13 +122,17 @@ vi.mock("@/utils/messaging", () => ({
 vi.mock("@/utils/featureFlags", () => ({
   isWebGLCanvas: () => true,
   isCanvasCompareMode: () => false,
-  isFramesTabCanonical: () => mockIsFramesTabCanonical,
 }));
 
 vi.mock("@/builder/stores/elements", () => ({
   selectCanonicalDocument: (
     ...args: Parameters<typeof mockSelectCanonicalDocument>
   ) => mockSelectCanonicalDocument(...args),
+}));
+
+vi.mock("@/adapters/canonical/canonicalMutations", () => ({
+  mergeElementsCanonicalPrimary: (elements: Element[]) =>
+    mockStoreState.mergeElements(elements),
 }));
 
 vi.mock("@/builder/hooks", () => ({
@@ -174,11 +176,19 @@ function resetMockState() {
   mockLayoutsState.selectedReusableFrameId = null;
   mockStoreState.elementsMap = new Map<string, Element>();
   mockStoreState.pages = [];
-  mockIsFramesTabCanonical = false;
   vi.clearAllMocks();
   mockGetAllElements.mockResolvedValue([] as Element[]);
   mockGetDescendants.mockResolvedValue([] as Element[]);
-  mockSelectCanonicalDocument.mockReturnValue({ children: [] });
+  mockSelectCanonicalDocument.mockImplementation(() => ({
+    children: mockLayoutsState.layouts.map((layout) => ({
+      id: `layout-${layout.id}`,
+      type: "frame",
+      reusable: true,
+      name: layout.name,
+      metadata: { type: "legacy-layout", layoutId: layout.id },
+      children: [],
+    })),
+  }));
   mockBuildTreeFromElements.mockImplementation(() => []);
   // wrapper Promise resolve 기본값 — 정상 동작
   createReusableFrameMock.mockResolvedValue({
@@ -379,10 +389,9 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
     });
   });
 
-  // ─── PR-C: canonical-native read path ──────────────────────────────────────
-  describe("canonical-native read path (isFramesTabCanonical=true)", () => {
+  // ─── canonical-native read path ────────────────────────────────────────────
+  describe("canonical-native read path", () => {
     it("frame 목록을 selectCanonicalDocument 의 reusable FrameNode 로 표시", () => {
-      mockIsFramesTabCanonical = true;
       // legacy layouts[] 에는 데이터 있지만, canonical doc 가 다르면 canonical 표시
       mockLayoutsState.layouts = [
         { id: "legacy-id", name: "Legacy Should Not Show", project_id: "p" },
@@ -407,7 +416,6 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
     });
 
     it("non-frame / non-reusable 노드는 필터링됨", () => {
-      mockIsFramesTabCanonical = true;
       mockSelectCanonicalDocument.mockReturnValue({
         children: [
           {
@@ -444,7 +452,6 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
     });
 
     it("canonical frame 클릭 시 metadata.layoutId (legacy id) 로 selectReusableFrame 위임 — write 정합성", async () => {
-      mockIsFramesTabCanonical = true;
       mockSelectCanonicalDocument.mockReturnValue({
         children: [
           {

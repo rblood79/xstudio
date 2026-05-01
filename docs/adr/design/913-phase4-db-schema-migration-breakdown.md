@@ -1,6 +1,6 @@
-# ADR-913 Phase 4 Implementation Breakdown — DB Schema Migration `tag → type` (DB_VERSION 8 → 9)
+# ADR-913 Phase 4 Implementation Breakdown — Direct Cutover `tag → type`
 
-> 본 문서는 [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) **Phase 4 (HIGH risk, 1.5d 예상)** 의 sub-step + migration script + 안전망 + 검증 명령을 분리. ADR-903 P3-E E-6 의 자동 migration 패턴을 재사용하되, 2026-04-30 이후 Step 4-4 write-through 는 [ADR-916](../916-canonical-document-ssot-transition.md) G2 canonical store/export adapter 이후 재평가한다.
+> **2026-05-02 direct cutover 정정**: 기존 사용자/데이터 보존 의무가 없는 개발 단계이므로 본 문서의 DB migration / backup / env flag / rollback 계획은 superseded 됐다. `runTagTypeMigration`, `normalizeLegacyElement`, dry-run entry 는 제거됐고, 현행 format 은 `Element.type` 단일 기준이다.
 
 ## 1. 목표 + Gate G5-E
 
@@ -8,24 +8,24 @@ ADR-913 line 135 G5-E:
 
 | 조건 | 정의                                     |
 | ---- | ---------------------------------------- |
-| (a)  | `DB_VERSION 8 → 9` migration script land |
-| (b)  | `tag → type` 컬럼 전환 + index 갱신      |
-| (c)  | read-through 우선 + write-through 후행   |
-| (d)  | localStorage backup 3중 안전망           |
-| (e)  | dev 환경 수동 검증                       |
+| (a)  | `Element.type` 단일 기준 유지            |
+| (b)  | `tag` read-through/migration helper 제거 |
+| (c)  | 신규 write/read path type-only           |
+| (d)  | runtime DB migration/backup 없음         |
+| (e)  | targeted test/type-check 검증            |
 
-실패 시 fallback: `_meta.schemaVersion: legacy` 자동 복귀.
+실패 시 fallback/rollback 은 두지 않고 runtime path 를 수정한다.
 
 ## 2. 인프라 재사용 (ADR-903 P3-E 결과)
 
 기존 land 된 자산을 그대로 재사용. 신규 구축 0.
 
-| 자산                                | 위치                                         | 역할                                            |
-| ----------------------------------- | -------------------------------------------- | ----------------------------------------------- |
-| `_meta` object store + `MetaRecord` | `apps/builder/src/lib/db/types.ts`           | `schemaVersion` 추적 (composition-1.0 / legacy) |
-| `createMigrationBackup`             | `apps/builder/src/lib/db/migrationBackup.ts` | localStorage backup (3중 안전망 1번째)          |
-| `runLegacyToCanonicalMigration`     | `apps/builder/src/lib/db/migration.ts`       | dry-run + write-through 진입점 (P3-E E-6 land)  |
-| migration test fixtures             | `apps/builder/src/lib/db/__tests__/`         | 50+ fixture (round-trip baseline)               |
+| 자산                                | 위치                                 | 역할                                            |
+| ----------------------------------- | ------------------------------------ | ----------------------------------------------- |
+| `_meta` object store + `MetaRecord` | `apps/builder/src/lib/db/types.ts`   | `schemaVersion` 추적 (composition-1.0 / legacy) |
+| `createMigrationBackup`             | 제거됨                               | direct cutover 로 불필요                        |
+| `runLegacyToCanonicalMigration`     | 제거됨                               | direct cutover 로 불필요                        |
+| migration test fixtures             | `apps/builder/src/lib/db/__tests__/` | 50+ fixture (round-trip baseline)               |
 
 본 Phase 4 는 동일 패턴을 `tag → type` 변환으로 확장.
 
@@ -35,14 +35,14 @@ ADR-903 P3-E 의 E-1~E-6 모델을 그대로 답습. 각 step 은 독립 commit/
 
 ### Sub-step 진행 상태 (2026-04-27 기준)
 
-| Step | 산출물                                                                         |        상태        | 검증                                                                                |
-| ---- | ------------------------------------------------------------------------------ | :----------------: | ----------------------------------------------------------------------------------- |
-| 4-1  | DB_VERSION 8→9 bump + `composition-1.1` enum                                   | ✅ Land 2026-04-27 | metaStore.test.ts 5 PASS / commit `0e9b5101`                                        |
-| 4-2  | `runTagTypeMigration` dry-run (READ-ONLY)                                      | ✅ Land 2026-04-27 | `migrationTagType.test.ts` 16 PASS (50 fixture round-trip 포함) / commit `79aaf808` |
-| 4-3  | `usePageManager.initializeProject` dry-run entry 연결 (READ-ONLY)              | ✅ Land 2026-04-27 | type-check 3/3 + db 142/142 + usePageManager.canonical 회귀 0 / commit `19864dfe`   |
-| 4-4  | write-through 활성화 (`dryRun=false`, env flag `VITE_ADR913_P4_WRITE_THROUGH`) |   미진입 (HIGH)    | ADR-916 G2 이후 canonical primary/shadow write 방향 재평가                          |
-| 4-5  | `normalizeLegacyElement` helper 제거 (cutover)                                 |       미진입       | Step 4-4 land 1주+ 안정 + composition-1.1/canonical-primary 기준 충족 후 진입       |
-| 4-6  | Validation + cleanup (Phase 4 종결)                                            |       미진입       | Step 4-5 land 후 진입                                                               |
+| Step | 산출물                                                            |        상태        | 검증                                                                                |
+| ---- | ----------------------------------------------------------------- | :----------------: | ----------------------------------------------------------------------------------- |
+| 4-1  | DB_VERSION 8→9 bump + `composition-1.1` enum                      | ✅ Land 2026-04-27 | metaStore.test.ts 5 PASS / commit `0e9b5101`                                        |
+| 4-2  | `runTagTypeMigration` dry-run (READ-ONLY)                         | ✅ Land 2026-04-27 | `migrationTagType.test.ts` 16 PASS (50 fixture round-trip 포함) / commit `79aaf808` |
+| 4-3  | `usePageManager.initializeProject` dry-run entry 연결 (READ-ONLY) | ✅ Land 2026-04-27 | type-check 3/3 + db 142/142 + usePageManager.canonical 회귀 0 / commit `19864dfe`   |
+| 4-4  | write-through 활성화 / env flag                                   |        폐기        | direct cutover 로 불필요                                                            |
+| 4-5  | `normalizeLegacyElement` helper 제거                              |   ✅ 2026-05-02    | direct cutover                                                                      |
+| 4-6  | Validation + cleanup                                              |   ✅ 2026-05-02    | targeted vitest 포함                                                                |
 
 ### Step 4-1 — DB_VERSION bump + onupgradeneeded 분기 (READ-ONLY land) — ✅ Land 2026-04-27 `0e9b5101`
 

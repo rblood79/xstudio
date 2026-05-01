@@ -4,16 +4,21 @@
  * 레이아웃 시스템에서 사용하는 타입 정의
  */
 
-import type { PanelId, PanelSide, PanelLayoutState, PanelLayoutActions } from '../panels/core/types';
+import type {
+  PanelId,
+  PanelSide,
+  PanelLayoutState,
+  PanelLayoutActions,
+} from "../panels/core/types";
 
 /**
- * PanelSlot Props
+ * PanelArea Props
  */
-export interface PanelSlotProps {
-  /** 슬롯 위치 (left/right) */
+export interface PanelAreaProps {
+  /** 영역 위치 (left/right) */
   side: PanelSide;
 
-  /** 이 슬롯에 배치된 패널 ID 배열 */
+  /** 이 영역에 배치된 패널 ID 배열 */
   availablePanels: PanelId[];
 
   /** 현재 활성화된 패널 ID */
@@ -49,10 +54,16 @@ export interface UsePanelLayoutReturn extends PanelLayoutActions {
   focusModalPanel: (panelId: PanelId) => void;
 
   /** Modal 패널 위치 업데이트 */
-  updateModalPanelPosition: (panelId: PanelId, position: { x: number; y: number }) => void;
+  updateModalPanelPosition: (
+    panelId: PanelId,
+    position: { x: number; y: number },
+  ) => void;
 
   /** Modal 패널 크기 업데이트 */
-  updateModalPanelSize: (panelId: PanelId, size: { width: number; height: number }) => void;
+  updateModalPanelSize: (
+    panelId: PanelId,
+    size: { width: number; height: number },
+  ) => void;
 
   /** 모든 Modal 패널 닫기 */
   closeAllModalPanels: () => void;
@@ -61,4 +72,4 @@ export interface UsePanelLayoutReturn extends PanelLayoutActions {
 /**
  * 레이아웃 저장 키
  */
-export const PANEL_LAYOUT_STORAGE_KEY = 'composition-panel-layout';
+export const PANEL_LAYOUT_STORAGE_KEY = "composition-panel-layout";

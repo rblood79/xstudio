@@ -14,8 +14,6 @@ import {
   getLegacyLayoutId,
   withLegacyLayoutId,
 } from "../../adapters/canonical/legacyElementFields";
-import { runLegacyToCanonicalMigration } from "../../lib/db/migration";
-import { runTagTypeMigration } from "../../lib/db/migrationTagType";
 import { useLayoutsStore } from "../stores/layouts";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
@@ -606,66 +604,6 @@ export const usePageManager = ({
           applyCollectionItemsMigration(rawMerged);
 
         useStore.getState().hydrateProjectSnapshot(mergedElements);
-
-        // ADR-903 P3-E E-4: migration 진입 조건 (dry-run, DB 무변경).
-        // hydrate 직후 store 상태에서 canonical document 빌드 후
-        // legacy → composition-1.0 변환 정합성을 dry-run 으로 측정.
-        // 실제 elements.updateMany / meta.set 은 E-6 (write-through) 단계.
-        const metaRecord = await db.meta.get(projectId);
-        if (!metaRecord || metaRecord.schemaVersion === "legacy") {
-          const migrationCanonicalDoc = selectCanonicalDocument(
-            useStore.getState(),
-            storePages,
-            useLayoutsStore.getState().layouts,
-          );
-          const migrationResult = await runLegacyToCanonicalMigration(
-            db,
-            projectId,
-            { canonicalDoc: migrationCanonicalDoc },
-          );
-          if (process.env.NODE_ENV !== "production") {
-            console.log(
-              `[ADR-903 P3-E E-4] migration dry-run: status=${migrationResult.status}, transformations=${migrationResult.transformations.length}, errors=${migrationResult.errors.length}`,
-            );
-          }
-        }
-
-        // ADR-913 P4 Step 4-3: tag → type rename migration dry-run (READ-ONLY).
-        // composition-1.1 미진입 프로젝트에 대해 transform 결과 측정. 실제
-        // elements.updateMany / meta.set 은 Step 4-4 (write-through) 단계 — env
-        // flag `VITE_ADR913_P4_WRITE_THROUGH` 으로 게이트 (현재 dryRun=true 고정).
-        if (
-          !metaRecord ||
-          metaRecord.schemaVersion === "legacy" ||
-          metaRecord.schemaVersion === "composition-1.0"
-        ) {
-          try {
-            const tagTypeResult = await runTagTypeMigration(db, projectId, {
-              dryRun: true,
-            });
-            if (process.env.NODE_ENV !== "production") {
-              if (tagTypeResult.status === "skipped") {
-                console.log(
-                  `[ADR-913 P4 dry-run] skipped: ${tagTypeResult.reason}`,
-                );
-              } else {
-                console.log(
-                  `[ADR-913 P4 dry-run] status=${tagTypeResult.status}, transformedCount=${tagTypeResult.transformedCount}/${tagTypeResult.totalCount}, errors=${tagTypeResult.errors.length}`,
-                );
-                if (tagTypeResult.transformedCount > 0) {
-                  console.log(
-                    `[ADR-913 P4 dry-run] ${tagTypeResult.transformedCount} elements need tag→type migration`,
-                  );
-                }
-              }
-            }
-          } catch (err) {
-            console.warn(
-              "[ADR-913 P4 dry-run] migration measurement failed:",
-              err,
-            );
-          }
-        }
 
         // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem/ListBoxItem(+subtree) 행 제거
         // (undo 스택 미오염)

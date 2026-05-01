@@ -19,12 +19,7 @@ import { BuilderCanvas } from "./BuilderCanvas";
 
 import { BuilderViewport } from "./BuilderViewport";
 import { Workspace } from "../workspace";
-import {
-  isWebGLCanvas,
-  isCanvasCompareMode,
-  isCanonicalDocumentSyncEnabled,
-  isCanonicalPrimaryEnabled,
-} from "../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { startCanonicalDocumentSync } from "../stores/canonical/canonicalDocumentSync";
 // ADR-916 Phase 2 G3 Step 4 — BuilderCore layout refresh dual-mode
 import {
@@ -32,14 +27,12 @@ import {
   getActiveCanonicalDocument,
 } from "../stores/canonical/canonicalElementsBridge";
 import { canonicalDocumentToElements } from "../stores/canonical/canonicalElementsView";
-// ADR-916 Phase 3 G4 sub-phase 3-B — Canonical primary backup bootstrap
-import { saveLegacyBackup } from "@/adapters/canonical/restoreFromLegacyBackup";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import {
   setElementsCanonicalPrimary,
   registerCanonicalMutationStoreActions,
 } from "@/adapters/canonical/canonicalMutations";
-import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
+import { PanelArea, BottomPanelArea, ModalPanelContainer } from "../layout";
 import {
   ToastContainer,
   CommandPalette,
@@ -133,23 +126,11 @@ export const BuilderCore: React.FC = () => {
     });
   }, [projectId]);
 
-  // ADR-916 Phase 2 G3 — Canonical document write-through sync (caller-driven).
-  // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 projectId 명시 전달하여 sync 시작.
+  // ADR-916 direct cutover — canonical document write-through sync.
   useEffect(() => {
-    if (!isCanonicalDocumentSyncEnabled() || !projectId) return;
+    if (!projectId) return;
     const stop = startCanonicalDocumentSync(projectId);
     return stop;
-  }, [projectId]);
-
-  // ADR-916 Phase 3 G4 sub-phase 3-B — Canonical primary backup bootstrap.
-  // flag `VITE_ADR916_CANONICAL_PRIMARY=true` 시 Builder 진입 시점에 현재
-  // legacy elements snapshot 을 localStorage backup 저장 (rollback prerequisite).
-  // mutation reverse 광역 refactor 는 별도 sub-phase 분리 — 본 단축 단계에서는
-  // backup snapshot 보존만으로 D19=B `restoreFromLegacyBackup` 경로 활성화.
-  useEffect(() => {
-    if (!isCanonicalPrimaryEnabled() || !projectId) return;
-    const elements = useStore.getState().elements;
-    saveLegacyBackup(projectId, elements);
   }, [projectId]);
 
   // 히스토리 정보 업데이트 (구독 기반)
@@ -616,35 +597,19 @@ export const BuilderCore: React.FC = () => {
       sendElementsToIframe(filteredElements);
     };
 
-    // canonical mode 시 canonical store mutation 추적 (legacy store.subscribe
-    // 은 sync 가 canonical 로 propagate 하므로 publish 책임 canonical 단일화).
-    if (isCanonicalDocumentSyncEnabled()) {
-      let lastDerivedRef: Element[] | null = null;
-      const unsubscribe = subscribeCanonicalStore(() => {
-        const doc = getActiveCanonicalDocument();
-        if (!doc) {
-          // canonical 미초기화 시 legacy fallback (write-through sync 부트스트랩
-          // 직전 단계). useStore.getState().elements 사용.
-          publishElements(useStore.getState().elements);
-          return;
-        }
-        const derived = canonicalDocumentToElements(doc);
-        if (derived === lastDerivedRef) return;
-        lastDerivedRef = derived;
-        publishElements(derived);
-      });
-      return () => unsubscribe();
-    }
-
-    // legacy mode — 기존 store.subscribe 경로 유지.
-    const unsubscribe = useStore.subscribe((state, prevState) => {
-      if (state.elements === prevState.elements) return;
-      publishElements(state.elements);
+    let lastDerivedRef: Element[] | null = null;
+    const unsubscribe = subscribeCanonicalStore(() => {
+      const doc = getActiveCanonicalDocument();
+      if (!doc) {
+        publishElements(useStore.getState().elements);
+        return;
+      }
+      const derived = canonicalDocumentToElements(doc);
+      if (derived === lastDerivedRef) return;
+      lastDerivedRef = derived;
+      publishElements(derived);
     });
-
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [iframeReadyState, sendElementsToIframe]);
 
   // NAVIGATE_TO_PAGE 메시지 수신 (Preview iframe에서)
@@ -1195,18 +1160,18 @@ export const BuilderCore: React.FC = () => {
       )}
 
       <aside className="sidebar" ref={(el) => registerPanelElement("left", el)}>
-        <PanelSlot side="left" />
+        <PanelArea side="left" />
       </aside>
 
       <aside
         className="inspector"
         ref={(el) => registerPanelElement("right", el)}
       >
-        <PanelSlot side="right" />
+        <PanelArea side="right" />
       </aside>
 
       {/* Bottom Panel (Monitor, etc.) */}
-      <BottomPanelSlot />
+      <BottomPanelArea />
 
       {/* 🚀 Phase 7: Toast 알림 컨테이너 */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

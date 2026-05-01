@@ -30,8 +30,6 @@ export interface FeatureFlags {
   renderMode: RenderMode;
   /** React Query Devtools 활성화 */
   enableReactQueryDevtools: boolean;
-  /** FramesTab canonical-native 모드 (ADR-911 P2) */
-  framesTabCanonical: boolean;
 }
 
 // ============================================
@@ -153,69 +151,6 @@ export function isReactQueryDevtoolsEnabled(): boolean {
 }
 
 /**
- * FramesTab canonical-native 모드 활성화 여부 (ADR-911 P2).
- *
- * `true` 일 때 FramesTab 의 frame 목록 read 가 `selectCanonicalDocument` 기반
- * canonical projection 으로 동작. `false` 일 때 legacy `useLayoutsStore.layouts[]`
- * direct read 유지.
- *
- * **PR-E4 (2026-04-27) cutover**: 기본값 `false` → `true` 전환.
- * - PR-A~E3 (8 PRs main land) + 33/33 vitest 회귀 안전망 + dev migration trigger
- *   (P1-c roundtrip 검증 가능) 토대 위에서 cutover 진행
- * - 사용자 환경변수 override 가능 (`VITE_FRAMES_TAB_CANONICAL=false`) — emergency
- *   rollback 경로 보장
- * - 1주 모니터링 (사용자 issue report 0건 확인) 후 ADR-911 Phase 2 Status:
- *   `In Progress` → `Phase 2 Implemented` 승격
- *
- * @returns true if FramesTab canonical-native read 활성화 (default true)
- */
-export function isFramesTabCanonical(): boolean {
-  return parseBoolean(import.meta.env.VITE_FRAMES_TAB_CANONICAL, true);
-}
-
-/**
- * Canonical document sync 활성화 여부 (ADR-916 Phase 2 G3 Sub-Phase B Step 1b-1).
- *
- * `true` 일 때 Builder 컴포넌트 mount 시 `startCanonicalDocumentSync()` 호출 →
- * legacy 3 store (`useStore` / `useLayoutsStore` / `useDataStore`) mutation 을
- * canonical store 에 자동 mirror.
- *
- * **default `false` (보수적)**: Step 1b-2 (LayerTree dual-mode cutover) 진입 전
- * 까지는 canonical store 가 hydrated 되어도 hot path consumer 가 없으므로
- * production 영향 0. flag enable 은 LayerTree pilot 검증 시점에 사용자 명시
- * 결정.
- *
- * **rollback 경로**: env override `VITE_ADR916_DOCUMENT_SYNC=false` 로 즉시
- * 비활성화 가능. canonical store 가 비어 있어도 5 hot path 는 legacy 경로 유지.
- *
- * @returns true if write-through sync should start on Builder mount (default false)
- */
-export function isCanonicalDocumentSyncEnabled(): boolean {
-  return parseBoolean(import.meta.env.VITE_ADR916_DOCUMENT_SYNC, false);
-}
-
-/**
- * Canonical primary storage marker 활성화 여부 (ADR-916 Phase 3 G4 sub-phase 3-B).
- *
- * `true` 일 때 Builder 진입 시점에 (1) 현재 legacy elements snapshot 을
- * `saveLegacyBackup(projectId, elements)` 로 localStorage 저장 + (2) canonical
- * store 가 사용자 mutation 의 primary 로 marker. 단, 본 단축 단계에서는 elementsApi
- * write 경로 reverse 는 진행하지 않음 (~30+ caller refactor → 별도 sub-phase).
- *
- * **default `false` (보수적)**: 3-A monitoring evidence 수집 + production
- * destructive=0 확정 후 enable. 본 flag enable 은 사용자 명시 dev 환경 설정.
- *
- * **rollback 경로**: env override `VITE_ADR916_CANONICAL_PRIMARY=false` 로 즉시
- * 비활성화. localStorage backup 은 보존되어 `restoreFromLegacyBackup(projectId)`
- * 로 복원 가능 (D19=B 채택, ADR-916 design §8.5).
- *
- * @returns true if canonical primary marker + auto-backup should activate (default false)
- */
-export function isCanonicalPrimaryEnabled(): boolean {
-  return parseBoolean(import.meta.env.VITE_ADR916_CANONICAL_PRIMARY, false);
-}
-
-/**
  * 모든 Feature Flags 조회
  *
  * @returns 현재 Feature Flags 상태
@@ -237,10 +172,6 @@ export function getFeatureFlags(): FeatureFlags {
     enableReactQueryDevtools: parseBoolean(
       import.meta.env.VITE_ENABLE_REACT_QUERY_DEVTOOLS,
       false,
-    ),
-    framesTabCanonical: parseBoolean(
-      import.meta.env.VITE_FRAMES_TAB_CANONICAL,
-      true,
     ),
   };
 }

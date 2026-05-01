@@ -1,11 +1,11 @@
 @layer builder-system {
   /* ========================================
-   * Bottom Panel Slot Layout
-   * Monitor Panel 등 하단 패널을 위한 리사이즈 가능한 슬롯
+   * Bottom Panel Area Layout
+   * Monitor Panel 등 하단 패널을 위한 리사이즈 가능한 영역
    * ======================================== */
 
-  /* Bottom Panel Slot - Grid Area */
-  .bottom-panel-slot {
+  /* Bottom Panel Area - Grid Area */
+  .bottom-panel-area {
     grid-area: bottom;
     display: flex;
     flex-direction: column;
@@ -36,7 +36,7 @@
   }
 
   .bottom-panel-resize-handle:hover,
-  .bottom-panel-slot[data-dragging="true"] .bottom-panel-resize-handle {
+  .bottom-panel-area[data-dragging="true"] .bottom-panel-resize-handle {
     background-color: var(--bg-muted);
     opacity: 1;
   }
@@ -72,7 +72,9 @@
     color: var(--fg-muted);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .bottom-panel-tab:hover {
@@ -99,7 +101,9 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--fg-muted);
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .bottom-panel-close:hover {
@@ -134,15 +138,15 @@
   }
 
   /* Dragging State - Prevent Selection */
-  .bottom-panel-slot[data-dragging="true"] {
+  .bottom-panel-area[data-dragging="true"] {
     user-select: none;
   }
 
-  .bottom-panel-slot[data-dragging="true"] * {
+  .bottom-panel-area[data-dragging="true"] * {
     pointer-events: none;
   }
 
-  .bottom-panel-slot[data-dragging="true"] .bottom-panel-resize-handle {
+  .bottom-panel-area[data-dragging="true"] .bottom-panel-resize-handle {
     pointer-events: auto;
   }
 }

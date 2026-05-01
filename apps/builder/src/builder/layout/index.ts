@@ -10,12 +10,12 @@ export { usePanelLayout } from "../hooks";
 // Components
 export { PanelNav } from "./PanelNav";
 export { PanelContainer } from "./PanelContainer";
-export { PanelSlot } from "./PanelSlot";
-export { BottomPanelSlot } from "./BottomPanelSlot";
+export { PanelArea } from "./PanelArea";
+export { BottomPanelArea } from "./BottomPanelArea";
 export { ModalPanelContainer } from "./ModalPanelContainer";
 
 // Types
 export * from "./types";
 export type { PanelNavProps } from "./PanelNav";
 export type { PanelContainerProps } from "./PanelContainer";
-export type { PanelSlotProps } from "./PanelSlot";
+export type { PanelAreaProps } from "./PanelArea";

@@ -2,14 +2,13 @@
  * @fileoverview ADR-916 Phase 3 G4 — 3-A-impl 실 동작 검증.
  *
  * 3-A-stub 단계에서 시그니처만 검증하던 6 test 를 실 동작 검증으로 확장.
- * 4 영역: exportLegacyDocument round-trip / diffLegacyRoundtrip 3 카테고리 분류
- * / restoreFromLegacyBackup localStorage backup-restore / shadowWriteDiff
- * evaluator + logger.
+ * 3 영역: exportLegacyDocument round-trip / diffLegacyRoundtrip 3 카테고리 분류
+ * / shadowWriteDiff evaluator + logger.
  *
  * @vitest-environment jsdom
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompositionDocument } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
 import type { LegacyAdapterInput } from "../types";
@@ -22,13 +21,6 @@ import {
   diffLegacyRoundtrip,
   type RoundtripDiff,
 } from "../diffLegacyRoundtrip";
-import {
-  clearLegacyBackup,
-  getCanonicalPrimaryStatus,
-  loadLegacyBackup,
-  restoreFromLegacyBackup,
-  saveLegacyBackup,
-} from "../restoreFromLegacyBackup";
 import {
   evaluateShadowWrite,
   evaluateShadowWriteFromCanonical,
@@ -229,96 +221,7 @@ describe("diffLegacyRoundtrip (3-A-impl)", () => {
 });
 
 // ─────────────────────────────────────────────
-// C. restoreFromLegacyBackup — localStorage backup
-// ─────────────────────────────────────────────
-
-describe("restoreFromLegacyBackup (3-A-impl)", () => {
-  beforeEach(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.clear();
-    }
-  });
-
-  afterEach(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.clear();
-    }
-  });
-
-  it("backup 없음 → false", async () => {
-    expect(await restoreFromLegacyBackup("missing-project")).toBe(false);
-  });
-
-  it("saveLegacyBackup → loadLegacyBackup round-trip", () => {
-    const elements = [makeElement("a"), makeElement("b")];
-    expect(saveLegacyBackup("proj-1", elements)).toBe(true);
-    const loaded = loadLegacyBackup("proj-1");
-    expect(loaded).not.toBeNull();
-    expect(loaded?.length).toBe(2);
-    expect(loaded?.[0].id).toBe("a");
-  });
-
-  it("save 후 restoreFromLegacyBackup → true", async () => {
-    saveLegacyBackup("proj-2", [makeElement("a")]);
-    expect(await restoreFromLegacyBackup("proj-2")).toBe(true);
-  });
-
-  it("clearLegacyBackup → 후속 restore false", async () => {
-    saveLegacyBackup("proj-3", [makeElement("a")]);
-    clearLegacyBackup("proj-3");
-    expect(await restoreFromLegacyBackup("proj-3")).toBe(false);
-  });
-
-  it("corrupted backup (invalid JSON) → loadLegacyBackup null", () => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      "__adr916_legacy_backup_proj-bad",
-      "not-json-{",
-    );
-    expect(loadLegacyBackup("proj-bad")).toBeNull();
-  });
-
-  // ── 3-D: getCanonicalPrimaryStatus ──
-
-  it("3-D: backup 없음 → hasBackup=false canRollback=false", () => {
-    const status = getCanonicalPrimaryStatus("missing-project");
-    expect(status.hasBackup).toBe(false);
-    expect(status.canRollback).toBe(false);
-    expect(status.schemaVersion).toBeUndefined();
-  });
-
-  it("3-D: legacy-1.0 backup → hasBackup=true canRollback=false (rollback 불필요)", () => {
-    saveLegacyBackup("proj-legacy", [makeElement("a")]);
-    const status = getCanonicalPrimaryStatus("proj-legacy");
-    expect(status.hasBackup).toBe(true);
-    expect(status.schemaVersion).toBe("legacy-1.0");
-    expect(status.canRollback).toBe(false);
-    expect(status.savedAt).toMatch(/\d{4}-\d{2}-\d{2}T/);
-  });
-
-  it("3-D: canonical-primary-1.0 backup → canRollback=true", () => {
-    saveLegacyBackup(
-      "proj-canonical",
-      [makeElement("a")],
-      "canonical-primary-1.0",
-    );
-    const status = getCanonicalPrimaryStatus("proj-canonical");
-    expect(status.hasBackup).toBe(true);
-    expect(status.schemaVersion).toBe("canonical-primary-1.0");
-    expect(status.canRollback).toBe(true);
-  });
-
-  it("3-D: clearLegacyBackup → status hasBackup=false", () => {
-    saveLegacyBackup("proj-cleared", [makeElement("a")]);
-    clearLegacyBackup("proj-cleared");
-    const status = getCanonicalPrimaryStatus("proj-cleared");
-    expect(status.hasBackup).toBe(false);
-    expect(status.canRollback).toBe(false);
-  });
-});
-
-// ─────────────────────────────────────────────
-// D. shadowWriteDiff — evaluator + logger
+// C. shadowWriteDiff — evaluator + logger
 // ─────────────────────────────────────────────
 
 describe("shadowWriteDiff (3-A-impl)", () => {

@@ -11,9 +11,9 @@
  * (id/parent_id/page_id/layout_id/order_num/fills/type + props spread) 를 통해
  * legacy Element 무손실 재구성.
  *
- * **flag gating**: `isCanonicalDocumentSyncEnabled()` && canonical store 가
- * hydrated 일 때만 의미. 미충족 시 `useCanonicalElements()` 가 `null` 반환 →
- * caller 가 legacy 경로로 fallback.
+ * Direct cutover 이후 canonical store 가 hydrated 일 때 의미가 있다. 초기
+ * hydration 전에는 `useCanonicalElements()` 가 `null` 을 반환하고 caller 가
+ * legacy 경로로 fallback 한다.
  */
 
 import { useMemo } from "react";

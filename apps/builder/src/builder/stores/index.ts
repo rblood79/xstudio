@@ -15,7 +15,6 @@ import {
   isCanonicalRefElement,
   resolveCanonicalRefElement,
 } from "../utils/canonicalRefResolution";
-import { isCanonicalDocumentSyncEnabled } from "../../utils/featureFlags";
 import { useCanonicalSelectedElement } from "./canonical/canonicalElementsView";
 import { getElementDataBinding } from "../../adapters/canonical/legacyExtensionFields";
 
@@ -140,8 +139,7 @@ export const useSelectedElementData = (): SelectedElement | null => {
 
     // dual-mode source 결정. canonical mode + canonical 에 element 존재 시
     // canonical 우선, 그 외 legacy elementsMap fallback.
-    const useCanonical =
-      isCanonicalDocumentSyncEnabled() && canonicalSelectedElement !== null;
+    const useCanonical = canonicalSelectedElement !== null;
 
     let element: Element | undefined;
     let resolvedElement: Element | undefined;

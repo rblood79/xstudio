@@ -51,11 +51,7 @@ import {
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from "../utils/canvasDeltaMessenger";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
-import {
-  isWebGLCanvas,
-  isCanvasCompareMode,
-  isCanonicalDocumentSyncEnabled,
-} from "../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 // ADR-916 Phase 2 G3 Step 3 — canonical document → derived Element[] source
 import {
   useCanonicalElements,
@@ -135,13 +131,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const previewGeneratedElementsFlushIdRef = useRef<number | null>(null);
 
   const legacyElements = useStore((state) => state.elements);
-  // ADR-916 Phase 2 G3 Step 3 — canonical mode 시 active document 의 derived
-  // Element[] 를 publish source 로 사용. flag 미활성/canonical 미초기화 시 legacy
-  // store 의 elements 그대로 사용. caller (sendElementsToIframe / preview iframe)
-  // 무수정.
+  // ADR-916 direct cutover — active canonical document 의 derived Element[] 를
+  // publish source 로 사용. 초기 hydration 전에는 legacy elements fallback.
   const canonicalElements = useCanonicalElements();
   const elements = useMemo(() => {
-    if (!isCanonicalDocumentSyncEnabled()) return legacyElements;
     if (!canonicalElements) return legacyElements;
     return canonicalElements;
   }, [legacyElements, canonicalElements]);
@@ -652,13 +645,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           sendVariablesToIframe();
 
           // Elements 전송
-          // ADR-916 Phase 2 G3 Step 3 — sendInitialData 는 useCallback 안의 closure
-          // 라 React state (elements) 가 stale 가능. 매 호출 시 dual-mode 평가:
-          // canonical mode + active doc 존재 → derived Element[] / 그 외 → legacy.
+          // sendInitialData 는 useCallback 안의 closure 라 React state (elements) 가
+          // stale 가능. 매 호출 시 active canonical document 를 직접 확인한다.
           let currentElements: Element[];
-          const canonicalDoc = isCanonicalDocumentSyncEnabled()
-            ? getActiveCanonicalDocument()
-            : null;
+          const canonicalDoc = getActiveCanonicalDocument();
           if (canonicalDoc) {
             currentElements = canonicalDocumentToElements(canonicalDoc);
           } else {

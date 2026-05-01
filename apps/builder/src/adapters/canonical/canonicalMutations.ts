@@ -4,21 +4,18 @@
  * caller 가 legacy `setElements` / `mergeElements` 직접 호출 대신 본 wrapper 를
  * 경유. design §8.6 grep gate 의 단일 SSOT 격리 (D18=A) 정합.
  *
- * **2026-05-02 land — drift #1 본질 reverse**:
+ * **2026-05-02 direct cutover**:
  *
- * §8.7 진정 reverse work — `isCanonicalPrimaryEnabled()` flag 분기:
- *
- * - **flag false (default, BC)**: legacy primary path — 기존처럼 `getActions().mergeElements/setElements()` 호출.
- * - **flag true (canonical primary)**: in-memory wrapper (merge/set) 가 (1) 현재
- *   legacy snapshot 과 입력 elements merge → (2) `legacyToCanonical()` full doc
- *   재구성 → (3) canonical store `setDocument` push → (4) `exportLegacyDocument()`
- *   결과를 legacy mirror 로 `setElements()` 호출.
+ * in-memory wrapper (merge/set) 가 항상 canonical primary 로 동작한다.
+ * (1) 현재 legacy snapshot 과 입력 elements merge → (2) `legacyToCanonical()`
+ * full doc 재구성 → (3) canonical store `setDocument` push →
+ * (4) `exportLegacyDocument()` 결과를 legacy mirror 로 `setElements()` 호출.
  *   DB wrapper (create/update/createMultiple) 는 reverse 영향 없음 — DB persist
  *   자체는 elementsApi 그대로 사용 (D17=A 채택, schema 미변경).
  *
- * **무한 루프 방지**: flag enable 시 `canonicalDocumentSync` 가 자체 disable
- * (`canonicalDocumentSync.ts` 안 분기). canonical setDocument → legacy mirror →
- * useStore.subscribe 가 sync 재호출 → 중복 처리 위험 차단.
+ * **무한 루프 방지**: canonical setDocument → legacy mirror → useStore.subscribe
+ * 순서로 sync 가 재호출될 수 있으나, 같은 document 를 재계산해 canonical store 에
+ * 반영하는 idempotent path 로 유지한다.
  *
  * **파일 위치 의도**: `apps/builder/src/adapters/canonical/` 안에 둠 → design
  * §8.6 grep gate 의 `apps/builder/src/adapters/**` exclude 패턴 안에 들어가서
@@ -41,7 +38,6 @@ import { legacyToCanonical } from "@/adapters/canonical";
 import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
 import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
 import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
-import { isCanonicalPrimaryEnabled } from "@/utils/featureFlags";
 
 // ─────────────────────────────────────────────
 // Callback registration (DI pattern)
@@ -197,35 +193,23 @@ function applyCanonicalPrimarySet(elements: Element[]): void {
 /**
  * legacy `mergeElements` 의 canonical-aware wrapper.
  *
- * - flag false (default): legacy primary path — 기존 동작.
- * - flag true: §8.7 canonical primary reverse — canonical store mutation 우선
- *   + legacy mirror 자동.
+ * canonical store mutation 우선 + legacy mirror 자동.
  *
  * @param elements - 추가/병합할 legacy element 배열
  */
 export function mergeElementsCanonicalPrimary(elements: Element[]): void {
-  if (isCanonicalPrimaryEnabled()) {
-    applyCanonicalPrimaryMerge(elements);
-    return;
-  }
-  getActions().mergeElements(elements);
+  applyCanonicalPrimaryMerge(elements);
 }
 
 /**
  * legacy `setElements` 의 canonical-aware wrapper.
  *
- * - flag false (default): legacy primary path — 기존 동작.
- * - flag true: §8.7 canonical primary reverse — canonical store mutation 우선
- *   + legacy mirror 자동.
+ * canonical store mutation 우선 + legacy mirror 자동.
  *
  * @param elements - 전체 element 배열 (replace)
  */
 export function setElementsCanonicalPrimary(elements: Element[]): void {
-  if (isCanonicalPrimaryEnabled()) {
-    applyCanonicalPrimarySet(elements);
-    return;
-  }
-  getActions().setElements(elements);
+  applyCanonicalPrimarySet(elements);
 }
 
 // ─────────────────────────────────────────────

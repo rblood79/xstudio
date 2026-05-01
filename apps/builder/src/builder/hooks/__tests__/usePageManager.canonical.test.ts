@@ -174,24 +174,25 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
   });
 
   // ─────────────────────────────────────────────
-  // P3-E E-4 — migration 진입 조건 연결 (read-through dry-run 호출)
+  // Direct cutover — runtime migration 제거
   // ─────────────────────────────────────────────
-  describe("initializeProject — P3-E E-4 migration entry contract", () => {
-    // E-4 의도: usePageManager.ts 가 migration script 모듈을 import 하고,
-    // initializeProject 안에서 dry-run 으로 호출. legacy → canonical 변환 결과를
-    // dev mode 에서 console.log 로 보고. 실제 DB write 는 E-6.
-    it("usePageManager.ts 가 runLegacyToCanonicalMigration 을 import 한다", async () => {
+  describe("initializeProject — direct cutover contract", () => {
+    it("usePageManager.ts 가 runtime DB migration helper 를 import 하지 않는다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
       const source = await fs.readFile(filePath, "utf-8");
-      // import { runLegacyToCanonicalMigration } from "..." 패턴 매칭
-      expect(source).toMatch(
-        /import\s*\{[\s\S]*?runLegacyToCanonicalMigration[\s\S]*?\}\s*from/,
-      );
+      const legacyMigrationName = [
+        "run",
+        "LegacyToCanonical",
+        "Migration",
+      ].join("");
+      const tagMigrationName = ["run", "TagType", "Migration"].join("");
+      expect(source).not.toContain(legacyMigrationName);
+      expect(source).not.toContain(tagMigrationName);
     });
 
-    it("initializeProject 안에서 runLegacyToCanonicalMigration 호출이 등장한다", async () => {
+    it("initializeProject 안에서 migration dry-run 호출이 없다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
@@ -202,23 +203,16 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
-      expect(initFnSource).toMatch(/runLegacyToCanonicalMigration\(/);
-    });
-
-    it("initializeProject 안에서 db.meta.get 호출로 schemaVersion 진입 조건을 검사한다", async () => {
-      const fs = await import("node:fs/promises");
-      const path = await import("node:path");
-      const filePath = path.resolve(__dirname, "../usePageManager.ts");
-      const rawSource = await fs.readFile(filePath, "utf-8");
-      const source = rawSource.replace(/\/\/.*$/gm, "");
-      const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
+      const legacyMigrationCall = new RegExp(
+        `${["run", "LegacyToCanonical", "Migration"].join("")}\\s*\\(`,
       );
-      expect(initFnMatch).not.toBeNull();
-      const initFnSource = initFnMatch![0];
-      // db.meta.get(...) 또는 adapter.meta.get(...) 호출 + schemaVersion 검사
-      expect(initFnSource).toMatch(/\bmeta\.get\(/);
-      expect(initFnSource).toMatch(/schemaVersion/);
+      const tagMigrationCall = new RegExp(
+        `${["run", "TagType", "Migration"].join("")}\\s*\\(`,
+      );
+      expect(initFnSource).not.toMatch(legacyMigrationCall);
+      expect(initFnSource).not.toMatch(tagMigrationCall);
+      expect(initFnSource).not.toMatch(/\bmeta\.get\(/);
+      expect(initFnSource).not.toMatch(/schemaVersion/);
     });
   });
 });
