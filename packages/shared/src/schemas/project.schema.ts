@@ -9,9 +9,6 @@
 import { z } from "zod";
 import { EXPORT_LIMITS } from "../types/export.types";
 
-const FRAME_BINDING_MIRROR_FIELD = "layout_id" as const;
-const SLOT_NAME_MIRROR_FIELD = "slot_name" as const;
-
 // ============================================
 // Base Schemas
 // ============================================
@@ -22,18 +19,13 @@ const SLOT_NAME_MIRROR_FIELD = "slot_name" as const;
 const semverPattern = /^\d+\.\d+\.\d+$/;
 
 /**
- * Slug 패턴 (/ 또는 소문자, 숫자, 하이픈, 언더스코어, 슬래시)
- */
-const slugPattern = /^(\/|\/[a-z0-9\-_/]+)$/;
-
-/**
  * UUID 패턴 (유연하게 - 하이픈 없는 것도 허용)
  */
 const uuidPattern =
   /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
 
 // ============================================
-// Element Schema
+// Canonical Document Schema
 // ============================================
 
 interface CanonicalNodeSchemaShape {
@@ -102,68 +94,6 @@ export const CompositionDocumentSchema = z
   })
   .catchall(z.unknown());
 
-/**
- * Element props 스키마 (유연하게 허용)
- */
-const ElementPropsSchema = z.record(z.string(), z.unknown()).default({});
-
-/**
- * Data Binding 스키마
- */
-const DataBindingSchema = z
-  .object({
-    type: z.enum(["collection", "value", "field"]),
-    source: z.enum(["supabase", "api", "state", "static", "parent"]),
-    config: z.record(z.string(), z.unknown()),
-  })
-  .optional();
-
-/**
- * Element 스키마
- */
-export const ElementSchema = z.object({
-  id: z.string().min(1, { message: "Element ID is required" }),
-  customId: z.string().optional(),
-  type: z.string().min(1, { message: "Element type is required" }),
-  props: ElementPropsSchema,
-  parent_id: z.string().nullable().optional(),
-  order_num: z.number().int().min(0).optional().default(0),
-  page_id: z.string().nullable().optional(),
-  [FRAME_BINDING_MIRROR_FIELD]: z.string().nullable().optional(),
-  [SLOT_NAME_MIRROR_FIELD]: z.string().nullable().optional(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-  deleted: z.boolean().optional(),
-  dataBinding: DataBindingSchema,
-  events: z.array(z.unknown()).optional(),
-});
-
-export type ElementSchemaType = z.infer<typeof ElementSchema>;
-
-// ============================================
-// Page Schema
-// ============================================
-
-/**
- * Page 스키마
- */
-export const PageSchema = z.object({
-  id: z.string().min(1, { message: "Page ID is required" }),
-  title: z.string().min(1, { message: "Page title is required" }),
-  slug: z.string().regex(slugPattern, {
-    message:
-      'Slug must be "/" or contain only lowercase letters, numbers, hyphens, underscores, and slashes',
-  }),
-  project_id: z.string().min(1, { message: "Project ID is required" }),
-  parent_id: z.string().nullable().optional(),
-  order_num: z.number().int().min(0).optional().default(0),
-  [FRAME_BINDING_MIRROR_FIELD]: z.string().nullable().optional(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-});
-
-export type PageSchemaType = z.infer<typeof PageSchema>;
-
 // ============================================
 // Project Schema
 // ============================================
@@ -214,109 +144,10 @@ export const ExportedProjectSchema = z
     }),
     project: ProjectInfoSchema,
     document: CompositionDocumentSchema,
-    pages: z
-      .array(PageSchema)
-      .max(
-        EXPORT_LIMITS.MAX_PAGES,
-        `Maximum ${EXPORT_LIMITS.MAX_PAGES} pages allowed`,
-      )
-      .default([]),
-    elements: z
-      .array(ElementSchema)
-      .max(
-        EXPORT_LIMITS.MAX_ELEMENTS,
-        `Maximum ${EXPORT_LIMITS.MAX_ELEMENTS} elements allowed`,
-      )
-      .default([]),
     currentPageId: z.string().nullable().optional(),
     fontRegistry: z.unknown().optional(),
     metadata: MetadataSchema,
   })
-  .refine(
-    (data) => {
-      // currentPageId가 있으면 pages에 해당 ID가 존재해야 함
-      if (data.currentPageId && data.pages.length > 0) {
-        return data.pages.some((page) => page.id === data.currentPageId);
-      }
-      return true;
-    },
-    {
-      message: "currentPageId must reference an existing page",
-      path: ["currentPageId"],
-    },
-  );
+  .strict();
 
 export type ExportedProjectSchemaType = z.infer<typeof ExportedProjectSchema>;
-
-// ============================================
-// Validation Helpers
-// ============================================
-
-/**
- * 페이지 최소 타입 (검증에 필요한 필드만)
- */
-interface PageLike {
-  id: string;
-  slug: string;
-  parent_id?: string | null;
-}
-
-/**
- * 페이지 순환 참조 검사
- */
-export function detectPageCycle(pages: PageLike[]): string | null {
-  const pageMap = new Map(pages.map((p) => [p.id, p]));
-
-  for (const page of pages) {
-    const visited = new Set<string>();
-    let current: PageLike | undefined = page;
-
-    while (current?.parent_id) {
-      if (visited.has(current.id)) {
-        return current.id;
-      }
-      visited.add(current.id);
-      current = pageMap.get(current.parent_id);
-    }
-  }
-
-  return null;
-}
-
-/**
- * 존재하지 않는 parent_id 검사
- */
-export function findInvalidParentIds(pages: PageLike[]): string[] {
-  const pageIds = new Set(pages.map((p) => p.id));
-  const invalid: string[] = [];
-
-  for (const page of pages) {
-    if (page.parent_id && !pageIds.has(page.parent_id)) {
-      invalid.push(page.id);
-    }
-  }
-
-  return invalid;
-}
-
-/**
- * 중복 slug 검사
- */
-export function findDuplicateSlugs(pages: PageLike[]): string[] {
-  const slugs = new Map<string, string[]>();
-
-  for (const page of pages) {
-    const existing = slugs.get(page.slug) || [];
-    existing.push(page.id);
-    slugs.set(page.slug, existing);
-  }
-
-  const duplicates: string[] = [];
-  for (const [, pageIds] of slugs) {
-    if (pageIds.length > 1) {
-      duplicates.push(...pageIds);
-    }
-  }
-
-  return duplicates;
-}

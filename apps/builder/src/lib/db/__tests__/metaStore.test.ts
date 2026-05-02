@@ -1,55 +1,15 @@
 import { describe, it, expect } from "vitest";
 
-describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
-  // Test 1: DB_VERSION 갱신 검증 (regex 기반 source 검증)
-  // ADR-916 direct cutover: DB_VERSION 10 schema bump
+describe("ADR-916 direct cutover: IndexedDB canonical document storage", () => {
   it("DB_VERSION 이 10 으로 갱신된다 (ADR-916 direct cutover)", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
     const source = await fs.readFile(filePath, "utf-8");
-    // const DB_VERSION = 10 패턴 매칭
     expect(source).toMatch(/const DB_VERSION\s*=\s*10\b/);
   });
 
-  // Test 2: _meta store 생성 코드 검증
-  it("onupgradeneeded 안에 _meta object store 생성 코드가 존재한다", async () => {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-    const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
-    const source = await fs.readFile(filePath, "utf-8");
-    expect(source).toMatch(/createObjectStore\(\s*["']_meta["']/);
-  });
-
-  // Test 3: MetaRecord 타입 정의 검증
-  it("MetaRecord 인터페이스가 정의된다 — schemaVersion / migratedAt / backupKey 필드", async () => {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-    // adapter.ts 또는 types.ts 중 한 곳에서 검색
-    const adapterPath = path.resolve(__dirname, "../indexedDB/adapter.ts");
-    const typesPath = path.resolve(__dirname, "../types.ts");
-    const adapterSource = await fs
-      .readFile(adapterPath, "utf-8")
-      .catch(() => "");
-    const typesSource = await fs.readFile(typesPath, "utf-8").catch(() => "");
-    const combined = adapterSource + "\n" + typesSource;
-    expect(combined).toMatch(/(?:interface|type)\s+MetaRecord\b/);
-    expect(combined).toMatch(/schemaVersion\s*[?:]/);
-  });
-
-  // Test 4: meta 메서드 그룹 시그니처 검증
-  it("adapter 에 meta 메서드 그룹 (get / set / update) 이 추가된다", async () => {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-    const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
-    const source = await fs.readFile(filePath, "utf-8");
-    // meta = { ... } (class field) 또는 meta: { ... } (interface) 둘 다 매칭
-    expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?get\s*:/);
-    expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?set\s*:/);
-    expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?update\s*:/);
-  });
-
-  it("adapter 에 documents primary store 와 메서드 그룹이 추가된다", async () => {
+  it("documents primary store 와 메서드 그룹이 추가된다", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const adapterPath = path.resolve(__dirname, "../indexedDB/adapter.ts");
@@ -64,13 +24,18 @@ describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
     expect(typesSource).toMatch(/documents\s*:\s*\{/);
   });
 
-  // Test 5: getByLayout @deprecated JSDoc 검증
-  it("getByLayout 메서드에 @deprecated JSDoc 주석이 추가된다", async () => {
+  it("runtime migration _meta store/API 와 getByLayout compatibility path 가 없다", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
-    const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
-    const source = await fs.readFile(filePath, "utf-8");
-    // @deprecated 주석 직후 (몇 줄 안에) getByLayout 등장 — 본문 길이 여유 있게
-    expect(source).toMatch(/@deprecated[\s\S]{0,500}getByLayout/);
+    const adapterPath = path.resolve(__dirname, "../indexedDB/adapter.ts");
+    const typesPath = path.resolve(__dirname, "../types.ts");
+    const adapterSource = await fs.readFile(adapterPath, "utf-8");
+    const typesSource = await fs.readFile(typesPath, "utf-8");
+    const combined = `${adapterSource}\n${typesSource}`;
+
+    expect(combined).not.toMatch(/createObjectStore\(\s*["']_meta["']/);
+    expect(combined).not.toMatch(/\bMetaRecord\b/);
+    expect(combined).not.toMatch(/\bmeta\s*[:=]\s*\{/);
+    expect(combined).not.toMatch(/\bgetByLayout\b/);
   });
 });

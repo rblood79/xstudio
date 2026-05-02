@@ -9,7 +9,6 @@ export * from "./legacyExtensionFields";
 export * from "./core/dateUtils";
 export * from "./core/numberUtils";
 export * from "./export.utils";
-export * from "./migration.utils";
 export * from "./migrateCollectionItems";
 // ADR-076: BC re-export (deprecated, 신규 코드는 migrateCollectionItems 사용)
 export {

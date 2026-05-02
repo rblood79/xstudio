@@ -12,7 +12,6 @@ import type {
   Project,
   HistoryEntry,
   SyncMetadata,
-  MetaRecord,
   CanonicalDocumentRecord,
 } from "../types";
 import type { Element, Page } from "../../../types/core/store.types";
@@ -101,22 +100,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           elementsStore.createIndex("order_num", "order_num", {
             unique: false,
           });
-          elementsStore.createIndex("layout_id", "layout_id", {
-            unique: false,
-          }); // ✅ Layout/Slot System
           console.log("[IndexedDB] Created store: elements");
-        } else {
-          // ✅ 버전 5: 기존 스토어에 layout_id 인덱스 추가
-          const transaction = (event.target as IDBOpenDBRequest).transaction;
-          if (transaction) {
-            const elementsStore = transaction.objectStore("elements");
-            if (!elementsStore.indexNames.contains("layout_id")) {
-              elementsStore.createIndex("layout_id", "layout_id", {
-                unique: false,
-              });
-              console.log("[IndexedDB] Added frame ownership mirror index");
-            }
-          }
         }
 
         // Design tokens store
@@ -265,12 +249,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
             unique: false,
           });
           console.log("[IndexedDB] Created store: transformers");
-        }
-
-        // ADR-903 P3-E _meta store: schema migration metadata (per-project)
-        if (!db.objectStoreNames.contains("_meta")) {
-          db.createObjectStore("_meta", { keyPath: "projectId" });
-          console.log("[IndexedDB] Created store: _meta");
         }
 
         console.log("[IndexedDB] Schema upgrade completed");
@@ -780,36 +758,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       return rows;
     },
 
-    /**
-     * @deprecated ADR-903 P3-E: migration script 완료 후 제거 예정.
-     * canonical document 기반 layout elements 조회 (`selectCanonicalReusableFrames`
-     * + `allElements.filter(parent_id 매칭)`) 로 대체. legacy ownership marker
-     * legacy element frame ownership field 의존을 제거하기 위함.
-     */
-    getByLayout: async (layoutId: string): Promise<Element[]> => {
-      // ADR-903 P3-E E-5: deprecated 사용 추적 — dev mode 에서 console.warn 발생.
-      if (process.env.NODE_ENV !== "production") {
-        console.warn(
-          `[IndexedDB] getByLayout(${layoutId}) — @deprecated ADR-903 P3-E. canonical parent 기반 조회 (selectCanonicalReusableFrames + allElements.filter) 사용 권장. migration script 호출 경로는 예외.`,
-        );
-      }
-      // ADR-903 P3-E E-6: composition-1.0 migration 완료된 프로젝트가 1개라도 있으면
-      // legacy `layout_id` index 는 빈 배열이 정답 (parent_id 가 canonical frame.id).
-      // canonical path 강제 — caller 들이 parent_id 기반 조회로 마이그레이션해야 한다.
-      const allMeta = await this.getAllFromStore<MetaRecord>("_meta");
-      if (allMeta.some((m) => m.schemaVersion === "composition-1.0")) {
-        return [];
-      }
-      // legacy fallback (composition-1.0 진입 전 프로젝트만 해당)
-      const elements = await this.getAllByIndex<Element>(
-        "elements",
-        "layout_id",
-        layoutId,
-      );
-      console.log(`📥 [IndexedDB] getByLayout 결과: ${elements.length}개 요소`);
-      return elements;
-    },
-
     getChildren: async (parentId: string): Promise<Element[]> => {
       const rows = await this.getAllByIndex<Element>(
         "elements",
@@ -838,24 +786,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           queue.push(child.id);
         }
       }
-      if (result.length > 0) return result;
-
-      // composition-pre-1.0 (legacy) fallback: layout_id index 직접 매칭
-      // _meta 에 composition-1.0+ record 가 없으면 legacy ownership marker 가 정본.
-      // composition-1.0+ 프로젝트인데 단순히 자식 0개 (빈 frame) 인 경우도 빈 배열 반환 — 동등 결과.
-      const allMeta = await this.getAllFromStore<MetaRecord>("_meta");
-      const isCanonical = allMeta.some(
-        (m) =>
-          m.schemaVersion === "composition-1.0" ||
-          m.schemaVersion === "composition-1.1",
-      );
-      if (isCanonical) return result;
-      const legacy = await this.getAllByIndex<Element>(
-        "elements",
-        "layout_id",
-        parentId,
-      );
-      return legacy;
+      return result;
     },
 
     getAll: async (): Promise<Element[]> => {
@@ -1565,32 +1496,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
   };
 
-  // === Schema Migration Meta (ADR-903 P3-E _meta object store) ===
-
-  meta = {
-    get: async (projectId: string): Promise<MetaRecord | null> => {
-      return this.getFromStore<MetaRecord>("_meta", projectId);
-    },
-
-    set: async (record: MetaRecord): Promise<void> => {
-      await this.putToStore("_meta", record);
-    },
-
-    update: async (
-      projectId: string,
-      updates: Partial<MetaRecord>,
-    ): Promise<void> => {
-      const existing = await this.meta.get(projectId);
-      if (!existing) {
-        throw new Error(
-          `MetaRecord not found for projectId=${projectId}. Call set() first.`,
-        );
-      }
-      const next: MetaRecord = { ...existing, ...updates, projectId };
-      await this.putToStore("_meta", next);
-    },
-  };
-
   // === Cache Management ===
 
   cache = {
@@ -1621,15 +1526,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   batch = {
     export: async () => {
-      const [project, documents, pages, elements, designTokens, metadata] =
-        await Promise.all([
-          this.projects.getAll().then((projects) => projects[0] || null),
-          this.documents.getAll(),
-          this.pages.getAll(),
-          this.elements.getAll(),
-          this.designTokens.getAll(),
-          this.metadata.get(),
-        ]);
+      const [project, documents, designTokens, metadata] = await Promise.all([
+        this.projects.getAll().then((projects) => projects[0] || null),
+        this.documents.getAll(),
+        this.designTokens.getAll(),
+        this.metadata.get(),
+      ]);
 
       return {
         project,
@@ -1637,8 +1539,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           ? (documents.find((doc) => doc.project_id === project.id)?.document ??
             null)
           : (documents[0]?.document ?? null),
-        pages,
-        elements,
         designTokens,
         metadata,
       };
@@ -1647,8 +1547,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     import: async (data: {
       project?: Project;
       document?: CompositionDocument;
-      pages?: Page[];
-      elements?: Element[];
       designTokens?: DesignToken[];
       metadata?: SyncMetadata;
     }): Promise<void> => {
@@ -1657,21 +1555,13 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       }
 
       if (data.document) {
-        const projectId = data.project?.id ?? data.pages?.[0]?.project_id;
+        const projectId = data.project?.id;
         if (!projectId) {
           throw new Error(
             "Cannot import CompositionDocument without project id",
           );
         }
         await this.documents.put(projectId, data.document);
-      }
-
-      if (data.pages && data.pages.length > 0) {
-        await this.pages.insertMany(data.pages);
-      }
-
-      if (data.elements && data.elements.length > 0) {
-        await this.elements.insertMany(data.elements);
       }
 
       if (data.designTokens && data.designTokens.length > 0) {
@@ -1684,8 +1574,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       console.log("[IndexedDB] Import completed:", {
         document: Boolean(data.document),
-        pages: data.pages?.length || 0,
-        elements: data.elements?.length || 0,
         designTokens: data.designTokens?.length || 0,
       });
     },

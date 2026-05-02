@@ -1865,9 +1865,9 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 **land 내용**:
 
 - IndexedDB `DB_VERSION` 을 10으로 올리고 `documents` object store 를 추가했다. `DatabaseAdapter.documents` 는 `put/get/delete/getAll` 을 제공하며 `CanonicalDocumentRecord` 가 `project_id + document + updated_at` 을 보관한다.
-- `usePageManager.initializeProject` 는 `db.documents.get(projectId)` 를 먼저 읽는다. 저장된 canonical document 가 있으면 canonical store 에 직접 주입하고 `exportLegacyDocument()` 로만 legacy mirror elements 를 만든다. 저장된 document 가 없을 때만 기존 `pages/elements/layouts` mirror hydrate fallback 을 사용한다.
+- `usePageManager.initializeProject` 는 `db.documents.get(projectId)` 를 먼저 읽는다. 저장된 canonical document 가 있으면 canonical store 에 직접 주입하고, render/runtime mirror 는 canonical document 에서 derive 한다.
 - `BuilderCore` 는 active canonical store 변경을 microtask debounce 후 `db.documents.put(projectId, doc)` 으로 저장한다. page shell 변경(`appendPageShell` / `setPages` / `removePageLocal`)도 `setElementsCanonicalPrimary()` 를 통해 canonical document 에 반영한다.
-- shared `ExportedProjectSchema` 는 `document: CompositionDocumentSchema` 를 필수로 검증한다. `ProjectExportData` 는 canonical document 를 primary payload 로 포함하고, legacy `pages` / `elements` 는 compatibility mirror 로 유지한다. Publish import 타입은 `ProjectExportData` 로 전환했다.
+- shared `ExportedProjectSchema` 는 `document: CompositionDocumentSchema` 를 필수로 검증한다. `ProjectExportData` 는 canonical document 를 primary payload 로 포함한다. Publish import 타입은 `ProjectExportData` 로 전환했다.
 - legacy `descendants` mirror field 는 `apps/builder` / `packages/shared` Element type schema 에서 제거했다. non-adapter raw fixture key bucket (`layout_id:` / `slot_name:` / `componentRole:` / `masterId:`) 은 broader test sweep 기준 0건이다. canonical `RefNode.descendants` fixture 는 합법 canonical schema 검증으로 유지한다.
 
 **grep 상태**:
@@ -1883,6 +1883,29 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 - `pnpm -F @composition/shared exec vitest run src/utils/__tests__/exportCanonicalProject.test.ts` — 1 file / 3 tests PASS.
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/integration.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/selection/selectionHitTest.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/hooks/useElementCreator.test.ts src/builder/stores/__tests__/pagesLayoutInvalidation.test.ts src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts src/builder/stores/utils/__tests__/frameActions.test.ts src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts` — 14 files / 130 tests PASS.
 - `pnpm run codex:typecheck` — PASS.
+
+### 10.2.34 Residual legacy projection removal final slice (2026-05-02)
+
+**framing**: final SSOT closure 뒤에도 compatibility projection 이 payload/schema/hydrate/db batch 에 남으면 `CompositionDocument` 가 최종 SSOT 라는 판정이 약해진다. 개발 단계 direct cutover 결정에 따라 fallback/backup/migration 없이 잔여 projection surface 를 제거한다.
+
+**land 내용**:
+
+- shared export/import schema 는 canonical-only 로 고정했다. `ProjectExportData` / `ExportedProjectSchema` / `serializeProjectData` / `parseProjectData` 는 `document` 만 유지하고 legacy-only `pages`/`elements` payload 를 거부한다.
+- Publish import, Builder preview session payload, static HTML export 는 serialized `pages`/`elements` 를 사용하지 않는다. runtime 에 필요한 pages/elements view 는 `deriveProjectRenderModelFromDocument()` 가 `CompositionDocument` 에서 in-memory 로 만든다.
+- `usePageManager.initializeProject` 는 DB `pages`/`elements`/`layouts` hydrate fallback 을 제거하고 `db.documents.get(projectId)` 결과만 canonical seed 로 사용한다.
+- IndexedDB batch export/import 는 `pages`/`elements` projection 을 제거했다. `getByLayout` adapter/type surface, `layout_id` index 생성, `_meta` migration store/API 도 direct cutover 기준에 맞춰 삭제했다.
+- shared `composition-document-actions.types.ts` 의 unused `CanonicalLegacyAdapter*` type stub 과 shared `element.utils.ts` 의 `layout_id`/`slot_name` utility 를 삭제해 shared public surface 에 legacy projection helper 를 남기지 않는다.
+
+**grep 상태**:
+
+- `rg -n "LegacyExported|createProjectCompositionDocument|migrateProject|migration\\.utils|legacy-export-mirror|pages: data\\.pages|elements: data\\.elements|parsed\\.pages|parsed\\.elements|getByLayout\\(" packages/shared/src apps/publish/src apps/builder/src/builder/main/BuilderCore.tsx apps/builder/src/builder/hooks/usePageManager.ts apps/builder/src/lib/db -g "*.ts" -g "*.tsx" -g "!**/__tests__/**" -g "!*.test.ts" -g "!*.test.tsx"` — 0건.
+- `rg -n "pages\\?: Page\\[\\]|elements\\?: Element\\[\\]" packages/shared/src/types packages/shared/src/schemas packages/shared/src/utils packages/shared/src/index.ts packages/shared/src/utils/index.ts -g "*.ts" -g "*.tsx" -g "!**/__tests__/**" -g "!*.test.ts" -g "!*.test.tsx"` — 0건.
+- `rg -n "db\\.pages|db\\.elements|db\\.layouts|getByLayout\\(|getAllByIndex<Element>\\(\\s*\"elements\",\\s*\"layout_id\"|enqueuePagePersistence|withPageFrameBinding|exportLegacyDocument|applyCollectionItemsMigration" apps/builder/src/builder/hooks/usePageManager.ts apps/builder/src/builder/main/BuilderCore.tsx apps/builder/src/lib/db/indexedDB/adapter.ts apps/builder/src/lib/db/types.ts` — 0건.
+
+**검증**:
+
+- `pnpm -F @composition/shared exec vitest run src/utils/__tests__/exportCanonicalProject.test.ts` — 1 file / 4 tests PASS.
+- `pnpm -F @composition/builder exec vitest run src/lib/db/__tests__/metaStore.test.ts src/lib/db/__tests__/getByLayoutDeprecation.test.ts src/lib/db/__tests__/getByLayoutCanonicalPath.test.ts src/builder/main/BuilderCore.static.test.ts src/builder/hooks/__tests__/usePageManager.canonical.test.ts` — 5 files / 16 tests PASS.
 
 ## 11. ADR 의존 관계 정리
 

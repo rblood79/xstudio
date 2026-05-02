@@ -53,7 +53,7 @@ export function useBodyElement(elements: Element[]): void {
       appliedClassNameRef.current = "";
     }
 
-    // body element 찾기 (page-level: layout_id 없음 + parent_id 없음)
+    // body element 찾기 (page-level + parent_id 없음)
     const bodyElement = elements.find(
       (el) => el.type === "body" && !el.parent_id && !el.deleted,
     );

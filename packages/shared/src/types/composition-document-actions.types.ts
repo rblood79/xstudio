@@ -3,15 +3,11 @@
  *
  * Phase 1 = Canonical Document Store/API surface + skeleton + unit test (R1 명시 scope).
  *
- * 본 파일은 두 contract 를 정의:
+ * 본 파일은 `CanonicalDocumentActions` contract 를 정의한다.
  *
- * 1. `CanonicalDocumentActions` — `CompositionDocument` 자체를 mutate 하는 store
+ * `CanonicalDocumentActions` — `CompositionDocument` 자체를 mutate 하는 store
  *    surface. legacy `Element` 입력을 받지 않으며 history entry 가 canonical
  *    patch 단위로 기록되도록 시그니처를 잡는다 (design breakdown §6 원칙 1, 3).
- *
- * 2. `CanonicalLegacyAdapter` — Phase 3 shadow write/canonical primary 전환 전
- *    필수 산출물의 spec (design breakdown §8). 본 파일에서는 **type stub only**,
- *    구현은 Phase 3 에서 land. ADR-916 Phase 1 land scope 외부 (R1 보수).
  *
  * **저장 backing 결정 (ADR-916 Phase 1 D2=β)**:
  * - 본 actions surface 는 별도 Zustand slice
@@ -158,104 +154,4 @@ export interface CanonicalDocumentActions {
     descendantPath: string,
     value: DescendantOverride,
   ): void;
-}
-
-// ─────────────────────────────────────────────
-// CanonicalLegacyAdapter — Phase 3 prerequisite (spec only)
-// ─────────────────────────────────────────────
-
-/**
- * 역방향 adapter 진단 entry — Phase 3 shadow write 시 destructive diff 추적.
- *
- * Phase 1 placeholder. Phase 3 시점에 message catalog / nodePath 좌표계
- * 정확화.
- */
-export interface CanonicalExportDiagnostic {
-  level: "info" | "warn" | "error";
-  message: string;
-  /** canonical 좌표계 — Phase 1 에서는 nodeId, Phase 2 이후 path */
-  nodePath?: string;
-}
-
-/**
- * canonical document → legacy projection 결과.
- *
- * `TElement` / `TPage` / `TLayout` 은 generic — `apps/builder` 의 legacy
- * `Element` / `Page` / `Layout` 타입을 주입하여 사용 (shared 가 builder
- * 타입에 의존하지 않게 함).
- */
-export interface CanonicalLegacyExport<
-  TElement = unknown,
-  TPage = unknown,
-  TLayout = unknown,
-> {
-  elements: TElement[];
-  pages: TPage[];
-  layouts: TLayout[];
-  diagnostics: CanonicalExportDiagnostic[];
-}
-
-/**
- * roundtrip diff 결과 — Phase 3 shadow write 비교용.
- *
- * Phase 1 placeholder. Phase 3 시점에 path-based diff entry / patch
- * application order 등 구체화.
- */
-export interface CanonicalRoundtripDiff {
-  identical: boolean;
-  /** identical 이 false 일 때만 의미 있음. Phase 3 에서 schema 확정 */
-  diffs: Array<{
-    path: string;
-    before: unknown;
-    after: unknown;
-    kind: "added" | "removed" | "changed";
-  }>;
-}
-
-/**
- * legacy `LegacyAdapterInput` 의 placeholder — `apps/builder/src/adapters/canonical/types.ts`
- * 의 구체 타입 (`{ elements, pages, layouts }`) 와 호환되는 generic 표면.
- *
- * Phase 1 spec 에서는 input shape 를 builder 쪽 `LegacyAdapterInput` 와 호환
- * 가능한 형태로 받는 것만 명시. 실제 호출 site (Phase 3) 가 builder 의
- * `LegacyAdapterInput` 을 그대로 전달.
- */
-export interface CanonicalLegacyAdapterInput<
-  TElement = unknown,
-  TPage = unknown,
-  TLayout = unknown,
-> {
-  elements: TElement[];
-  pages: TPage[];
-  layouts: TLayout[];
-}
-
-/**
- * canonical → legacy 역방향 adapter contract.
- *
- * Canonical primary direct cutover 에서 legacy export 와 roundtrip diff 의
- * 최소 계약을 고정한다. 개발 단계에서는 rollback backup API 를 두지 않는다.
- */
-export interface CanonicalLegacyAdapter<
-  TElement = unknown,
-  TPage = unknown,
-  TLayout = unknown,
-> {
-  /**
-   * canonical document 를 legacy `elements / pages / layouts` payload 로
-   * 변환. Phase 3 shadow write / canonical primary 전환 시 legacy 저장
-   * 호환성 유지 용도.
-   */
-  exportLegacyDocument(
-    doc: CompositionDocument,
-  ): CanonicalLegacyExport<TElement, TPage, TLayout>;
-
-  /**
-   * 동일 document 에 대해 legacy → canonical → legacy roundtrip 결과를
-   * before/after 로 비교. Phase 3 destructive diff 0 검증.
-   */
-  diffLegacyRoundtrip(
-    before: CanonicalLegacyAdapterInput<TElement, TPage, TLayout>,
-    after: CanonicalLegacyExport<TElement, TPage, TLayout>,
-  ): CanonicalRoundtripDiff;
 }

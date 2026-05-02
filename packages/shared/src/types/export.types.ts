@@ -4,7 +4,7 @@
  * @since 2026-01-02 Phase 1
  */
 
-import type { Element, Page } from "./element.types";
+import type { CompositionDocument } from "./composition-document.types";
 import type { FontRegistryV2 } from "./font.types";
 
 // ============================================
@@ -89,8 +89,7 @@ export interface ExportedProjectData {
     id: string;
     name: string;
   };
-  pages: Page[];
-  elements: Element[];
+  document: CompositionDocument;
   currentPageId?: string | null;
   fontRegistry?: FontRegistryV2;
   metadata?: ProjectMetadata;
@@ -127,8 +126,6 @@ export type ImportResult = ImportResultSuccess | ImportResultFailure;
  * 데이터 제한 상수
  */
 export const EXPORT_LIMITS = {
-  MAX_PAGES: 200,
-  MAX_ELEMENTS: 10000,
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_THUMBNAIL_SIZE: 512 * 1024, // 512KB
   MAX_PROJECT_NAME_LENGTH: 120,

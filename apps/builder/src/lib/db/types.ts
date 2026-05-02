@@ -78,23 +78,6 @@ export interface SyncMetadata {
   sync_status: "local-only" | "synced" | "conflict" | "pending";
 }
 
-// === Schema Migration Metadata (ADR-903 P3-E + ADR-913 Phase 4) ===
-
-/**
- * Per-project IndexedDB schema migration record.
- * `_meta` object store (DB_VERSION 8 도입) 의 record 1건 = 프로젝트 1개.
- *
- * - `legacy` — 미진입 (composition-1.0 migration 전)
- * - `composition-1.0` — ADR-903 P3-E migration 완료 (canonical document 직렬화)
- * - `composition-1.1` — ADR-913 Phase 4 migration 완료 (tag → type field rename)
- */
-export interface MetaRecord {
-  projectId: string;
-  schemaVersion: "legacy" | "composition-1.0" | "composition-1.1";
-  migratedAt?: string;
-  backupKey?: string;
-}
-
 // === Canonical Document Storage (ADR-916 direct cutover) ===
 
 export interface CanonicalDocumentRecord {
@@ -153,27 +136,9 @@ export interface DatabaseAdapter {
     deleteMany(ids: string[]): Promise<void>;
     getById(id: string): Promise<Element | null>;
     getByPage(pageId: string): Promise<Element[]>;
-    /**
-     * @deprecated ADR-903 P3-E: migration script 완료 후 제거 예정.
-     * canonical document 기반 layout elements 조회 (`selectCanonicalReusableFrames`
-     * + `allElements.filter(layout_id 매칭)`) 로 대체. legacy ownership marker
-     * legacy element frame ownership field 의존을 제거하기 위함.
-     */
-    getByLayout(layoutId: string): Promise<Element[]>;
     getChildren(parentId: string): Promise<Element[]>;
     /**
-     * `parentId` 의 모든 descendant element BFS 수집 (canonical `parent_id` index 기반).
-     *
-     * `getByLayout()` 의 canonical 후속 — `getByLayout` 이 composition-1.0 schemaVersion
-     * 1개라도 있으면 강제 빈 배열 반환하면서 caller 마이그레이션을 압박했으나, 7 caller
-     * (Frame/Layout 자식 element 로드 또는 일괄 삭제) 가 마이그레이션되지 않아 시각 회귀
-     * (Skia 미렌더) + delete 누락 (orphan element) 노출. 본 API 가 caller migration target.
-     *
-     * 동작:
-     * - `parent_id` index 로 직접 자식 조회
-     * - 자식의 자식을 BFS 로 재귀 수집
-     * - 순환 참조 방지 (seen Set)
-     * - composition-pre-1.0 (legacy) / composition-1.0 / composition-1.1 모두 동일 결과
+     * `parentId` 의 모든 descendant element BFS 수집.
      */
     getDescendants(parentId: string): Promise<Element[]>;
     getAll(): Promise<Element[]>;
@@ -306,8 +271,6 @@ export interface DatabaseAdapter {
     export(): Promise<{
       project: Project | null;
       document: CompositionDocument | null;
-      pages: Page[];
-      elements: Element[];
       designTokens: DesignToken[];
       metadata: SyncMetadata | null;
     }>;
@@ -316,21 +279,12 @@ export interface DatabaseAdapter {
     import(data: {
       project?: Project;
       document?: CompositionDocument;
-      pages?: Page[];
-      elements?: Element[];
       designTokens?: DesignToken[];
       metadata?: SyncMetadata;
     }): Promise<void>;
 
     // Clear all data
     clear(): Promise<void>;
-  };
-
-  // Schema migration metadata (ADR-903 P3-E _meta object store)
-  meta: {
-    get(projectId: string): Promise<MetaRecord | null>;
-    set(record: MetaRecord): Promise<void>;
-    update(projectId: string, updates: Partial<MetaRecord>): Promise<void>;
   };
 }
 

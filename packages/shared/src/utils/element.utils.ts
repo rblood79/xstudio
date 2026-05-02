@@ -8,28 +8,6 @@
 
 import type { Element } from "../types/element.types";
 
-const FRAME_ELEMENT_MIRROR_FIELD = "layout_id" as const;
-const SLOT_NAME_MIRROR_FIELD = "slot_name" as const;
-
-type ElementMirrorFields = {
-  [FRAME_ELEMENT_MIRROR_FIELD]?: unknown;
-  [SLOT_NAME_MIRROR_FIELD]?: unknown;
-};
-
-function getFrameElementMirrorId(element: Element): string | null {
-  const value = (element as Element & ElementMirrorFields)[
-    FRAME_ELEMENT_MIRROR_FIELD
-  ];
-  return typeof value === "string" ? value : null;
-}
-
-function getSlotMirrorName(element: Element): string | null {
-  const value = (element as Element & ElementMirrorFields)[
-    SLOT_NAME_MIRROR_FIELD
-  ];
-  return typeof value === "string" ? value : null;
-}
-
 // ============================================
 // ID Generation
 // ============================================
@@ -166,37 +144,4 @@ export function getPageElements(
   pageId: string,
 ): Element[] {
   return elements.filter((el) => el.page_id === pageId && !el.deleted);
-}
-
-/**
- * 레이아웃의 요소들 필터링
- */
-export function getLayoutElements(
-  elements: Element[],
-  layoutId: string,
-): Element[] {
-  return elements.filter(
-    (el) => getFrameElementMirrorId(el) === layoutId && !el.deleted,
-  );
-}
-
-/**
- * 슬롯별 요소들 그룹핑
- */
-export function getElementsBySlot(
-  elements: Element[],
-  pageId: string,
-): Map<string, Element[]> {
-  const slotMap = new Map<string, Element[]>();
-
-  for (const element of elements) {
-    const slotName = getSlotMirrorName(element);
-    if (element.page_id === pageId && slotName) {
-      const slotElements = slotMap.get(slotName) || [];
-      slotElements.push(element);
-      slotMap.set(slotName, slotElements);
-    }
-  }
-
-  return slotMap;
 }

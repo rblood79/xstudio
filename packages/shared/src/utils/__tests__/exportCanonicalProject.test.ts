@@ -1,32 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { CompositionDocument } from "../../types/composition-document.types";
-import type { Element, Page } from "../../types/element.types";
-import { parseProjectData, serializeProjectData } from "../export.utils";
+import {
+  deriveProjectRenderModelFromDocument,
+  parseProjectData,
+  serializeProjectData,
+} from "../export.utils";
 
 const projectId = "00000000-0000-0000-0000-000000000916";
-
-const pages: Page[] = [
-  {
-    id: "page-home",
-    title: "Home",
-    slug: "/",
-    project_id: projectId,
-    parent_id: null,
-    order_num: 0,
-  },
-];
-
-const elements: Element[] = [
-  {
-    id: "heading-1",
-    type: "Heading",
-    props: { children: "Canonical export" },
-    parent_id: null,
-    page_id: "page-home",
-    order_num: 0,
-  },
-];
 
 const document: CompositionDocument = {
   version: "composition-1.0",
@@ -51,31 +32,27 @@ describe("project export canonical CompositionDocument payload", () => {
     const json = serializeProjectData(
       projectId,
       "Canonical Project",
-      pages,
-      elements,
-      "page-home",
       document,
+      "page-home",
     );
 
     const parsed = JSON.parse(json) as {
       document?: CompositionDocument;
-      pages?: Page[];
-      elements?: Element[];
+      pages?: unknown;
+      elements?: unknown;
     };
 
     expect(parsed.document).toEqual(document);
-    expect(parsed.pages).toEqual(pages);
-    expect(parsed.elements).toEqual(elements);
+    expect(parsed.pages).toBeUndefined();
+    expect(parsed.elements).toBeUndefined();
   });
 
-  it("parses canonical-first project payload and keeps legacy mirror data", () => {
+  it("parses canonical-only project payload", () => {
     const json = serializeProjectData(
       projectId,
       "Canonical Project",
-      pages,
-      elements,
-      "page-home",
       document,
+      "page-home",
     );
 
     const result = parseProjectData(json);
@@ -84,8 +61,37 @@ describe("project export canonical CompositionDocument payload", () => {
     if (!result.success) return;
 
     expect(result.data.document).toEqual(document);
-    expect(result.data.pages).toEqual(pages);
-    expect(result.data.elements).toEqual(elements);
+    expect("pages" in result.data).toBe(false);
+    expect("elements" in result.data).toBe(false);
+  });
+
+  it("derives publish render model from CompositionDocument", () => {
+    const renderModel = deriveProjectRenderModelFromDocument(
+      document,
+      projectId,
+      "page-home",
+    );
+
+    expect(renderModel.pages).toEqual([
+      {
+        id: "page-home",
+        title: "Home",
+        slug: "/",
+        project_id: projectId,
+        parent_id: null,
+        order_num: 0,
+      },
+    ]);
+    expect(renderModel.elements).toEqual([
+      {
+        id: "heading-1",
+        type: "Heading",
+        props: { children: "Canonical export" },
+        parent_id: null,
+        page_id: "page-home",
+        order_num: 0,
+      },
+    ]);
   });
 
   it("rejects legacy-only project payload without CompositionDocument", () => {
@@ -93,8 +99,8 @@ describe("project export canonical CompositionDocument payload", () => {
       version: "1.0.0",
       exportedAt: "2026-05-02T00:00:00.000Z",
       project: { id: projectId, name: "Legacy Only" },
-      pages,
-      elements,
+      pages: [],
+      elements: [],
       currentPageId: "page-home",
     };
 

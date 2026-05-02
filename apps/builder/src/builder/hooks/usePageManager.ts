@@ -6,51 +6,17 @@ import { type Page, getDefaultProps } from "../../types/builder/unified.types";
 import { getDB } from "../../lib/db";
 import { useStore } from "../stores";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
-import {
-  mergeElementsCanonicalPrimary,
-  setElementsCanonicalPrimary,
-} from "../../adapters/canonical/canonicalMutations";
-import { exportLegacyDocument } from "../../adapters/canonical/exportLegacyDocument";
-import {
-  getFrameElementMirrorId,
-  getNullablePageFrameBindingId,
-  withPageFrameBinding,
-} from "../../adapters/canonical/frameMirror";
-import {
-  getCanonicalReusableFrameLayouts,
-  seedCanonicalReusableFrameLayouts,
-} from "../stores/canonical/canonicalFrameStore";
 import { useCanonicalDocumentStore } from "../stores/canonical/canonicalDocumentStore";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
-import { applyCollectionItemsMigration } from "@composition/shared";
-import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
+import {
+  deriveProjectRenderModelFromDocument,
+  type CompositionDocument,
+} from "@composition/shared";
 import { scheduleNextFrame } from "../utils/scheduleTask";
-import { loadFrameElements } from "../../adapters/canonical/frameElementLoader";
-import type { Layout } from "../../types/builder/layout.types";
 
 const PAGE_STACK_GAP = 80;
-
-async function getProjectLayoutsForCanonical(
-  db: unknown,
-  projectId: string,
-): Promise<Layout[]> {
-  const projectLayouts = getCanonicalReusableFrameLayouts().filter(
-    (layout) => layout.project_id === projectId,
-  );
-  if (projectLayouts.length > 0) {
-    return projectLayouts;
-  }
-
-  const data = await (
-    db as {
-      layouts: { getByProject: (projectId: string) => Promise<Layout[]> };
-    }
-  ).layouts.getByProject(projectId);
-
-  return data ?? [];
-}
 
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
@@ -221,49 +187,14 @@ export const usePageManager = ({
       }
 
       try {
-        // ADR-040 Phase 6: pageElementsSnapshot O(1) 조회 (elements.filter 배열 순회 제거)
-        const { elements, pages, pageElementsSnapshot } = useStore.getState();
+        const { elements, pageElementsSnapshot } = useStore.getState();
         const existingPageElements = pageElementsSnapshot[pageId] ?? [];
-        let mergedElements = elements;
-        let loadedPageElements = existingPageElements;
-
-        if (existingPageElements.length === 0) {
-          // IndexedDB에서 페이지 요소 로드 (빠름! 10-50ms)
-          const db = await getDB();
-          const elementsData = await db.elements.getByPage(pageId);
-
-          // ⭐ Layout/Slot System: 페이지에 적용된 Layout의 요소들도 함께 로드
-          const currentPage = pages.find((p) => p.id === pageId);
-          const allElements = [...elementsData];
-
-          const pageFrameId = getNullablePageFrameBindingId(currentPage);
-          if (pageFrameId) {
-            const layoutElements = await loadFrameElements(db, pageFrameId);
-            console.log(
-              `📥 [fetchElements] Layout ${pageFrameId.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`,
-            );
-            // Layout 요소들 추가 (중복 제거)
-            const existingIds = new Set(allElements.map((el) => el.id));
-            layoutElements.forEach((el) => {
-              if (!existingIds.has(el.id)) {
-                allElements.push(el);
-              }
-            });
-          }
-
-          // 기존 요소와 병합 (중복 제거)
-          const mergedMap = new Map<string, Element>();
-          elements.forEach((el) => mergedMap.set(el.id, el));
-          allElements.forEach((el) => mergedMap.set(el.id, el));
-          mergedElements = Array.from(mergedMap.values());
-          loadedPageElements = elementsData;
-
-          mergeElementsCanonicalPrimary(allElements);
-        }
 
         setSelectedPageId(pageId);
 
-        const bodyElement = loadedPageElements.find((el) => el.order_num === 0);
+        const bodyElement = existingPageElements.find(
+          (el) => el.order_num === 0,
+        );
 
         // mergeElements 전에 auto-select 예약 — race condition 방지
         if (bodyElement && requestAutoSelectAfterUpdate) {
@@ -274,7 +205,7 @@ export const usePageManager = ({
           useStore.getState().setSelectedElement(bodyElement.id);
         }
 
-        return { success: true, data: mergedElements };
+        return { success: true, data: elements };
       } catch (error) {
         console.error("요소 로드 에러:", error);
         return { success: false, error: error as Error };
@@ -301,19 +232,16 @@ export const usePageManager = ({
         );
         const nextOrderNum = maxOrderNum + 1;
 
-        const newPageData: Page = withPageFrameBinding(
-          {
-            id: ElementUtils.generateId(),
-            project_id: projectId,
-            title: `Page ${nextOrderNum + 1}`,
-            slug: `/page-${nextOrderNum + 1}`,
-            parent_id: null,
-            order_num: nextOrderNum,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          null,
-        );
+        const newPageData: Page = {
+          id: ElementUtils.generateId(),
+          project_id: projectId,
+          title: `Page ${nextOrderNum + 1}`,
+          slug: `/page-${nextOrderNum + 1}`,
+          parent_id: null,
+          order_num: nextOrderNum,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
         // 새 페이지에 기본 body 요소 생성
         const bodyElement: Element = {
@@ -340,15 +268,6 @@ export const usePageManager = ({
           });
 
         schedulePageActivation(newPage.id, bodyElement.id);
-        enqueuePagePersistence(async () => {
-          const persistenceDb = await getDB();
-          if (persistenceDb.pages.insertWithBody) {
-            await persistenceDb.pages.insertWithBody(newPageData, bodyElement);
-          } else {
-            await persistenceDb.pages.insert(newPageData);
-            await persistenceDb.elements.insert(bodyElement);
-          }
-        });
 
         console.log("✅ 페이지 추가 완료:", newPage.title);
         return { success: true, data: newPage };
@@ -382,19 +301,16 @@ export const usePageManager = ({
         );
         const nextOrderNum = maxOrderNum + 1;
 
-        const newPageData: Page = withPageFrameBinding(
-          {
-            id: ElementUtils.generateId(),
-            project_id: projectId,
-            title: title,
-            slug: slug,
-            parent_id: parentId,
-            order_num: nextOrderNum,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          layoutId,
-        );
+        const newPageData: Page = {
+          id: ElementUtils.generateId(),
+          project_id: projectId,
+          title: title,
+          slug: slug,
+          parent_id: parentId,
+          order_num: nextOrderNum,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
         // 새 페이지에 기본 body 요소 생성
         const bodyElement: Element = {
@@ -412,37 +328,19 @@ export const usePageManager = ({
 
         setSelectedPageId(newPage.id);
 
-        if (!layoutId) {
-          const nextPosition = computeNextPagePosition();
-          useStore
-            .getState()
-            .appendPageShell(newPage, bodyElement, nextPosition, {
-              activate: false,
-            });
-          schedulePageActivation(newPage.id, bodyElement.id);
-          enqueuePagePersistence(async () => {
-            const persistenceDb = await getDB();
-            if (persistenceDb.pages.insertWithBody) {
-              await persistenceDb.pages.insertWithBody(
-                newPageData,
-                bodyElement,
-              );
-            } else {
-              await persistenceDb.pages.insert(newPageData);
-              await persistenceDb.elements.insert(bodyElement);
-            }
+        const nextPosition = computeNextPagePosition();
+        useStore
+          .getState()
+          .appendPageShell(newPage, bodyElement, nextPosition, {
+            activate: false,
           });
-        } else {
+
+        if (layoutId) {
           cancelPendingActivation();
-          const { setCurrentPageId, setPages } = useStore.getState();
-          setCurrentPageId(newPage.id);
-          setPages([...currentPages, newPage]);
-          enqueuePagePersistence(async () => {
-            const persistenceDb = await getDB();
-            await persistenceDb.pages.insert(newPageData);
-            await persistenceDb.elements.insert(bodyElement);
-            await fetchElements(newPage.id);
-          });
+          useStore.getState().setCurrentPageId(newPage.id);
+          setSelectedPageId(newPage.id);
+        } else {
+          schedulePageActivation(newPage.id, bodyElement.id);
         }
 
         console.log(
@@ -482,62 +380,52 @@ export const usePageManager = ({
       try {
         initializingRef.current = projectId;
 
-        // 1. IndexedDB에서 프로젝트의 페이지들 로드
         const db = await getDB();
-        const allPages = await db.pages.getAll();
-        const projectPages = allPages.filter((p) => p.project_id === projectId);
+        const persistedDocument = await db.documents.get(projectId);
 
-        // 2. 기존 페이지 제거 후 새로 추가
         const existingKeys = pageList.items.map((p) => p.id);
         if (existingKeys.length > 0) {
           pageList.remove(...existingKeys);
         }
 
-        // IndexedDB Page를 ApiPage로 변환
-        const apiPages: ApiPage[] = projectPages.map((p) =>
-          withPageFrameBinding(
-            {
-              id: p.id,
-              project_id: p.project_id,
-              title: p.title || "Untitled",
-              slug: p.slug,
-              parent_id: p.parent_id ?? null,
-              order_num: p.order_num ?? 0,
-              created_at: p.created_at || new Date().toISOString(),
-              updated_at: p.updated_at || new Date().toISOString(),
-            },
-            getNullablePageFrameBindingId(p),
-          ),
-        );
-
-        apiPages.forEach((page) => pageList.append(page));
-
-        // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
-        // ApiPage → store Page 변환 (title → name)
-        // Layout/Slot System: legacy layout binding도 함께 저장
-        const storePages = apiPages.map((p) => {
-          // IndexedDB의 원본 페이지에서 legacy layout binding 가져오기
-          const originalPage = projectPages.find((pp) => pp.id === p.id);
-          return withPageFrameBinding(
-            {
-              id: p.id,
-              title: p.title,
-              slug: p.slug,
-              project_id: p.project_id,
-              parent_id: p.parent_id ?? null,
-              order_num: p.order_num,
-            },
-            getNullablePageFrameBindingId(p) ??
-              getNullablePageFrameBindingId(originalPage),
-          );
-        });
         const {
           setPages,
+          setElements,
           initializePagePositions,
           setLazyLoadingEnabled,
           pageLayoutDirection,
         } = useStore.getState();
+
+        const document =
+          persistedDocument ??
+          ({
+            version: "composition-1.0",
+            children: [],
+          } satisfies CompositionDocument);
+
+        useCanonicalDocumentStore.getState().setDocument(projectId, document);
+
+        const renderModel = deriveProjectRenderModelFromDocument(
+          document,
+          projectId,
+        );
+        const apiPages: ApiPage[] = renderModel.pages.map((page) => ({
+          ...page,
+          created_at: page.created_at || new Date().toISOString(),
+          updated_at: page.updated_at || new Date().toISOString(),
+        }));
+        const storePages = renderModel.pages.map((page) => ({
+          id: page.id,
+          title: page.title,
+          slug: page.slug,
+          project_id: page.project_id,
+          parent_id: page.parent_id ?? null,
+          order_num: page.order_num,
+        }));
+
+        apiPages.forEach((page) => pageList.append(page));
         setPages(storePages);
+        setElements(renderModel.elements as Element[]);
 
         // 🆕 Multi-page: 페이지 위치 초기화 (현재 방향 + canvasSize 기반)
         const currentCanvasSize = useViewportSyncStore.getState().canvasSize;
@@ -549,69 +437,7 @@ export const usePageManager = ({
           pageLayoutDirection,
         );
 
-        // 🚀 Pencil 방식: 전체 페이지 요소를 한 번에 로드 (Lazy Loading 비활성화)
         setLazyLoadingEnabled(false);
-
-        const canonicalLayouts = await getProjectLayoutsForCanonical(
-          db,
-          projectId,
-        );
-        seedCanonicalReusableFrameLayouts(canonicalLayouts, projectId);
-
-        let mergedElements: Element[];
-        let orphanIds: string[] = [];
-        const persistedDocument = await db.documents.get(projectId);
-
-        if (persistedDocument) {
-          // ADR-916 direct cutover: 저장 정본이 존재하면 legacy element rows 를
-          // 재구성하지 않고 CompositionDocument 를 그대로 hydrate 한다.
-          useCanonicalDocumentStore
-            .getState()
-            .setDocument(projectId, persistedDocument);
-          mergedElements = exportLegacyDocument(persistedDocument);
-          useStore.getState().setElements(mergedElements);
-        } else {
-          const pageIdSet = new Set(projectPages.map((p) => p.id));
-          const allElements = await db.elements.getAll();
-          const pageElements = allElements.filter(
-            (el) => el.page_id && pageIdSet.has(el.page_id),
-          );
-
-          // ADR-916 projection 제거: reusable frame ids 는 project layouts snapshot 을
-          // 직접 사용하고, legacy snapshot → canonical document rebuild 를 수행하지 않는다.
-          // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout binding 으로 필터링.
-          const layoutIdSet = new Set(
-            canonicalLayouts.map((layout) => layout.id),
-          );
-          const layoutElements = allElements.filter((el) => {
-            const elementLayoutId = getFrameElementMirrorId(el);
-            return elementLayoutId != null && layoutIdSet.has(elementLayoutId);
-          });
-
-          const mergedMap = new Map<string, Element>();
-          pageElements.forEach((el) => mergedMap.set(el.id, el));
-          layoutElements.forEach((el) => mergedMap.set(el.id, el));
-          const rawMerged = Array.from(mergedMap.values());
-
-          // ADR-076 P5: Select/ComboBox/ListBox legacy child → items[] 마이그레이션
-          // ListBox 는 부모 단위 원자 판정 (Field 자식 보유 부모는 템플릿 모드 유지).
-          const migration = applyCollectionItemsMigration(rawMerged);
-          mergedElements = migration.migratedElements;
-          orphanIds = migration.orphanIds;
-
-          setElementsCanonicalPrimary(mergedElements);
-        }
-
-        // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem/ListBoxItem(+subtree) 행 제거
-        // (undo 스택 미오염)
-        if (orphanIds.length > 0) {
-          void db.elements.deleteMany(orphanIds).catch((err) => {
-            console.warn(
-              "[ADR-076] Collection items orphan cleanup failed:",
-              err,
-            );
-          });
-        }
 
         // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
         if (apiPages.length > 0) {
@@ -622,7 +448,7 @@ export const usePageManager = ({
           setCurrentPageId(pageToSelect.id);
           setSelectedPageId(pageToSelect.id);
 
-          const bodyElement = mergedElements.find(
+          const bodyElement = renderModel.elements.find(
             (el) => el.page_id === pageToSelect.id && el.order_num === 0,
           );
           if (bodyElement) {

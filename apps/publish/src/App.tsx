@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Element, Page } from "@composition/shared";
 import {
+  deriveProjectRenderModelFromDocument,
   loadProjectFromUrl,
   loadProjectFromFile,
   type ProjectExportData,
@@ -271,10 +272,15 @@ export function App() {
   // 프로젝트 데이터 설정
   const setProject = useCallback(
     (data: ProjectExportData, loadWarnings?: ExportError[]) => {
+      const renderModel = deriveProjectRenderModelFromDocument(
+        data.document,
+        data.project.id,
+        data.currentPageId,
+      );
       const projectData: ProjectData = {
-        pages: data.pages,
-        elements: data.elements,
-        currentPageId: data.currentPageId || null,
+        pages: renderModel.pages,
+        elements: renderModel.elements,
+        currentPageId: renderModel.currentPageId,
         projectName: data.project.name,
         version: data.version,
       };
@@ -337,11 +343,18 @@ export function App() {
       if (previewData) {
         try {
           const parsed = JSON.parse(previewData);
-          // sessionStorage 데이터는 이미 검증된 형식이므로 직접 사용
+          if (!parsed.document) {
+            throw new Error("CompositionDocument payload is required");
+          }
+          const renderModel = deriveProjectRenderModelFromDocument(
+            parsed.document,
+            parsed.project?.id || "preview",
+            parsed.currentPageId,
+          );
           const projectData: ProjectData = {
-            pages: parsed.pages,
-            elements: parsed.elements,
-            currentPageId: parsed.currentPageId || null,
+            pages: renderModel.pages,
+            elements: renderModel.elements,
+            currentPageId: renderModel.currentPageId,
             projectName: parsed.project?.name || "Preview",
             version: parsed.version,
           };

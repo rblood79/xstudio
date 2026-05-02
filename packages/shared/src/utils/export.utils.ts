@@ -15,22 +15,15 @@ import type {
   CanonicalNode,
   CompositionDocument,
 } from "../types/composition-document.types";
-import { isCanonicalNode } from "../types/composition-vocabulary";
 import {
   ExportErrorCode,
   EXPORT_LIMITS,
-  type ExportedProjectData as LegacyExportedProjectData,
   type ExportError,
   type ImportResult,
+  type ProjectMetadata,
 } from "../types/export.types";
 import type { ZodError } from "zod";
-import {
-  ExportedProjectSchema,
-  detectPageCycle,
-  findInvalidParentIds,
-  findDuplicateSlugs,
-} from "../schemas/project.schema";
-import { migrateProject } from "./migration.utils";
+import { ExportedProjectSchema } from "../schemas/project.schema";
 import { buildRegistryFontFaceCss } from "./fontRegistry";
 import type { FontRegistryV2 } from "../types/font.types";
 
@@ -39,19 +32,26 @@ import type { FontRegistryV2 } from "../types/font.types";
 // ============================================
 
 const CURRENT_VERSION = "1.0.0";
-const CURRENT_DOCUMENT_VERSION = "composition-1.0";
 const DANGEROUS_KEYS = ["__proto__", "constructor", "prototype"];
-const LEGACY_EXPORT_MIRROR_METADATA_TYPE = "legacy-export-mirror";
 
 type CanonicalMetadata = {
   type: string;
   [key: string]: unknown;
 };
 
-export interface ProjectExportData extends LegacyExportedProjectData {
+type CanonicalNodeWithRef = CanonicalNode & { ref?: string };
+
+export interface ProjectExportData {
+  version: string;
+  exportedAt: string;
+  project: {
+    id: string;
+    name: string;
+  };
   document: CompositionDocument;
-  pages: Page[];
-  elements: Element[];
+  currentPageId?: string | null;
+  fontRegistry?: FontRegistryV2;
+  metadata?: ProjectMetadata;
 }
 
 export interface ProjectImportResultSuccess {
@@ -153,130 +153,128 @@ function validateFileSize(size: number): ExportError | null {
 // Canonical Document Helpers
 // ============================================
 
-function toCanonicalNodeId(id: string): string {
-  const normalized = id.replace(/\//g, "_");
-  return normalized.length > 0 ? normalized : "node";
+export interface ProjectRenderModel {
+  pages: Page[];
+  elements: Element[];
+  currentPageId: string | null;
 }
 
-function sortByOrder<T extends { order_num?: number }>(items: T[]): T[] {
-  return [...items].sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+function isPageNode(node: CanonicalNode): boolean {
+  const metadata = node.metadata as CanonicalMetadata | undefined;
+  return (
+    metadata?.type === "page" ||
+    (node.type === "frame" && node.reusable !== true)
+  );
 }
 
-function createLegacyMirrorMetadata(source: Page | Element): CanonicalMetadata {
-  return {
-    type: LEGACY_EXPORT_MIRROR_METADATA_TYPE,
-    legacy: source,
-  };
+function makeSlug(index: number, node: CanonicalNode): string {
+  if (index === 0) return "/";
+  return `/${node.id.replace(/[^a-zA-Z0-9_-]+/g, "-").toLowerCase()}`;
 }
 
-function createCanonicalNodeFromLegacyElement(
-  element: Element,
-  childrenByParentId: Map<string, Element[]>,
-  visited: Set<string>,
-): CanonicalNode {
-  const nextVisited = new Set(visited);
-  nextVisited.add(element.id);
-
-  const childNodes = sortByOrder(childrenByParentId.get(element.id) ?? [])
-    .filter((child) => !nextVisited.has(child.id))
-    .map((child) =>
-      createCanonicalNodeFromLegacyElement(
-        child,
-        childrenByParentId,
-        nextVisited,
-      ),
-    );
-
-  const candidate: Record<string, unknown> = {
-    id: toCanonicalNodeId(element.id),
-    type: element.type,
-    props: element.props,
-    metadata: createLegacyMirrorMetadata(element),
-    children: childNodes,
-  };
-
-  if (element.componentName) {
-    candidate.name = element.componentName;
+function findNodeById(
+  nodes: CanonicalNode[],
+  id: string,
+): CanonicalNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const found = findNodeById(node.children ?? [], id);
+    if (found) return found;
   }
-
-  if (isCanonicalNode(candidate)) {
-    return candidate;
-  }
-
-  return {
-    id: toCanonicalNodeId(element.id),
-    type: "group",
-    props: element.props,
-    metadata: createLegacyMirrorMetadata(element),
-    children: childNodes,
-  };
+  return null;
 }
 
-function createPageNode(
-  page: Page,
-  rootElements: Element[],
-  childrenByParentId: Map<string, Element[]>,
+function resolveRenderableNode(
+  document: CompositionDocument,
+  node: CanonicalNode,
 ): CanonicalNode {
+  const ref = (node as CanonicalNodeWithRef).ref;
+  if (!ref) return node;
+
+  const master = findNodeById(document.children, ref);
+  if (!master) return node;
+
   return {
-    id: toCanonicalNodeId(page.id),
-    type: "frame",
-    name: page.title,
-    metadata: createLegacyMirrorMetadata(page),
-    children: sortByOrder(rootElements).map((element) =>
-      createCanonicalNodeFromLegacyElement(
-        element,
-        childrenByParentId,
-        new Set<string>(),
-      ),
-    ),
+    ...master,
+    ...node,
+    type: master.type,
+    props: { ...(master.props ?? {}), ...(node.props ?? {}) },
+    children: node.children ?? master.children,
   };
 }
 
-export function createProjectCompositionDocument(
-  pages: Page[],
+function collectRuntimeElements(
+  document: CompositionDocument,
+  nodes: CanonicalNode[],
+  pageId: string,
+  parentId: string | null,
   elements: Element[],
-): CompositionDocument {
-  const childrenByParentId = new Map<string, Element[]>();
-  const rootElementsByPageId = new Map<string, Element[]>();
-  const unpagedRootElements: Element[] = [];
-  const elementIds = new Set(elements.map((element) => element.id));
+): void {
+  nodes.forEach((sourceNode, index) => {
+    const node = resolveRenderableNode(document, sourceNode);
+    if (node.reusable && parentId === null) return;
 
-  for (const element of elements) {
-    if (element.parent_id && elementIds.has(element.parent_id)) {
-      const children = childrenByParentId.get(element.parent_id) ?? [];
-      children.push(element);
-      childrenByParentId.set(element.parent_id, children);
-      continue;
-    }
+    elements.push({
+      id: node.id,
+      type: node.type,
+      props: node.props ?? {},
+      parent_id: parentId,
+      page_id: pageId,
+      order_num: index,
+    });
 
-    if (element.page_id) {
-      const roots = rootElementsByPageId.get(element.page_id) ?? [];
-      roots.push(element);
-      rootElementsByPageId.set(element.page_id, roots);
-      continue;
-    }
+    collectRuntimeElements(
+      document,
+      node.children ?? [],
+      pageId,
+      node.id,
+      elements,
+    );
+  });
+}
 
-    unpagedRootElements.push(element);
-  }
+export function deriveProjectRenderModelFromDocument(
+  document: CompositionDocument,
+  projectId: string,
+  currentPageId?: string | null,
+): ProjectRenderModel {
+  const explicitPageNodes = document.children.filter(isPageNode);
+  const pageNodes =
+    explicitPageNodes.length > 0
+      ? explicitPageNodes
+      : [
+          {
+            id: "page-root",
+            type: "frame",
+            name: "Home",
+            children: document.children.filter((node) => !node.reusable),
+          } satisfies CanonicalNode,
+        ];
+
+  const pages: Page[] = pageNodes.map((node, index) => ({
+    id: node.id,
+    title: node.name ?? (index === 0 ? "Home" : `Page ${index + 1}`),
+    slug: makeSlug(index, node),
+    project_id: projectId,
+    parent_id: null,
+    order_num: index,
+  }));
+
+  const elements: Element[] = [];
+  pageNodes.forEach((pageNode) => {
+    collectRuntimeElements(
+      document,
+      pageNode.children ?? [],
+      pageNode.id,
+      null,
+      elements,
+    );
+  });
 
   return {
-    version: CURRENT_DOCUMENT_VERSION,
-    children: [
-      ...sortByOrder(pages).map((page) =>
-        createPageNode(
-          page,
-          rootElementsByPageId.get(page.id) ?? [],
-          childrenByParentId,
-        ),
-      ),
-      ...sortByOrder(unpagedRootElements).map((element) =>
-        createCanonicalNodeFromLegacyElement(
-          element,
-          childrenByParentId,
-          new Set<string>(),
-        ),
-      ),
-    ],
+    pages,
+    elements,
+    currentPageId: currentPageId ?? pages[0]?.id ?? null,
   };
 }
 
@@ -290,10 +288,10 @@ export function createProjectCompositionDocument(
 export function serializeProjectData(
   projectId: string,
   projectName: string,
-  pages: Page[],
-  elements: Element[],
+  document: CompositionDocument,
   currentPageId?: string | null,
-  document?: CompositionDocument,
+  fontRegistry?: FontRegistryV2,
+  metadata?: ProjectMetadata,
 ): string {
   const exportData: ProjectExportData = {
     version: CURRENT_VERSION,
@@ -302,10 +300,10 @@ export function serializeProjectData(
       id: projectId,
       name: projectName,
     },
-    document: document ?? createProjectCompositionDocument(pages, elements),
-    pages,
-    elements,
+    document,
     currentPageId,
+    fontRegistry,
+    metadata,
   };
 
   return JSON.stringify(exportData, null, 2);
@@ -317,18 +315,18 @@ export function serializeProjectData(
 export function downloadProjectAsJson(
   projectId: string,
   projectName: string,
-  pages: Page[],
-  elements: Element[],
+  canonicalDocument: CompositionDocument,
   currentPageId?: string | null,
-  canonicalDocument?: CompositionDocument,
+  fontRegistry?: FontRegistryV2,
+  metadata?: ProjectMetadata,
 ): void {
   const jsonString = serializeProjectData(
     projectId,
     projectName,
-    pages,
-    elements,
-    currentPageId,
     canonicalDocument,
+    currentPageId,
+    fontRegistry,
+    metadata,
   );
 
   const blob = new Blob([jsonString], { type: "application/json" });
@@ -366,26 +364,8 @@ export function parseProjectData(jsonString: string): ProjectImportResult {
     };
   }
 
-  // 2. 버전 마이그레이션 (스키마 검증 전)
-  const migrationResult = migrateProject(parsed);
-  if (!migrationResult.success) {
-    return {
-      success: false,
-      error:
-        migrationResult.error ||
-        createError(ExportErrorCode.VALIDATION_ERROR, "Migration failed"),
-    };
-  }
-
-  // 마이그레이션 발생 시 로그
-  if (migrationResult.migratedFrom) {
-    console.log(
-      `[Migration] Project migrated from v${migrationResult.migratedFrom} to v${migrationResult.migratedTo}`,
-    );
-  }
-
-  // 3. Zod 스키마 검증
-  const result = ExportedProjectSchema.safeParse(migrationResult.data);
+  // 2. Zod 스키마 검증
+  const result = ExportedProjectSchema.safeParse(parsed);
 
   if (!result.success) {
     return {
@@ -398,60 +378,7 @@ export function parseProjectData(jsonString: string): ProjectImportResult {
   const data = result.data as ProjectExportData;
   const warnings: ExportError[] = [];
 
-  // 마이그레이션 경고 추가
-  if (migrationResult.migratedFrom) {
-    warnings.push({
-      code: ExportErrorCode.UNKNOWN_VERSION,
-      message: `Project was migrated from v${migrationResult.migratedFrom} to v${migrationResult.migratedTo}`,
-      severity: "info",
-    });
-  }
-
   // 3. 추가 비즈니스 로직 검증
-
-  // 3.1 페이지 순환 참조 검사
-  const cyclePageId = detectPageCycle(data.pages);
-  if (cyclePageId) {
-    return {
-      success: false,
-      error: createError(
-        ExportErrorCode.PARENT_CYCLE,
-        `Page "${cyclePageId}" forms a circular reference`,
-        {
-          field: `pages[${data.pages.findIndex((p) => p.id === cyclePageId)}].parent_id`,
-        },
-      ),
-    };
-  }
-
-  // 3.2 존재하지 않는 parent_id 검사
-  const invalidParentPages = findInvalidParentIds(data.pages);
-  if (invalidParentPages.length > 0) {
-    const pageId = invalidParentPages[0];
-    const pageIndex = data.pages.findIndex((p) => p.id === pageId);
-    return {
-      success: false,
-      error: createError(
-        ExportErrorCode.VALIDATION_ERROR,
-        `Page "${pageId}" references non-existent parent`,
-        { field: `pages[${pageIndex}].parent_id` },
-      ),
-    };
-  }
-
-  // 3.3 중복 slug 경고 (에러는 아니지만 경고)
-  const duplicateSlugs = findDuplicateSlugs(data.pages);
-  if (duplicateSlugs.length > 0) {
-    warnings.push(
-      createError(
-        ExportErrorCode.VALIDATION_ERROR,
-        `Duplicate slugs found for pages: ${duplicateSlugs.join(", ")}`,
-        { severity: "warning" },
-      ),
-    );
-  }
-
-  // 3.4 exportedAt 미래 시각 경고
   const exportedAt = new Date(data.exportedAt);
   if (exportedAt > new Date()) {
     warnings.push(
@@ -571,21 +498,16 @@ export async function loadProjectFromFile(
 export function generateStaticHtml(
   projectId: string,
   projectName: string,
-  pages: Page[],
-  elements: Element[],
+  document: CompositionDocument,
   currentPageId?: string | null,
   fontRegistry?: FontRegistryV2,
   themeCSS: string = "",
-  canonicalDocument?: CompositionDocument,
 ): string {
   const projectData: ProjectExportData = {
     version: CURRENT_VERSION,
     exportedAt: new Date().toISOString(),
     project: { id: projectId, name: projectName },
-    document:
-      canonicalDocument ?? createProjectCompositionDocument(pages, elements),
-    pages,
-    elements,
+    document,
     currentPageId,
     fontRegistry,
   };
@@ -665,59 +587,93 @@ export function generateStaticHtml(
 
   <script>
     (function() {
-      // 프로젝트 데이터 로드
       const projectData = JSON.parse(document.getElementById('projectData').textContent);
-      const { pages, elements, currentPageId } = projectData;
+      const compositionDocument = projectData.document;
+      const currentPageId = projectData.currentPageId || null;
 
-      // 네비게이션 렌더링
+      function isPageNode(node) {
+        const metadata = node.metadata || {};
+        return metadata.type === 'page' || node.type === 'page' || (node.type === 'frame' && node.reusable !== true);
+      }
+
+      function makeSlug(index, node) {
+        if (index === 0) return '/';
+        return '/' + String(node.id).replace(/[^a-zA-Z0-9_-]+/g, '-').toLowerCase();
+      }
+
+      function findNodeById(nodes, id) {
+        for (const node of nodes || []) {
+          if (node.id === id) return node;
+          const found = findNodeById(node.children || [], id);
+          if (found) return found;
+        }
+        return null;
+      }
+
+      function resolveNode(node) {
+        if (!node.ref) return node;
+        const master = findNodeById(compositionDocument.children || [], node.ref);
+        if (!master) return node;
+        return {
+          ...master,
+          ...node,
+          type: master.type,
+          props: { ...(master.props || {}), ...(node.props || {}) },
+          children: node.children || master.children,
+        };
+      }
+
+      const pageNodes = (compositionDocument.children || []).filter(isPageNode);
+      const renderPages = pageNodes.length > 0
+        ? pageNodes
+        : [{ id: 'page-root', type: 'page', name: 'Home', children: (compositionDocument.children || []).filter(node => !node.reusable) }];
+
+      const pages = renderPages.map((node, index) => ({
+        id: node.id,
+        title: node.name || (index === 0 ? 'Home' : 'Page ' + (index + 1)),
+        slug: makeSlug(index, node),
+        node,
+      }));
+
       const nav = document.getElementById('pageNav');
       pages.forEach(page => {
         const link = document.createElement('a');
         link.href = '#' + (page.slug || page.id);
-        link.textContent = page.name || page.slug || 'Page';
+        link.textContent = page.title;
         link.dataset.pageId = page.id;
         nav.appendChild(link);
       });
 
-      // Element를 DOM으로 변환
-      function renderElement(el, allElements) {
-        const children = allElements
-          .filter(child => child.parent_id === el.id && !child.deleted)
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-        const type = mapTagToHtml(el.type);
+      function renderNode(sourceNode) {
+        const node = resolveNode(sourceNode);
+        const type = mapTagToHtml(node.type);
         const dom = document.createElement(type);
         dom.className = 'component';
-        dom.dataset.elementId = el.id;
+        dom.dataset.canonicalId = node.id;
 
-        // Props 적용
-        if (el.props) {
-          // Style 적용
-          if (el.props.style) {
-            Object.assign(dom.style, el.props.style);
-          }
-
-          // 텍스트 콘텐츠
-          if (el.props.children && typeof el.props.children === 'string') {
-            dom.textContent = el.props.children;
-          }
-
-          // 속성들
-          if (el.props.placeholder) dom.placeholder = el.props.placeholder;
-          if (el.props.src) dom.src = el.props.src;
-          if (el.props.href) dom.href = el.props.href;
-          if (el.props.alt) dom.alt = el.props.alt;
+        const props = node.props || {};
+        if (props.style) {
+          Object.assign(dom.style, props.style);
         }
 
-        // 자식 요소 렌더링
-        children.forEach(child => {
-          dom.appendChild(renderElement(child, allElements));
+        if (props.children && typeof props.children === 'string') {
+          dom.textContent = props.children;
+        }
+
+        if (props.placeholder) dom.placeholder = props.placeholder;
+        if (props.src) dom.src = props.src;
+        if (props.href) dom.href = props.href;
+        if (props.alt) dom.alt = props.alt;
+
+        (node.children || []).forEach(child => {
+          if (!child.reusable) {
+            dom.appendChild(renderNode(child));
+          }
         });
 
         return dom;
       }
 
-      // Tag 매핑
       function mapTagToHtml(type) {
         const map = {
           'Container': 'div', 'Box': 'div', 'Flex': 'div', 'Grid': 'div',
@@ -732,32 +688,29 @@ export function generateStaticHtml(
         return map[type] || 'div';
       }
 
-      // 페이지 렌더링
       function renderPage(pageId) {
         const container = document.getElementById('pageContainer');
         container.innerHTML = '';
 
-        const pageElements = elements.filter(el => el.page_id === pageId && !el.deleted);
-        const rootElements = pageElements
-          .filter(el => !el.parent_id)
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        const page = pages.find(p => p.id === pageId);
+        if (!page) return;
 
         const pageDiv = document.createElement('div');
         pageDiv.className = 'page active';
 
-        rootElements.forEach(el => {
-          pageDiv.appendChild(renderElement(el, pageElements));
+        (page.node.children || []).forEach(node => {
+          if (!node.reusable) {
+            pageDiv.appendChild(renderNode(node));
+          }
         });
 
         container.appendChild(pageDiv);
 
-        // 네비게이션 활성화
         nav.querySelectorAll('a').forEach(a => {
           a.classList.toggle('active', a.dataset.pageId === pageId);
         });
       }
 
-      // 해시 변경 처리
       function handleHashChange() {
         const hash = window.location.hash.slice(1);
         const page = pages.find(p => p.slug === hash || p.id === hash);
@@ -790,27 +743,23 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * 정적 HTML 파일 다운로드 (단일 파일, 레거시 호환)
+ * 정적 HTML 파일 다운로드 (단일 파일)
  */
 export function downloadStaticHtml(
   projectId: string,
   projectName: string,
-  pages: Page[],
-  elements: Element[],
+  document: CompositionDocument,
   currentPageId?: string | null,
   fontRegistry?: FontRegistryV2,
   themeCSS: string = "",
-  canonicalDocument?: CompositionDocument,
 ): void {
   const html = generateStaticHtml(
     projectId,
     projectName,
-    pages,
-    elements,
+    document,
     currentPageId,
     fontRegistry,
     themeCSS,
-    canonicalDocument,
   );
 
   downloadBlob(
@@ -909,9 +858,7 @@ function rewriteRegistryForExport(registry: FontRegistryV2): {
 interface ExportProjectOptions {
   projectId: string;
   projectName: string;
-  pages: Page[];
-  elements: Element[];
-  document?: CompositionDocument;
+  document: CompositionDocument;
   currentPageId?: string | null;
   fontRegistry?: FontRegistryV2;
   themeCSS?: string;
@@ -941,12 +888,10 @@ export async function exportProject(
   const html = generateStaticHtml(
     options.projectId,
     options.projectName,
-    options.pages,
-    options.elements,
+    options.document,
     options.currentPageId,
     exportRegistry,
     options.themeCSS || "",
-    options.document,
   );
 
   // 폰트가 없으면 단일 HTML 다운로드

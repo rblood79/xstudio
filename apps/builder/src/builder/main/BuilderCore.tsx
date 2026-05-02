@@ -60,10 +60,7 @@ import {
 } from "../stores/canonical/canonicalFrameStore";
 import { useDataTableStore } from "../stores/datatable";
 import { useDataStore } from "../stores/data";
-import {
-  isFrameElementForFrame,
-  loadFrameElements,
-} from "@/adapters/canonical/frameElementLoader";
+import { isFrameElementForFrame } from "@/adapters/canonical/frameElementLoader";
 
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
@@ -376,63 +373,16 @@ export const BuilderCore: React.FC = () => {
         return;
       }
 
-      // ⭐ Layout/Slot System: editMode가 'layout'이면 Layout 요소도 로드
-      // (새로고침 시 editMode와 selectedReusableFrameId가 localStorage에서 복원됨)
+      // frame edit mode entry still initializes data surfaces; frame elements
+      // are derived from the active CompositionDocument.
       const editMode = useEditModeStore.getState().mode;
 
       if (editMode === "layout") {
         try {
-          const db = await getDB();
-
-          // canonical frame 목록을 우선 사용하고, 초기 hydrate 직후 비어 있으면
-          // DB mirror 로 frame elements 복원 범위를 보강한다.
-          const canonicalLayouts = getCanonicalReusableFrameLayouts();
-          const layouts =
-            canonicalLayouts.length > 0
-              ? canonicalLayouts
-              : await db.layouts.getByProject(projectId);
-          const activeFrameId = getSelectedReusableFrameId();
-          const frameIds = Array.from(
-            new Set([
-              ...(activeFrameId ? [activeFrameId] : []),
-              ...layouts.map((layout) => layout.id),
-            ]),
-          );
-          const frameElementGroups = await Promise.all(
-            frameIds.map(async (frameId) => ({
-              frameId,
-              elements: await loadFrameElements(db, frameId),
-            })),
-          );
-          const frameElementsWithData = frameElementGroups.filter(
-            (group) => group.elements.length > 0,
-          );
-          const layoutElements = frameElementsWithData.flatMap(
-            (group) => group.elements,
-          );
-
-          if (layoutElements.length > 0) {
-            // 기존 요소들과 병합.
-            // ADR-916 projection 제거: initialize path 에서 legacy snapshot 을
-            // canonical document 로 재구성하지 않고 frame mirror adapter 로 판정한다.
-            const { elements } = useStore.getState();
-            const loadedFrameIds = frameElementsWithData.map(
-              (group) => group.frameId,
-            );
-            const otherElements = elements.filter(
-              (el) =>
-                !loadedFrameIds.some((frameId) =>
-                  isFrameElementForFrame(el, frameId),
-                ),
-            );
-            const mergedElements = [...otherElements, ...layoutElements];
-            setElementsCanonicalPrimary(mergedElements);
-          }
-
           // ⭐ DataStore 초기화 (Variables, DataTables, ApiEndpoints, Transformers)
           await useDataStore.getState().initializeForProject(projectId);
         } catch (error) {
-          console.error("[BuilderCore] Layout 요소 로드 실패:", error);
+          console.error("[BuilderCore] DataStore 초기화 실패:", error);
         }
       }
 
@@ -1016,7 +966,12 @@ export const BuilderCore: React.FC = () => {
   const handlePreview = useCallback(() => {
     // Store에서 현재 상태 가져오기
     const state = useStore.getState();
-    const { elements, currentPageId: storeCurrentPageId } = state;
+    const { currentPageId: storeCurrentPageId } = state;
+    const document = getActiveCanonicalDocument();
+    if (!document) {
+      console.error("[BuilderCore] canonical document is not ready");
+      return;
+    }
 
     // ADR-021 Phase C: themeConfig 포함
     const { tint, neutral, radiusScale } = useThemeConfigStore.getState();
@@ -1029,8 +984,7 @@ export const BuilderCore: React.FC = () => {
         id: projectId || "preview",
         name: projectInfo?.name || "Preview",
       },
-      pages, // usePageManager에서 가져온 pages 사용
-      elements,
+      document,
       currentPageId: storeCurrentPageId,
       themeConfig: { tint, neutral, radiusScale },
       fontRegistry: loadFontRegistry(),
@@ -1044,14 +998,19 @@ export const BuilderCore: React.FC = () => {
 
     // 새 탭에서 publish 앱 열기
     window.open("/publish/", "_blank");
-  }, [projectId, projectInfo, pages]);
+  }, [projectId, projectInfo]);
 
   const handlePlay = useCallback(() => {}, []);
 
   const handlePublish = useCallback(async () => {
     // Store에서 현재 상태 가져오기
     const state = useStore.getState();
-    const { elements, pages, currentPageId: storeCurrentPageId } = state;
+    const { currentPageId: storeCurrentPageId } = state;
+    const document = getActiveCanonicalDocument();
+    if (!document) {
+      console.error("[BuilderCore] canonical document is not ready");
+      return;
+    }
 
     // 프로젝트 ID와 이름
     const id = projectId || "unknown-project";
@@ -1069,8 +1028,7 @@ export const BuilderCore: React.FC = () => {
     await exportProject({
       projectId: id,
       projectName: name,
-      pages,
-      elements,
+      document,
       currentPageId: storeCurrentPageId,
       fontRegistry: loadFontRegistry(),
       themeCSS,
