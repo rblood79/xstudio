@@ -1,10 +1,14 @@
-import type { CompositionDocument, FrameNode } from "@composition/shared";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+  FrameNode,
+  RefNode,
+} from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
 import { getDefaultProps } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
 import { getDB } from "@/lib/db";
 import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
-import { selectCanonicalDocument } from "@/builder/stores/elements";
 import { exportLegacyDocument } from "./exportLegacyDocument";
 import { mergeElementsCanonicalPrimary } from "./canonicalMutations";
 import {
@@ -14,14 +18,15 @@ import {
   withLegacyLayoutId,
 } from "./legacyElementFields";
 
-type ElementsStateForCanonicalDocument = Parameters<
-  typeof selectCanonicalDocument
->[0];
+interface ElementsStateForFrameLayoutCascade {
+  pages: Page[];
+  elementsMap: Map<string, Element>;
+}
 
 interface ApplyDeleteReusableFrameInput {
   frameId: string;
   layouts: Layout[];
-  getElementsState: () => ElementsStateForCanonicalDocument;
+  getElementsState: () => ElementsStateForFrameLayoutCascade;
   setPages: (pages: Page[]) => void;
   setElements: (elements: Element[]) => void;
 }
@@ -60,17 +65,35 @@ function findReusableFrame(
   );
 }
 
+function getProjectId(pages: Page[], layouts: Layout[]): string | null {
+  return (
+    pages.find((page) => page.project_id)?.project_id ??
+    layouts.find((layout) => layout.project_id)?.project_id ??
+    null
+  );
+}
+
+function getCurrentCanonicalDocument(
+  pages: Page[],
+  layouts: Layout[],
+): CompositionDocument {
+  const canonical = useCanonicalDocumentStore.getState();
+  const projectId = canonical.currentProjectId ?? getProjectId(pages, layouts);
+  return (
+    (projectId ? canonical.getDocument(projectId) : null) ?? {
+      version: "composition-1.0",
+      children: [],
+    }
+  );
+}
+
 function setCanonicalDocument(
   doc: CompositionDocument,
   pages: Page[],
   layouts: Layout[],
 ): void {
   const canonical = useCanonicalDocumentStore.getState();
-  const projectId =
-    canonical.currentProjectId ??
-    pages.find((page) => page.project_id)?.project_id ??
-    layouts.find((layout) => layout.project_id)?.project_id ??
-    null;
+  const projectId = canonical.currentProjectId ?? getProjectId(pages, layouts);
 
   if (!projectId) return;
 
@@ -94,6 +117,111 @@ function clearFramePageBindings(
   });
 
   return { pages: nextPages, clearedPageIds };
+}
+
+function getLegacyPageMetadata(
+  node: CanonicalNode,
+): { type?: unknown; pageId?: unknown; layoutId?: unknown } | undefined {
+  return node.metadata as
+    | { type?: unknown; pageId?: unknown; layoutId?: unknown }
+    | undefined;
+}
+
+function isLegacyPageNode(node: CanonicalNode): boolean {
+  return getLegacyPageMetadata(node)?.type === "legacy-page";
+}
+
+function pageNodeReferencesFrame(
+  node: CanonicalNode,
+  frameId: string,
+  clearedPageIds: Set<string>,
+): boolean {
+  const metadata = getLegacyPageMetadata(node);
+  const metadataPageId =
+    typeof metadata?.pageId === "string" ? metadata.pageId : node.id;
+  return (
+    isLegacyPageNode(node) &&
+    (clearedPageIds.has(metadataPageId) ||
+      metadata?.layoutId === frameId ||
+      (node.type === "ref" && (node as RefNode).ref === `layout-${frameId}`))
+  );
+}
+
+function removeLayoutIdFromMetadata(
+  node: CanonicalNode,
+): CanonicalNode["metadata"] {
+  const metadata = {
+    ...(node.metadata ?? { type: "legacy-page" }),
+    type: "legacy-page",
+  } as CanonicalNode["metadata"] & { layoutId?: unknown };
+  delete metadata.layoutId;
+  return metadata;
+}
+
+function childrenFromRefDescendants(refNode: RefNode): CanonicalNode[] {
+  const children: CanonicalNode[] = [];
+  const descendants = refNode.descendants ?? {};
+
+  for (const override of Object.values(descendants)) {
+    if (
+      override &&
+      typeof override === "object" &&
+      "children" in override &&
+      Array.isArray(override.children)
+    ) {
+      children.push(...override.children);
+    } else if (
+      override &&
+      typeof override === "object" &&
+      "type" in override &&
+      typeof override.type === "string"
+    ) {
+      children.push(override as CanonicalNode);
+    }
+  }
+
+  return children;
+}
+
+function clearPageFrameBindingNode(node: CanonicalNode): FrameNode {
+  const children =
+    node.type === "ref"
+      ? childrenFromRefDescendants(node as RefNode)
+      : (node.children ?? []);
+  return {
+    id: node.id,
+    type: "frame",
+    ...(node.name ? { name: node.name } : {}),
+    ...(node.props ? { props: node.props } : {}),
+    metadata: removeLayoutIdFromMetadata(node),
+    ...(node.slot !== undefined ? { slot: node.slot } : {}),
+    ...(node.theme ? { theme: node.theme } : {}),
+    ...(children.length > 0 ? { children } : {}),
+  };
+}
+
+function removeReusableFrameFromDocument(
+  doc: CompositionDocument,
+  frameId: string,
+  clearedPageIds: string[],
+): CompositionDocument {
+  const clearedPageIdSet = new Set(clearedPageIds);
+  return {
+    ...doc,
+    children: doc.children.flatMap((node) => {
+      if (
+        node.type === "frame" &&
+        node.reusable === true &&
+        frameMatchesLayoutId(node as FrameNode, frameId)
+      ) {
+        return [];
+      }
+      if (pageNodeReferencesFrame(node, frameId, clearedPageIdSet)) {
+        return [clearPageFrameBindingNode(node)];
+      }
+      return [node];
+    }),
+  };
 }
 
 function collectRemovedElementIds(
@@ -174,9 +302,13 @@ export async function applyDeleteReusableFrameCanonicalPrimary({
     frameId,
   );
   const nextLayouts = layouts.filter((layout) => layout.id !== frameId);
-  const currentDoc = selectCanonicalDocument(state, state.pages, layouts);
+  const currentDoc = getCurrentCanonicalDocument(state.pages, layouts);
   const frameExisted = findReusableFrame(currentDoc, frameId) !== null;
-  const nextDoc = selectCanonicalDocument(state, nextPages, nextLayouts);
+  const nextDoc = removeReusableFrameFromDocument(
+    currentDoc,
+    frameId,
+    clearedPageIds,
+  );
 
   setCanonicalDocument(nextDoc, nextPages, nextLayouts);
 

@@ -2,7 +2,7 @@
  * @fileoverview storeBridge helper 단위 테스트 — ADR-903 P2 D-B + P3-B
  *
  * 검증 대상:
- * - `selectResolvedTree(state, pages, layouts, cache?)` — store snapshot 진입점
+ * - `selectResolvedTree(doc, cache?)` — canonical document 진입점
  * - `buildResolvedNodeIndex(tree)` — DFS flatten Map
  * - `extractLegacyPropsFromResolved(resolved)` — 두 metadata 패턴 대응
  * - `resolveInstanceWithSharedCache(instance, master, cache?)` — mini-doc + cache 통과한
@@ -11,10 +11,8 @@
  * - `getCanonicalParentId(index, elementId)` — canonical parent id 조회 (P3-B)
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import type { Element, Page } from "@/types/builder/unified.types";
-import type { Layout } from "@/types/builder/layout.types";
-import type { ElementsState } from "@/builder/stores/elements";
-import type { ResolvedNode } from "@composition/shared";
+import type { Element } from "@/types/builder/unified.types";
+import type { CompositionDocument, ResolvedNode } from "@composition/shared";
 
 import { resolveInstanceElement } from "@/utils/component/instanceResolver";
 import {
@@ -44,16 +42,6 @@ function el(partial: Partial<Element> & Pick<Element, "id" | "type">): Element {
   } as Element;
 }
 
-function makeState(elements: Element[], pages: Page[]): ElementsState {
-  const elementsMap = new Map<string, Element>();
-  for (const e of elements) elementsMap.set(e.id, e);
-  return {
-    elements,
-    elementsMap,
-    pages,
-  } as unknown as ElementsState;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // selectResolvedTree
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,39 +51,40 @@ describe("selectResolvedTree", () => {
     resetSharedResolverCache();
   });
 
-  it("TC1: master + instance legacy → ResolvedNode[] (instance 는 _resolvedFrom 세팅)", () => {
-    // P1 adapter (idPath.ts) 는 element 의 customId/componentName/tag 기반으로
-    // segId 를 생성하므로, 명시적 customId 를 부여하여 stable lookup 을 보장한다.
-    const elements: Element[] = [
-      el({
-        id: "master-btn",
-        type: "Button",
-        componentRole: "master",
-        customId: "MasterBtn",
-        props: { label: "Submit", color: "blue" },
-      }),
-      el({
-        id: "instance-btn",
-        type: "Button",
-        componentRole: "instance",
-        masterId: "master-btn",
-        customId: "InstanceBtn",
-        page_id: "P1",
-        overrides: { label: "Send" },
-      }),
-    ];
-    const pages: Page[] = [
-      { id: "P1", title: "Home", slug: "/", project_id: "proj-1" } as Page,
-    ];
-    const layouts: Layout[] = [];
+  it("TC1: master + instance document → ResolvedNode[] (instance 는 _resolvedFrom 세팅)", () => {
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      children: [
+        {
+          id: "MasterBtn",
+          type: "Button",
+          reusable: true,
+          metadata: {
+            type: "legacy-element-props",
+            legacyProps: { label: "Submit", color: "blue" },
+          },
+        },
+        {
+          id: "P1",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "P1" },
+          children: [
+            {
+              id: "InstanceBtn",
+              type: "ref",
+              ref: "MasterBtn",
+              metadata: {
+                type: "legacy-instance-overrides",
+                legacyProps: { label: "Send" },
+              },
+            },
+          ],
+        },
+      ],
+    };
 
     const cache = createResolverCache();
-    const tree = selectResolvedTree(
-      makeState(elements, pages),
-      pages,
-      layouts,
-      cache,
-    );
+    const tree = selectResolvedTree(doc, cache);
 
     // top-level: reusable master 1+ 개 + pageNodes — reusable 노드 존재 확인
     const reusableNodes = tree.filter((n) => n.reusable === true);
@@ -105,49 +94,46 @@ describe("selectResolvedTree", () => {
     const index = buildResolvedNodeIndex(tree);
     const instanceResolved = index.get("InstanceBtn");
     expect(instanceResolved).toBeDefined();
-    // _resolvedFrom 은 ref 의 stable id path (customId "MasterBtn")
+    // _resolvedFrom 은 ref 의 stable master id path ("MasterBtn")
     expect(instanceResolved?._resolvedFrom).toBe("MasterBtn");
   });
 
   it("TC2: 동일 state 에 대한 반복 호출은 shared cache 로 ref subtree hit 보장", () => {
-    const elements: Element[] = [
-      el({
-        id: "master-A",
-        type: "Button",
-        componentRole: "master",
-        props: { label: "A" },
-      }),
-      el({
-        id: "inst-A1",
-        type: "Button",
-        componentRole: "instance",
-        masterId: "master-A",
-        page_id: "P1",
-      }),
-      el({
-        id: "inst-A2",
-        type: "Button",
-        componentRole: "instance",
-        masterId: "master-A",
-        page_id: "P1",
-      }),
-    ];
-    const pages: Page[] = [
-      { id: "P1", title: "Home", slug: "/", project_id: "proj-1" } as Page,
-    ];
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      children: [
+        {
+          id: "master-A",
+          type: "Button",
+          reusable: true,
+          metadata: {
+            type: "legacy-element-props",
+            legacyProps: { label: "A" },
+          },
+        },
+        {
+          id: "P1",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "P1" },
+          children: [
+            { id: "inst-A1", type: "ref", ref: "master-A" },
+            { id: "inst-A2", type: "ref", ref: "master-A" },
+          ],
+        },
+      ],
+    };
 
     const cache = createResolverCache();
-    const state = makeState(elements, pages);
 
     const before = cache.stats();
     expect(before.hits).toBe(0);
 
-    selectResolvedTree(state, pages, [], cache);
+    selectResolvedTree(doc, cache);
     const afterFirst = cache.stats();
     expect(afterFirst.misses).toBeGreaterThan(0);
     expect(afterFirst.size).toBeGreaterThan(0);
 
-    selectResolvedTree(state, pages, [], cache);
+    selectResolvedTree(doc, cache);
     const afterSecond = cache.stats();
     // 2 번째 호출은 동일 ref subtree 에 대해 hit 발생
     expect(afterSecond.hits).toBeGreaterThan(afterFirst.hits);

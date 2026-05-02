@@ -187,6 +187,13 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - `elementCreation` history/reorder context 는 active canonical document 를 직접 읽고, `layoutActions.getLayoutSlots` 는 active canonical document 의 FrameNode.slot 을 직접 조회한다. 해당 caller/store action 경로의 `selectCanonicalDocument()` 호출은 제거했다.
   - 잔여 production 호출은 `canonicalDocumentSync`, `frameLayoutCascade`, `pageFrameBinding`, `storeBridge`, `elements.ts` adapter 정의로 축소했다.
   - 검증: targeted vitest 12 files / 60 tests PASS.
+- **2026-05-02 — ADR-916 projection removal seventeenth cleanup slice**:
+  - `usePageManager.initializeProject` 는 legacy snapshot hydrate 대신 `setElementsCanonicalPrimary()` 를 호출해 초기 project hydrate 도 canonical primary wrapper 를 통과한다.
+  - `canonicalDocumentSync` 는 legacy `useStore`/`useLayoutsStore` subscribe 와 `selectCanonicalDocument()` projection sync 를 제거하고, active project id lifecycle marker 로만 남겼다. scheduler diagnostic API 는 no-op compatibility surface 로 유지한다.
+  - `storeBridge.selectResolvedTree` 는 `elements/pages/layouts` snapshot 을 받지 않고 `CompositionDocument` 를 직접 resolve 한다. 테스트 fixture 도 legacy snapshot 생성 없이 canonical document fixture 로 전환했다.
+  - `pageFrameBinding` 과 `frameLayoutCascade` 는 active canonical document 를 직접 갱신한다. page frame binding 변경, reusable frame 삭제, page binding clear 는 canonical document children 을 직접 교체/삭제하고, legacy page/elements payload 는 adapter mirror/persistence 경계에서만 생성한다.
+  - production `selectCanonicalDocument()` 호출은 `elements.ts` adapter 정의와 문서/comment 경계만 남았다. runtime `legacyToCanonical()` 호출은 `canonicalMutations` wrapper 내부 reverse 경로와 adapter 정의로 제한된다.
+  - 검증: targeted vitest 7 files / 62 tests PASS.
 
 ## Context
 

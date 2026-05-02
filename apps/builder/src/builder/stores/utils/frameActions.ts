@@ -4,10 +4,9 @@
  * ADR-911 P2-a (PR-A): canonical-native FramesTab 재설계의 첫 단계.
  *
  * 본 모듈은 canonical FrameNode (`type: "frame"` + `reusable: true`) 의미를
- * 가진 wrapper API를 제공한다. P2 scope 동안 내부 구현은 legacy
- * `useLayoutsStore` (createLayout / deleteLayout / updateLayout) 를 호출하여
- * reverse-projection — `selectCanonicalDocument` adapter 가 자동으로 canonical
- * `FrameNode` 로 투영한다.
+ * 가진 wrapper API를 제공한다. 현재 내부 구현은 legacy `useLayoutsStore`
+ * (createLayout / deleteLayout / updateLayout) 를 호출하되, delete cascade 는
+ * active canonical document 를 직접 갱신한다.
  *
  * 정책 (ADR-911 design breakdown line 467-474):
  * - P2 scope: `stores/layouts.ts` 본체 미수정. adapter shim 그대로 유지.
@@ -52,7 +51,8 @@ export interface ReusableFrameRef {
 /**
  * Reusable frame 생성 — canonical-shaped wrapper.
  *
- * 내부 구현: legacy `createLayout` 호출 → adapter 가 자동으로 reusable FrameNode 로 projection.
+ * 내부 구현: legacy `createLayout` 호출. canonical mirror 갱신은 layout action
+ * 경계에서 처리한다.
  *
  * @param input - frame 메타데이터
  * @returns 생성된 frame 참조 (P3 이후 `FrameNode` 로 전환)
@@ -72,7 +72,8 @@ export async function createReusableFrame(
 /**
  * Reusable frame 삭제 — canonical-shaped wrapper.
  *
- * 내부 구현: legacy `deleteLayout` 호출. adapter projection 이 자동으로 갱신.
+ * 내부 구현: legacy `deleteLayout` 호출. canonical frame 제거와 page binding clear 는
+ * layoutAction 의 canonical cascade adapter 에서 처리한다.
  * cascade (page.layout_id null 화 + element 삭제) 도 layoutAction 내부에서 처리.
  *
  * @param frameId - canonical FrameNode id (현재는 layout id 와 동일)

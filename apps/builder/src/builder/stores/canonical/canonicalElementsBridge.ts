@@ -9,11 +9,10 @@
  * - subscribe lifecycle (`useSyncExternalStore` 호환 시그니처).
  * - React hook 2종 (`useCanonicalNode`, `useActiveCanonicalDocument`).
  *
- * **Sub-Phase B (다음 sub-phase) scope (본 파일에서 land 안 함)**:
- * - legacy `elementsMap` fallback 자동 변환 (`legacyToCanonical()` 결과 캐싱).
- * - path-별 cutover 진행 (LayerTree → Selection/properties → Preview sync →
- *   BuilderCore → canvas drag/drop).
- * - memoized snapshot (현재는 store 가 clone-on-write 라 reference 안정).
+ * **Direct cutover scope**:
+ * - legacy `elementsMap` fallback 자동 변환은 채택하지 않는다.
+ * - path-별 cutover 는 active canonical document 를 직접 읽는다.
+ * - snapshot reference 는 store 의 clone-on-write 로 안정화한다.
  *
  * **D6=i 채택 근거**:
  * - `useSyncExternalStore` = React 18+ external store subscribe primitive.
@@ -41,8 +40,7 @@ import {
  * Phase 2 hot path 가 호출 — `useCanonicalNode(nodeId)` hook 의 snapshot
  * source.
  *
- * Sub-Phase A 에서는 canonical store 단독 조회. legacy fallback 은
- * Sub-Phase B 에서 추가 (`legacyToCanonical()` 캐싱 포함).
+ * direct cutover 이후 canonical store 단독 조회만 수행한다.
  */
 export function getCanonicalNode(nodeId: string): CanonicalNode | null {
   return selectCanonicalNode(nodeId);

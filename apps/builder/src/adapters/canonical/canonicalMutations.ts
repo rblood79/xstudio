@@ -13,9 +13,9 @@
  *   DB wrapper (create/update/createMultiple) 는 reverse 영향 없음 — DB persist
  *   자체는 elementsApi 그대로 사용 (D17=A 채택, schema 미변경).
  *
- * **무한 루프 방지**: canonical setDocument → legacy mirror → useStore.subscribe
- * 순서로 sync 가 재호출될 수 있으나, 같은 document 를 재계산해 canonical store 에
- * 반영하는 idempotent path 로 유지한다.
+ * **무한 루프 방지**: `canonicalDocumentSync` 는 direct cutover 이후 legacy
+ * store subscribe/projection 을 수행하지 않는다. wrapper 가 canonical store 와
+ * legacy mirror 를 같은 호출에서 갱신하므로 재호출 루프가 없다.
  *
  * **파일 위치 의도**: `apps/builder/src/adapters/canonical/` 안에 둠 → design
  * §8.6 grep gate 의 `apps/builder/src/adapters/**` exclude 패턴 안에 들어가서

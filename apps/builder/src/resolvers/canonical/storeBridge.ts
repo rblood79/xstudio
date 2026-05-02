@@ -1,8 +1,8 @@
 /**
  * @fileoverview Store-Level Canonical Resolver Bridge — ADR-903 P2 D-B
  *
- * P1 adapter (`legacyToCanonical`) + P2 resolver (`resolveCanonicalDocument`) 를
- * **store snapshot 진입점** 으로 묶고, consumer 측에서 사용할 lookup helper 와
+ * canonical document + P2 resolver (`resolveCanonicalDocument`) 를
+ * **document snapshot 진입점** 으로 묶고, consumer 측에서 사용할 lookup helper 와
  * Element 재구성 helper 를 제공한다.
  *
  * 본 모듈의 의도:
@@ -32,43 +32,31 @@ import type {
 
 import type { Element } from "@/types/builder/unified.types";
 import { isInstanceElement } from "@/types/builder/unified.types";
-import type { Page } from "@/types/builder/unified.types";
-import type { Layout } from "@/types/builder/layout.types";
-import type { ElementsState } from "@/builder/stores/elements";
-
-import { selectCanonicalDocument } from "@/builder/stores/elements";
 import { getComponentOverridesMirror } from "@/adapters/canonical/componentSemanticsMirror";
 import { resolveCanonicalDocument } from "./index";
 import { getSharedResolverCache } from "./cache";
 import { extractLegacyPropsFromResolved } from "./extractLegacyProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1) Store-snapshot → ResolvedNode[] selector (full tree)
+// 1) CompositionDocument → ResolvedNode[] selector (full tree)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * store snapshot + pages + layouts 를 받아 P1 adapter → P2 resolver 를 통과시킨
- * 결과 ResolvedNode[] 를 반환한다.
+ * canonical document snapshot 을 받아 P2 resolver 를 통과시킨 결과
+ * ResolvedNode[] 를 반환한다.
  *
  * - cache 는 기본적으로 `getSharedResolverCache()` 의 singleton 사용 — Preview /
  *   Skia 양쪽이 동일 인스턴스를 공유한다는 ADR-903 P0 Gate G2 (a) 계약 충족
  * - caller 가 격리된 cache (테스트 등) 가 필요하면 4번째 인자로 명시 주입
  *
- * 매 호출 시 `legacyToCanonical` 은 재실행 — adapter 자체는 ResolverCache 적용
- * 대상 아님 (P0 read-through 결정). cache 효과는 `resolveCanonicalDocument`
- * 단계에서 ref subtree hit 으로 발휘됨.
+ * ADR-916 direct cutover 이후 이 진입점은 store snapshot 에서
+ * `legacyToCanonical()` projection 을 재실행하지 않는다. cache 효과는
+ * `resolveCanonicalDocument` 단계에서 ref subtree hit 으로 발휘된다.
  */
 export function selectResolvedTree(
-  state: ElementsState,
-  pages: Page[],
-  layouts: Layout[],
+  doc: CompositionDocument,
   cache: ResolverCache = getSharedResolverCache(),
 ): ResolvedNode[] {
-  const doc: CompositionDocument = selectCanonicalDocument(
-    state,
-    pages,
-    layouts,
-  );
   return resolveCanonicalDocument(doc, cache);
 }
 

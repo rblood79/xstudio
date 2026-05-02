@@ -96,7 +96,6 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         await applyPageFrameBindingCanonicalPrimary({
           pageId,
           frameId: frameId || null,
-          layouts,
           getElementsState: () => useStore.getState(),
           setPages: state.setPages,
         });
@@ -107,7 +106,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         );
       }
     },
-    [layouts, pageId],
+    [pageId],
   );
 
   if (reusableFrames.length === 0) return null;

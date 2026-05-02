@@ -607,7 +607,7 @@ rg -n "elementsApi\.(create|update|insert|delete)|setElements\(|mergeElements\("
 1. **mergeElements 의 신규/기존 분기**: `legacy state + 입력 elements` merge 시 동일 id 면 입력으로 덮어쓰기. `legacyToCanonical(mergedElements)` 가 canonical doc 재생성 — full document 재구성 path. per-element insertNode/updateNode 분기 불필요 (full doc 재구성이 더 robust, lookup 키 분리 — segId vs uuid — 회피).
 2. **setElements 전체 교체**: 입력 elements + **기존 pages/layouts 보존** (입력 elements 만 변경, pages/layouts 는 이전 state). `legacyToCanonical({elements: input, pages: currentPages, layouts: currentLayouts})` 호출.
 3. **DB persist 와 in-memory 순서**: DB wrapper 3개는 DB save 후 caller 가 반환 Element 받아서 별도 in-memory wrapper 호출 (현재 caller 패턴). canonical reverse 시점에도 동일 — DB save 는 reverse 무관, in-memory wrapper 만 reverse.
-4. **무한 루프 방지**: wrapper 가 canonical setDocument + legacy setElements 양쪽 호출 → `canonicalDocumentSync` 가 useStore.subscribe 으로 legacy mutation 감지 → 또 canonical setDocument 재호출될 수 있다. direct cutover 에서는 같은 document 를 재계산하는 idempotent path 로 유지하고 flag disable 분기는 두지 않는다.
+4. **무한 루프 방지**: wrapper 가 canonical setDocument + legacy setElements 양쪽을 처리한다. direct cutover 후 `canonicalDocumentSync` 는 legacy store subscribe/projection sync 를 수행하지 않고 active project lifecycle marker 로만 남으므로 wrapper → legacy mirror → sync 재호출 루프가 없다.
 
 #### 8.7.3 sub-step β/γ/δ 정의
 
@@ -615,12 +615,13 @@ rg -n "elementsApi\.(create|update|insert|delete)|setElements\(|mergeElements\("
 | -------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------- |
 | **β monitoring trigger** (선택)  | 폐기 — feature flag/shadow subscription 없이 targeted fixture 로 대체                               | 제외              | direct cutover 원칙                                        |
 | **γ wrapper internal reverse**   | mergeElements / setElements wrapper 2개 내부 reverse + DI deps 확장 (legacyToCanonical caller 주입) | 본 §8.7 본격 land | HIGH — fixture coverage gap 발견 시 즉시 fixture 보강 의무 |
-| **δ canonicalDocumentSync swap** | 폐기 — sync 는 hydration/외부 legacy mirror 안전망으로 항상 유지                                    | 제외              | flag toggle 없음                                           |
+| **δ canonicalDocumentSync swap** | land — sync 는 project lifecycle marker 로만 유지하고 legacy snapshot projection 은 제거            | 본 §8.7 후속      | wrapper 가 canonical primary seed 책임                     |
 
 #### 8.7.4 진입 순서 (확정)
 
-1. **γ direct land** — wrapper 2 reverse 항상 활성 + sync 항상 on + vitest 회귀
-2. **β/δ/3-D 폐기** — feature flag, shadow monitoring, schemaVersion backup marker 는 direct cutover 원칙과 충돌
+1. **γ direct land** — wrapper 2 reverse 항상 활성 + vitest 회귀
+2. **δ direct land** — `canonicalDocumentSync` legacy subscribe/projection 제거, project lifecycle only
+3. **β/3-D 폐기** — feature flag, shadow monitoring, schemaVersion backup marker 는 direct cutover 원칙과 충돌
 
 #### 8.7.5 land 후 재검증 의무
 
@@ -1520,6 +1521,27 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 
 - **Phase 3 G4 wrapper 내부 진정 reverse** (HIGH ~3-5d, drift #1 본질 해소): canonical store mutation 우선 + legacy mirror 자동. ADR-916 본질 목표 (canonical primary write) 달성. caller 16 site 무수정 (DI pattern 으로 wrapper 외부 시그니처 보존).
 - **Phase 4 G5 P5-B `overrides`** (MED-HIGH ~1-2d, ADR-911 P3 회피 영역만, drift #2 영역 결합 위험).
+
+### §10.2.16 — Projection removal slices 15~17 (2026-05-02)
+
+**목표**: direct cutover 이후 hot/caller path 의 `selectCanonicalDocument()` / `legacyToCanonical()` full projection rebuild 를 제거한다. legacy payload 는 adapter/import/export mirror 경계로 제한한다.
+
+**land 요약**:
+
+- Preview runtime: `UPDATE_CANONICAL_DOCUMENT` payload 를 직접 저장하고 `App.tsx` 에서 수신된 `CompositionDocument` 를 resolve. Preview 렌더 경로 `legacyToCanonical()` 0.
+- Canvas/Builder panels: drag/drop helper, BuilderCanvas layout/frame memo, FramesTab, PageLayoutSelector, ComponentsPanel visible path 는 active canonical document 사용.
+- Builder/store actions: BuilderCore refresh/theme/publish, `usePageManager.initializeProject`, `elementCreation`, `layoutActions.getLayoutSlots` caller-level `selectCanonicalDocument()` 제거.
+- Sync/store bridge: `canonicalDocumentSync` 는 project lifecycle marker 로 축소. `storeBridge.selectResolvedTree` 는 `CompositionDocument` 직접 resolve API 로 전환.
+- Adapter boundary: `pageFrameBinding`, `frameLayoutCascade` 는 active canonical document children 을 직접 upsert/remove 하고 legacy page/elements 는 mirror persistence/export 로만 생성.
+
+**최신 grep 상태**:
+
+- production `selectCanonicalDocument()` 호출: `elements.ts` adapter 정의와 문서/comment 경계만 잔존.
+- runtime `legacyToCanonical()` 호출: `canonicalMutations` wrapper 내부 reverse 2곳 + adapter 정의. 이는 canonical primary wrapper 가 legacy `Element[]` 입력을 받는 transition boundary 로 남긴다.
+
+**검증**:
+
+- targeted vitest 7 files / 62 tests PASS (`canonicalDocumentSync`, `usePageManager.canonical`, `BuilderCore.static`, `storeBridge`, `pageFrameBinding`, `PageLayoutSelector.static`, `layoutActions`).
 
 ## 11. ADR 의존 관계 정리
 

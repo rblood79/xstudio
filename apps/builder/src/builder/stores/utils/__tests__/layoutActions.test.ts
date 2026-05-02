@@ -3,7 +3,7 @@
  *
  * RED → GREEN 사이클:
  *  1. createGetLayoutSlotsAction: elementsMap.forEach 제거 + canonical FrameNode.slot 직접 조회
- *  2. createDeleteLayoutAction cascade: layout_id 기반 elements 제거 → selectCanonicalDocument 경유
+ *  2. createDeleteLayoutAction cascade: active canonical document 기반 frame 제거
  *  3. edge: 빈 layout, nested slot, cascade 정확성
  */
 
@@ -25,6 +25,7 @@ import {
 import type { Element, Page } from "../../../../types/builder/unified.types";
 import type { Layout } from "../../../../types/builder/layout.types";
 import type { CompositionDocument } from "@composition/shared";
+import { useCanonicalDocumentStore } from "../../canonical/canonicalDocumentStore";
 
 const mockGetActiveCanonicalDocument = vi.hoisted(() => vi.fn());
 
@@ -376,14 +377,15 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
   beforeEach(async () => {
     vi.clearAllMocks();
     await mockElementsState();
+    useCanonicalDocumentStore.setState({
+      documents: new Map(),
+      currentProjectId: null,
+      documentVersion: 0,
+    });
   });
 
   it("canonical document 에 없는 layout 삭제 시 elements 는 제거하지 않고 page ref 는 해제한다", async () => {
     const layoutId = "layout-del-1";
-    vi.mocked(elementsStoreModule.selectCanonicalDocument).mockReturnValue({
-      version: "composition-1.0",
-      children: [],
-    } satisfies CompositionDocument);
 
     const removeElements = vi.fn(async () => {});
     const setPages = vi.fn();
@@ -436,12 +438,10 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
 
   it("canonical document mirror 로 frame subtree 를 제거하고 DB mirror 를 삭제한다", async () => {
     const layoutId = "layout-del-2";
-    vi.mocked(elementsStoreModule.selectCanonicalDocument)
-      .mockReturnValueOnce(makeFrameDoc(layoutId))
-      .mockReturnValueOnce({
-        version: "composition-1.0",
-        children: [],
-      } satisfies CompositionDocument);
+    useCanonicalDocumentStore.getState().setCurrentProject("proj-1");
+    useCanonicalDocumentStore
+      .getState()
+      .setDocument("proj-1", makeFrameDoc(layoutId));
 
     const layoutEl1 = makeElement("el-1", "body", { layout_id: layoutId });
     const layoutEl2 = makeElement("el-2", "Slot", { layout_id: layoutId });
@@ -491,6 +491,9 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     expect(setElements).toHaveBeenCalledWith([]);
     expect(db.elements.delete).toHaveBeenCalledWith("el-1");
     expect(db.elements.delete).toHaveBeenCalledWith("el-2");
+    expect(
+      useCanonicalDocumentStore.getState().getDocument("proj-1")?.children,
+    ).toEqual([]);
   });
 });
 

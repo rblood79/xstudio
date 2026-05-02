@@ -11,11 +11,10 @@
  * - elementsMap legacy store 와 양방향 sync 없음 — Phase 2 hot path cutover
  *   (G3) 와 함께 통합.
  *
- * **Phase 2/3 결합점**:
- * - Phase 2 G3: `legacyToCanonical()` 호출 결과를 본 store 의 `setDocument`
- *   로 push 하는 bridge 추가 (read-side cutover).
- * - Phase 3 G4: `setDocument` / mutation 호출 시 canonical primary 저장 +
- *   `CanonicalLegacyAdapter.exportLegacyDocument()` 결과 shadow write.
+ * **Direct cutover 결합점**:
+ * - route/project hydrate 는 canonical primary wrapper 가 document 를 직접 set.
+ * - hot path read 는 active canonical document 를 직접 구독.
+ * - legacy payload 는 export/adapter mirror 경계에서만 생성.
  */
 
 import { create } from "zustand";

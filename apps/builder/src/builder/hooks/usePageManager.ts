@@ -6,7 +6,10 @@ import { type Page, getDefaultProps } from "../../types/builder/unified.types";
 import { getDB } from "../../lib/db";
 import { useStore } from "../stores";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
-import { mergeElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
+import {
+  mergeElementsCanonicalPrimary,
+  setElementsCanonicalPrimary,
+} from "../../adapters/canonical/canonicalMutations";
 import {
   getFrameElementMirrorId,
   getNullablePageFrameBindingId,
@@ -576,7 +579,7 @@ export const usePageManager = ({
         const { migratedElements: mergedElements, orphanIds } =
           applyCollectionItemsMigration(rawMerged);
 
-        useStore.getState().hydrateProjectSnapshot(mergedElements);
+        setElementsCanonicalPrimary(mergedElements);
 
         // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem/ListBoxItem(+subtree) 행 제거
         // (undo 스택 미오염)
