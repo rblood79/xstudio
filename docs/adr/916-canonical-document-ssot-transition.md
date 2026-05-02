@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 2 G3 / Phase 3 G4 / Phase 5 G6-1·G6-2·G6-3·G6-4·G7 closure 는 유지하되, 개발 단계 전제에 맞춰 feature flag / backup / runtime DB migration / rollback marker 를 제거하고 canonical primary 를 즉시 기본 경로로 고정했다. `useLayoutsStore` / `layoutActions` legacy store 본체도 제거했다. component/frame/slot mirror type schema 와 targeted fixture cluster 는 adapter helper 경계로 이동했다. 잔존 = ADR-911/913 의 legacy field quarantine broader fixture/comment bucket 및 legacy `descendants` schema cleanup.
+Implemented — 2026-05-02. `CompositionDocument` canonical schema 를 저장/편집/export/import 의 최종 SSOT 로 전환했다. feature flag / backup / runtime DB migration / rollback marker 없이 direct cutover 했고, IndexedDB `documents` store + `DatabaseAdapter.documents` 를 primary persistence 로 추가했다. legacy `pages`/`elements`/`layouts` 는 hydrate fallback 과 adapter/export mirror boundary 로 격리하며, legacy field runtime access / Element type schema / broader raw fixture key bucket 은 gate 0으로 닫았다.
 
 ### 진행 로그
 
@@ -276,14 +276,20 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - `MasterChangeEvent` / `DetachResult.previousState` 의 legacy-style field 명칭은 `originId` / `overrideProps` / `descendantPatches` 로 전환했다.
   - strict non-adapter field-access grep 은 0건이며, `g5LegacyFieldGrepGate.test.ts` 가 unified types helper 재도입을 차단한다.
   - 검증: targeted vitest 5 files / 58 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — ADR-916 final SSOT closure**:
+  - IndexedDB `DB_VERSION` 을 10으로 올리고 `documents` object store + `DatabaseAdapter.documents.{put,get,delete,getAll}` 를 추가했다. Builder hydrate 는 저장된 `CompositionDocument` 가 있으면 이를 먼저 canonical store 에 주입하고, legacy element rows 는 `exportLegacyDocument()` 로만 mirror 생성한다.
+  - `BuilderCore` 는 active canonical document 변경을 debounce 하여 `db.documents.put(projectId, doc)` 으로 저장한다. page shell mutation 은 canonical document 를 즉시 갱신해 page 추가/삭제 경로가 legacy page store 에 머물지 않게 했다.
+  - shared project export schema 는 `document: CompositionDocument` 를 필수로 검증하고, export/import utility 와 Publish import 타입은 `ProjectExportData.document` 를 기준으로 동작한다. legacy `pages`/`elements` 는 backward-compatible mirror payload 로만 남는다.
+  - `Element` / shared `Element` schema 에서 legacy `descendants` mirror 선언까지 제거했고, broader non-adapter raw fixture key bucket (`layout_id:` / `slot_name:` / `componentRole:` / `masterId:`) 은 0건으로 닫았다. canonical `RefNode.descendants` 테스트는 합법 canonical field 로 유지한다.
+  - 검증: ADR-916 persistence/export/schema targeted builder vitest 5 files / 29 tests PASS, fixture cleanup targeted vitest 14 files / 130 tests PASS, shared export canonical project vitest 1 file / 3 tests PASS, `pnpm run codex:typecheck` PASS.
 
 ## Context
 
 ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slot` 문법, resolver-first migration을 도입했고, ADR-910은 `themes`/`variables`를 canonical document에 land했다. ADR-911/912/913/914는 그 후속 영역인 frame/slot authoring, editing semantics, `tag -> type`, hybrid field cleanup, imports resolver를 나누어 처리했다. 2026-04-30 기준 ADR-914 독립 계획은 superseded 처리하고, 잔여 `imports` resolver/cache 범위는 본 ADR의 canonical document boundary로 흡수한다.
 
-그러나 현재 runtime/persistence 구조는 아직 **canonical document가 최종 SSOT가 아니라 read-through projection**에 가깝다. `elements[] + pages[] + layouts[]`에서 매번 `CompositionDocument`를 만들고, legacy 필드(`layout_id`, `slot_name`, `componentRole`, `masterId`, legacy `overrides/descendants`)를 canonical 의미로 역해석한다. 이 상태는 format 전환기의 완충책으로는 유효하지만, 최종 구조가 되면 성능과 의미 충돌을 계속 만든다.
+전환 전 runtime/persistence 구조는 **canonical document가 최종 SSOT가 아니라 read-through projection**에 가까웠다. `elements[] + pages[] + layouts[]`에서 매번 `CompositionDocument`를 만들고, legacy 필드(`layout_id`, `slot_name`, `componentRole`, `masterId`, legacy `overrides/descendants`)를 canonical 의미로 역해석했다. 이 상태는 format 전환기의 완충책으로는 유효했지만, 최종 구조가 되면 성능과 의미 충돌을 계속 만든다.
 
-이 ADR은 기존 후속 ADR들을 폐기하지 않고, 그 위에 **최종 목표를 명확히 고정**한다. 최종 기준은 Pencil 원본 `.pen` schema도, legacy `elements[]` store도 아니다. 최종 기준은 Composition component vocabulary를 유지하는 `**CompositionDocument` canonical schema\*\*다.
+이 ADR은 기존 후속 ADR들을 폐기하지 않고, 그 위에 **최종 목표를 명확히 고정**했다. 최종 기준은 Pencil 원본 `.pen` schema도, legacy `elements[]` store도 아니다. 최종 기준은 Composition component vocabulary를 유지하는 `**CompositionDocument` canonical schema\*\*다.
 
 **Hard Constraints**:
 

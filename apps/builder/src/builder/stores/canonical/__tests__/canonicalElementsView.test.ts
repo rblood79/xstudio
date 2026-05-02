@@ -5,7 +5,7 @@
  * 검증 영역:
  * 1. canonicalDocumentToElements — DFS + metadata.legacyProps 역추적
  * 2. metadata 누락 노드 skip + 자식 parent context 승계
- * 3. element top-level fields (id/parent_id/page_id/layout_id/order_num/fills/type)
+ * 3. element top-level fields (id/parent_id/page_id/frame mirror/order_num/fills/type)
  *    무손실 복원
  * 4. legacyToCanonical 결과를 그대로 통과시킨 round-trip 동등성
  * 5. (Step 2) useCanonicalSelectedElement — selectedElementId 단일 노드 변환
@@ -25,6 +25,7 @@ import {
   useCanonicalSelectedElement,
 } from "../canonicalElementsView";
 import { useCanonicalDocumentStore } from "../canonicalDocumentStore";
+import { withFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "../../../../adapters/canonical/legacyMetadata";
 
 // ─────────────────────────────────────────────
@@ -486,20 +487,24 @@ describe("canonicalDocumentToElements — spec consumer parity (G6-1)", () => {
 // ─────────────────────────────────────────────
 
 describe("canonicalDocumentToElements — fields 복원", () => {
-  it("layout_id / fills 필드도 복원", () => {
+  it("frame mirror / fills 필드도 복원", () => {
     const doc = makeDoc([
       {
         id: "seg-layout",
         type: "Frame",
-        metadata: makeMetadata({
-          id: "uuid-layout-el",
-          parent_id: null,
-          page_id: null,
-          layout_id: "layout-1",
-          order_num: 5,
-          fills: [{ color: "red" }],
-          type: "Frame",
-        }),
+        metadata: makeMetadata(
+          withFrameElementMirrorId(
+            {
+              id: "uuid-layout-el",
+              parent_id: null,
+              page_id: null,
+              order_num: 5,
+              fills: [{ color: "red" }],
+              type: "Frame",
+            },
+            "layout-1",
+          ),
+        ),
       },
     ]);
 

@@ -93,14 +93,6 @@ export interface Element {
 
   // --- G.1: Component-Instance System ---
   /**
-   * @deprecated ADR-913 Phase 5-E + ADR-916 G5 cleanup target.
-   * canonical `RefNode.descendants` (Record<string, DescendantOverride>) 로
-   * 통합. 기존 `DescendantOverrides` (Record<string, Record<string, unknown>>)
-   * 는 `(A) DescendantPatchMode` 모드와 호환되나 (B)/(C) 모드 미지원 → migration 필요.
-   * ADR-916 G5 시점에 canonical `DescendantOverride` union 으로만 사용.
-   */
-  descendants?: DescendantOverrides;
-  /**
    * @deprecated ADR-913 Phase 5 + ADR-916 G5 cleanup target.
    * canonical `CanonicalNode.name` (모든 노드 공통) 으로 흡수. reusable 전용 prop
    * 이 아니라 모든 노드에 사용 가능한 sentence-case 이름.
@@ -118,8 +110,6 @@ export interface Element {
 }
 
 // === G.1/G.2 타입 별칭 및 가드 ===
-
-export type DescendantOverrides = Record<string, Record<string, unknown>>;
 
 /** $-- 접두사 디자인 변수 참조인지 검사 */
 export function isVariableRef(value: unknown): value is string {

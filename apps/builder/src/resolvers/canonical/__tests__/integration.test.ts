@@ -13,7 +13,16 @@ import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
 import { legacyToCanonical } from "@/adapters/canonical";
 import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
+import {
+  withComponentInstanceMirror,
+  withComponentOriginMirror,
+} from "@/adapters/canonical/componentSemanticsMirror";
+import {
+  withFrameElementMirrorId,
+  withPageFrameBinding,
+} from "@/adapters/canonical/frameMirror";
 import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
+import { withSlotMirrorName } from "@/adapters/canonical/slotMirror";
 import { resolveCanonicalDocument } from "../index";
 import { createResolverCache } from "../cache";
 
@@ -71,20 +80,22 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
   it("TC1: master + instance legacy → adapter → resolver — instance 가 master 기반 resolved (_resolvedFrom 세팅)", () => {
     // Arrange
     const elements: Element[] = [
-      el({
-        id: "master-btn",
-        type: "Button",
-        componentRole: "master",
-        componentName: "Submit Button",
-        customId: "submit-btn",
-      }),
-      el({
-        id: "instance-btn",
-        type: "Button",
-        componentRole: "instance",
-        masterId: "master-btn",
-        page_id: "P1",
-      }),
+      withComponentOriginMirror(
+        el({
+          id: "master-btn",
+          type: "Button",
+          componentName: "Submit Button",
+          customId: "submit-btn",
+        }),
+      ),
+      withComponentInstanceMirror(
+        el({
+          id: "instance-btn",
+          type: "Button",
+          page_id: "P1",
+        }),
+        "master-btn",
+      ),
     ];
     const pages: Page[] = [page({ id: "P1", title: "Home", slug: "/" })];
 
@@ -121,24 +132,31 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     // Arrange
     const layouts: Layout[] = [layout({ id: "L1", name: "App Shell" })];
     const elements: Element[] = [
-      el({ id: "shell-root", type: "Box", layout_id: "L1", parent_id: null }),
-      el({
-        id: "main-slot",
-        type: "Slot",
-        layout_id: "L1",
-        parent_id: "shell-root",
-        props: { name: "main" },
-      }),
-      el({
-        id: "page-card",
-        type: "Card",
-        page_id: "P1",
-        slot_name: "main",
-        parent_id: null,
-      }),
+      withFrameElementMirrorId(
+        el({ id: "shell-root", type: "Box", parent_id: null }),
+        "L1",
+      ),
+      withFrameElementMirrorId(
+        el({
+          id: "main-slot",
+          type: "Slot",
+          parent_id: "shell-root",
+          props: { name: "main" },
+        }),
+        "L1",
+      ),
+      withSlotMirrorName(
+        el({
+          id: "page-card",
+          type: "Card",
+          page_id: "P1",
+          parent_id: null,
+        }),
+        "main",
+      ),
     ];
     const pages: Page[] = [
-      page({ id: "P1", title: "Home", slug: "/", layout_id: "L1" }),
+      withPageFrameBinding(page({ id: "P1", title: "Home", slug: "/" }), "L1"),
     ];
 
     // Act
@@ -172,24 +190,31 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
   it("TC2-b: layout + page resolve 후 instance metadata (type/pageId) 보존 — page filter 시나리오", () => {
     const layouts: Layout[] = [layout({ id: "L1", name: "App Shell" })];
     const elements: Element[] = [
-      el({ id: "shell-root", type: "Box", layout_id: "L1", parent_id: null }),
-      el({
-        id: "main-slot",
-        type: "Slot",
-        layout_id: "L1",
-        parent_id: "shell-root",
-        props: { name: "main" },
-      }),
-      el({
-        id: "page-card",
-        type: "Card",
-        page_id: "P1",
-        slot_name: "main",
-        parent_id: null,
-      }),
+      withFrameElementMirrorId(
+        el({ id: "shell-root", type: "Box", parent_id: null }),
+        "L1",
+      ),
+      withFrameElementMirrorId(
+        el({
+          id: "main-slot",
+          type: "Slot",
+          parent_id: "shell-root",
+          props: { name: "main" },
+        }),
+        "L1",
+      ),
+      withSlotMirrorName(
+        el({
+          id: "page-card",
+          type: "Card",
+          page_id: "P1",
+          parent_id: null,
+        }),
+        "main",
+      ),
     ];
     const pages: Page[] = [
-      page({ id: "P1", title: "Home", slug: "/", layout_id: "L1" }),
+      withPageFrameBinding(page({ id: "P1", title: "Home", slug: "/" }), "L1"),
     ];
 
     const doc = legacyToCanonical({ elements, pages, layouts }, deps);
@@ -215,13 +240,14 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
   it("TC3: legacy instance 의 descendants UUID → adapter remap → resolver mode A apply — 최종 child props 머지 검증", () => {
     // Arrange: master + label 자식 + instance with descendants override
     const elements: Element[] = [
-      el({
-        id: "m1",
-        type: "Button",
-        componentRole: "master",
-        customId: "ok-button",
-        props: {},
-      }),
+      withComponentOriginMirror(
+        el({
+          id: "m1",
+          type: "Button",
+          customId: "ok-button",
+          props: {},
+        }),
+      ),
       el({
         id: "label-child",
         type: "Label",
@@ -229,17 +255,15 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
         customId: "label",
         props: { text: "OK" },
       }),
-      el({
-        id: "i1-on-page",
-        type: "Button",
-        componentRole: "instance",
-        masterId: "m1",
-        descendants: { "label-child": { text: "Cancel" } } as Record<
-          string,
-          Record<string, unknown>
-        >,
-        page_id: "P1",
-      }),
+      withComponentInstanceMirror(
+        el({
+          id: "i1-on-page",
+          type: "Button",
+          page_id: "P1",
+        }),
+        "m1",
+        { descendantPatches: { "label-child": { text: "Cancel" } } },
+      ),
     ];
     const pages: Page[] = [page({ id: "P1", title: "Home", slug: "/" })];
 
@@ -314,17 +338,18 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
   it("TC5: invalidateSubtree(layoutRefId) 후 다음 resolve 시 해당 ref 만 cache miss", () => {
     // Arrange: layout ref (L1) + master ref (btn) 두 ref 가 cache 에 들어감
     const layouts: Layout[] = [layout({ id: "L1", name: "Shell" })];
-    const masterEl = el({
-      id: "master-btn",
-      type: "Button",
-      componentRole: "master",
-      customId: "shared-btn",
-    });
+    const masterEl = withComponentOriginMirror(
+      el({
+        id: "master-btn",
+        type: "Button",
+        customId: "shared-btn",
+      }),
+    );
     const pages: Page[] = [
-      page({ id: "P1", title: "Home", slug: "/", layout_id: "L1" }),
+      withPageFrameBinding(page({ id: "P1", title: "Home", slug: "/" }), "L1"),
     ];
     const elements: Element[] = [
-      el({ id: "shell-root", type: "Box", layout_id: "L1" }),
+      withFrameElementMirrorId(el({ id: "shell-root", type: "Box" }), "L1"),
       masterEl,
     ];
 

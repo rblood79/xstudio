@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import {
+  getNullablePageFrameBindingId,
+  withPageFrameBinding,
+} from "../../../adapters/canonical/frameMirror";
 import type { Page } from "../../../types/builder/unified.types";
 import { useStore } from "../elements";
 
@@ -23,15 +27,17 @@ describe("setPages layout invalidation", () => {
   });
 
   it("page frame binding 변경은 Skia layout 재계산을 트리거한다", () => {
-    const page = makePage("page-1", { layout_id: "frame-1" });
+    const page = withPageFrameBinding(makePage("page-1"), "frame-1");
     useStore.setState({
       pages: [page],
       layoutVersion: 10,
     });
 
-    useStore.getState().setPages([{ ...page, layout_id: null }]);
+    useStore.getState().setPages([withPageFrameBinding(page, null)]);
 
-    expect(useStore.getState().pages[0].layout_id).toBeNull();
+    expect(
+      getNullablePageFrameBindingId(useStore.getState().pages[0]),
+    ).toBeNull();
     expect(useStore.getState().layoutVersion).toBe(11);
   });
 

@@ -27,6 +27,7 @@ import {
 } from "@testing-library/react";
 import type { Element } from "@/types/core/store.types";
 import type { ElementTreeItem } from "@/types/builder/stately.types";
+import { withFrameElementMirrorId } from "@/adapters/canonical/frameMirror";
 
 // ─── mock state holders ─────────────────────────────────────────────────────
 type LayoutLite = { id: string; name: string; project_id: string };
@@ -181,6 +182,10 @@ function makeProps(): React.ComponentProps<typeof FramesTab> {
   };
 }
 
+function makeFrameElement(frameId: string | null, element: Element): Element {
+  return withFrameElementMirrorId(element, frameId);
+}
+
 function resetMockState() {
   mockLayoutsState.layouts = [];
   mockLayoutsState.selectedReusableFrameId = null;
@@ -243,42 +248,38 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
         { id: "f-1", name: "Header Frame", project_id: "test-project" },
         { id: "f-2", name: "Footer Frame", project_id: "test-project" },
       ];
-      const body1: Element = {
+      const body1: Element = makeFrameElement("f-1", {
         id: "body-f-1",
         type: "body",
         props: {},
         parent_id: null,
         page_id: null,
-        layout_id: "f-1",
         order_num: 0,
-      };
-      const slot1: Element = {
+      });
+      const slot1: Element = makeFrameElement("f-1", {
         id: "slot-f-1",
         type: "Slot",
         props: {},
         parent_id: "body-f-1",
         page_id: null,
-        layout_id: "f-1",
         order_num: 1,
-      };
-      const body2: Element = {
+      });
+      const body2: Element = makeFrameElement("f-2", {
         id: "body-f-2",
         type: "body",
         props: {},
         parent_id: null,
         page_id: null,
-        layout_id: "f-2",
         order_num: 0,
-      };
-      const slot2: Element = {
+      });
+      const slot2: Element = makeFrameElement("f-2", {
         id: "slot-f-2",
         type: "Slot",
         props: {},
         parent_id: "body-f-2",
         page_id: null,
-        layout_id: "f-2",
         order_num: 1,
-      };
+      });
       mockGetAllElements.mockResolvedValue([body1, slot1, body2, slot2]);
 
       render(<FramesTab {...makeProps()} />);
@@ -298,15 +299,14 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
     it("선택 id가 frame 목록 projection보다 먼저 도착해도 body tree를 렌더한다", () => {
       mockLayoutsState.layouts = [];
       mockLayoutsState.selectedReusableFrameId = "new-frame";
-      const body: Element = {
+      const body: Element = makeFrameElement("new-frame", {
         id: "body-new-frame",
         type: "body",
         props: {},
         parent_id: null,
         page_id: null,
-        layout_id: "new-frame",
         order_num: 0,
-      };
+      });
       mockStoreState.elementsMap = new Map([[body.id, body]]);
       mockBuildTreeFromElements.mockImplementation(
         (elements: Element[]): ElementTreeItem[] =>
@@ -402,7 +402,7 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
   // ─── canonical-native read path ────────────────────────────────────────────
   describe("canonical-native read path", () => {
     it("frame 목록을 active canonical document 의 reusable FrameNode 로 표시", () => {
-      // legacy layouts[] 에는 데이터 있지만, canonical doc 가 다르면 canonical 표시
+      // mirror-source layouts[] 에는 데이터 있지만, canonical doc 가 다르면 canonical 표시
       mockLayoutsState.layouts = [
         { id: "legacy-id", name: "Legacy Should Not Show", project_id: "p" },
       ];
@@ -461,7 +461,7 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
       expect(screen.queryByText("Some Ref")).toBeNull();
     });
 
-    it("canonical frame 클릭 시 metadata.layoutId (legacy id) 로 selectReusableFrame 위임 — write 정합성", async () => {
+    it("canonical frame 클릭 시 metadata.layoutId mirror id 로 selectReusableFrame 위임 — write 정합성", async () => {
       mockActiveCanonicalDocument.mockReturnValue({
         children: [
           {
@@ -469,7 +469,7 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
             type: "frame",
             reusable: true,
             name: "Header",
-            metadata: { type: "legacy-layout", layoutId: "frame-zzz" }, // legacy id
+            metadata: { type: "legacy-layout", layoutId: "frame-zzz" }, // mirror id
             children: [],
           },
         ],
@@ -481,7 +481,7 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      // legacy id ("frame-zzz") 로 select 호출 — canonical id ("layout-frame-zzz") 아님
+      // mirror id ("frame-zzz") 로 select 호출 — canonical id ("layout-frame-zzz") 아님
       expect(selectReusableFrameMock).toHaveBeenCalledWith("frame-zzz");
     });
   });

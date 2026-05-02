@@ -15,7 +15,7 @@ import type { Element, Page } from "@composition/shared";
 import {
   loadProjectFromUrl,
   loadProjectFromFile,
-  type ExportedProjectData,
+  type ProjectExportData,
   type ExportError,
   ExportErrorCode,
 } from "@composition/shared/utils";
@@ -270,7 +270,7 @@ export function App() {
 
   // 프로젝트 데이터 설정
   const setProject = useCallback(
-    (data: ExportedProjectData, loadWarnings?: ExportError[]) => {
+    (data: ProjectExportData, loadWarnings?: ExportError[]) => {
       const projectData: ProjectData = {
         pages: data.pages,
         elements: data.elements,

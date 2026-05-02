@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
+import { withFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 import type { Element } from "../../../../types/core/store.types";
 import { findBodySelectionAtCanvasPoint } from "./selectionHitTest";
 
-function makeBody(overrides: Partial<Element>): Element {
-  return {
+function makeBody(
+  overrides: Partial<Element> & { frameId?: string | null },
+): Element {
+  const { frameId, ...elementOverrides } = overrides;
+  const body = {
     id: "body",
     type: "body",
     page_id: "page-1",
     parent_id: null,
     order_num: 0,
     props: {},
-    ...overrides,
+    ...elementOverrides,
   } as Element;
+
+  return frameId === undefined ? body : withFrameElementMirrorId(body, frameId);
 }
 
 describe("findBodySelectionAtCanvasPoint", () => {
@@ -42,7 +48,7 @@ describe("findBodySelectionAtCanvasPoint", () => {
           "frame-body",
           makeBody({
             id: "frame-body",
-            layout_id: "frame-1",
+            frameId: "frame-1",
             page_id: null,
           }),
         ],
@@ -67,7 +73,7 @@ describe("findBodySelectionAtCanvasPoint", () => {
           "frame-body-a",
           makeBody({
             id: "frame-body-a",
-            layout_id: "frame-a",
+            frameId: "frame-a",
             page_id: null,
           }),
         ],
@@ -75,7 +81,7 @@ describe("findBodySelectionAtCanvasPoint", () => {
           "frame-body-b",
           makeBody({
             id: "frame-body-b",
-            layout_id: "frame-b",
+            frameId: "frame-b",
             page_id: null,
           }),
         ],

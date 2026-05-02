@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 
+import {
+  withFrameElementMirrorId,
+  withPageFrameBinding,
+} from "../../../../adapters/canonical/frameMirror";
+import { withSlotMirrorName } from "../../../../adapters/canonical/slotMirror";
 import type { Element, Page } from "../../../../types/core/store.types";
 
 import {
@@ -8,12 +13,33 @@ import {
   toPageFrameElementId,
 } from "./resolvePageWithFrame";
 
-const makeEl = (
-  partial: Partial<Element> & { id: string; type: string },
-): Element => ({
-  props: {},
-  ...partial,
-});
+type TestElementPartial = Partial<Element> & {
+  frameId?: string | null;
+  id: string;
+  propsSlotMirrorName?: string | null;
+  slotMirrorName?: string | null;
+  type: string;
+};
+
+const makeEl = (partial: TestElementPartial): Element => {
+  const { frameId, propsSlotMirrorName, slotMirrorName, ...element } = partial;
+  let row = {
+    props: {},
+    ...element,
+  } as Element;
+
+  if (propsSlotMirrorName !== undefined) {
+    row = {
+      ...row,
+      props: withSlotMirrorName(row.props ?? {}, propsSlotMirrorName),
+    };
+  }
+  if (slotMirrorName !== undefined) {
+    row = withSlotMirrorName(row, slotMirrorName);
+  }
+
+  return frameId === undefined ? row : withFrameElementMirrorId(row, frameId);
+};
 
 const makePage = (partial: Partial<Page> & { id: string }): Page => ({
   title: "Home",
@@ -22,11 +48,16 @@ const makePage = (partial: Partial<Page> & { id: string }): Page => ({
   ...partial,
 });
 
+const makeFramePage = (
+  frameId: string | null,
+  partial: Partial<Page> & { id: string },
+): Page => withPageFrameBinding(makePage(partial), frameId);
+
 const buildElementsMap = (els: Element[]): Map<string, Element> =>
   new Map(els.map((el) => [el.id, el]));
 
 describe("ADR-911 P3-θ resolvePageWithFrame", () => {
-  it("layout_id 미바인딩 page → 기존 동작 (body + nonBody, hasFrameBinding=false)", () => {
+  it("frame mirror 미바인딩 page → 기존 동작 (body + nonBody, hasFrameBinding=false)", () => {
     const pageBody = makeEl({
       id: "page-body",
       type: "body",
@@ -53,7 +84,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     expect(result.pageElements.map((el) => el.id)).toEqual(["btn"]);
   });
 
-  it("layout_id 바인딩 but frame body 미존재 → page only fallback", () => {
+  it("frame mirror 바인딩 but frame body 미존재 → page only fallback", () => {
     const pageBody = makeEl({
       id: "page-body",
       type: "body",
@@ -69,7 +100,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const elementsMap = buildElementsMap([pageBody, button]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: "missing-frame" }),
+      page: makeFramePage("missing-frame", { id: "page-1" }),
       pageElements: [pageBody, button],
       elementsMap,
     });
@@ -84,14 +115,14 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       order_num: 0,
     });
     const slotHeader = makeEl({
       id: "slot-header",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       order_num: 0,
@@ -100,7 +131,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       order_num: 1,
@@ -109,7 +140,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const slotFooter = makeEl({
       id: "slot-footer",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       order_num: 2,
@@ -118,7 +149,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const textHeader = makeEl({
       id: "text-header",
       type: "Text",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "slot-header",
       order_num: 0,
@@ -126,7 +157,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const textFooter = makeEl({
       id: "text-footer",
       type: "Text",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "slot-footer",
       order_num: 0,
@@ -151,7 +182,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       const elementsMap = buildElementsMap(allElements);
 
       const result = resolvePageWithFrame({
-        page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+        page: makeFramePage(FRAME_ID, { id: "page-1" }),
         pageElements: [pageBody],
         elementsMap,
       });
@@ -202,13 +233,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
     });
     const slotHeader = makeEl({
       id: "slot-header",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       order_num: 0,
@@ -217,7 +248,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       order_num: 1,
@@ -226,7 +257,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const slotFooter = makeEl({
       id: "slot-footer",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       order_num: 2,
@@ -235,21 +266,21 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const textHeader = makeEl({
       id: "text-header",
       type: "Text",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "slot-header",
     });
     const textFooter = makeEl({
       id: "text-footer",
       type: "Text",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "slot-footer",
     });
     const defaultContentText = makeEl({
       id: "default-content-text",
       type: "Text",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "slot-content",
     });
@@ -265,7 +296,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       page_id: "page-1",
       parent_id: "page-body",
       order_num: 0,
-      props: { slot_name: "content" },
+      propsSlotMirrorName: "content",
     });
 
     const allElements = [
@@ -280,11 +311,11 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       pageCustom,
     ];
 
-    it("page slot_name='content' 매칭 → page element parent_id 재매핑 + frame default content 자식 hide", () => {
+    it("page slot mirror='content' 매칭 → page element parent_id 재매핑 + frame default content 자식 hide", () => {
       const elementsMap = buildElementsMap(allElements);
 
       const result = resolvePageWithFrame({
-        page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+        page: makeFramePage(FRAME_ID, { id: "page-1" }),
         pageElements: [pageBody, pageCustom],
         elementsMap,
       });
@@ -314,13 +345,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       expect(slotContentRow?.props?._slotMarkerChrome).toBe("visible");
     });
 
-    it("page slot_name 가 element-level (props 외부) 에 있어도 매칭", () => {
+    it("page slot mirror 가 element-level (props 외부) 에 있어도 매칭", () => {
       const pageCustomLegacy = makeEl({
         id: "page-custom",
         type: "Card",
         page_id: "page-1",
         parent_id: "page-body",
-        slot_name: "content",
+        slotMirrorName: "content",
       });
       const elementsMap = buildElementsMap([
         frameBody,
@@ -335,7 +366,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       ]);
 
       const result = resolvePageWithFrame({
-        page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+        page: makeFramePage(FRAME_ID, { id: "page-1" }),
         pageElements: [pageBody, pageCustomLegacy],
         elementsMap,
       });
@@ -349,18 +380,18 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     });
   });
 
-  it("매칭 안 된 slot_name 은 'content' fallback 으로 fill", () => {
+  it("매칭 안 된 slot mirror 는 'content' fallback 으로 fill", () => {
     const FRAME_ID = "frame-1";
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
     });
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "content" },
@@ -375,7 +406,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       type: "Button",
       page_id: "page-1",
       parent_id: "page-body",
-      props: { slot_name: "nonexistent" },
+      propsSlotMirrorName: "nonexistent",
     });
     const elementsMap = buildElementsMap([
       frameBody,
@@ -385,7 +416,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     ]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [pageBody, pageMisslotted],
       elementsMap,
     });
@@ -401,13 +432,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
     });
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "content" },
@@ -422,7 +453,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       type: "Card",
       page_id: "page-1",
       parent_id: "page-body",
-      props: { slot_name: "content" },
+      propsSlotMirrorName: "content",
     });
     const pageChild = makeEl({
       id: "page-child",
@@ -439,7 +470,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     ]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [pageBody, pageRoot, pageChild],
       elementsMap,
     });
@@ -462,13 +493,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
     });
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "content" },
@@ -483,7 +514,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       type: "Card",
       page_id: "page-1",
       parent_id: "page-1-body",
-      props: { slot_name: "content" },
+      propsSlotMirrorName: "content",
     });
     const page2Body = makeEl({
       id: "page-2-body",
@@ -495,7 +526,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       type: "Button",
       page_id: "page-2",
       parent_id: "page-2-body",
-      props: { slot_name: "content" },
+      propsSlotMirrorName: "content",
     });
     const elementsMap = buildElementsMap([
       frameBody,
@@ -507,12 +538,12 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     ]);
 
     const page1Result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [page1Body, page1Card],
       elementsMap,
     });
     const page2Result = resolvePageWithFrame({
-      page: makePage({ id: "page-2", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-2" }),
       pageElements: [page2Body, page2Button],
       elementsMap,
     });
@@ -544,7 +575,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
     });
     const pageBody = makeEl({
@@ -561,7 +592,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const elementsMap = buildElementsMap([frameBody, pageBody, pageCard]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [pageBody, pageCard],
       elementsMap,
     });
@@ -578,7 +609,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       props: {
         style: {
@@ -594,7 +625,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "content" },
@@ -608,7 +639,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const elementsMap = buildElementsMap([frameBody, slotContent, pageBody]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [pageBody],
       elementsMap,
     });
@@ -636,14 +667,14 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       props: { style: { display: "flex", flexDirection: "column" } },
     });
     const header = makeEl({
       id: "slot-header",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "header" },
@@ -651,7 +682,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const content = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "content" },
@@ -659,7 +690,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const footer = makeEl({
       id: "slot-footer",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "footer" },
@@ -678,7 +709,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     ]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [pageBody],
       elementsMap,
     });
@@ -707,13 +738,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
     });
     const slotContent = makeEl({
       id: "slot-content",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "content" },
@@ -721,7 +752,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     const deletedSlot = makeEl({
       id: "slot-deleted",
       type: "Slot",
-      layout_id: FRAME_ID,
+      frameId: FRAME_ID,
       page_id: null,
       parent_id: "frame-body",
       props: { name: "footer" },
@@ -740,15 +771,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     ]);
 
     const result = resolvePageWithFrame({
-      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      page: makeFramePage(FRAME_ID, { id: "page-1" }),
       pageElements: [pageBody],
       elementsMap,
     });
 
     const ids = new Set(result.pageElements.map((el) => el.id));
-    expect(ids.has(toPageFrameElementId("page-1", "slot-deleted"))).toBe(
-      false,
-    );
+    expect(ids.has(toPageFrameElementId("page-1", "slot-deleted"))).toBe(false);
     expect(ids.has(toPageFrameElementId("page-1", "slot-content"))).toBe(true);
   });
 });

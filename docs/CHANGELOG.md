@@ -59,6 +59,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - frame/slot targeted fixture cluster 는 `withFrameElementMirrorId()` / `withSlotMirrorName()` helper 로 전환했고, `g5LegacyFieldGrepGate` 가 frame/slot type schema 재도입과 targeted raw fixture key 재도입을 차단한다.
   - `MasterChangeEvent` / `DetachResult.previousState` 의 legacy-style field 명칭을 `originId` / `overrideProps` / `descendantPatches` 로 교체했다.
   - canonical resolver fingerprint parameter 의 일반 변수명 `overrides` 를 `descendantOverrides` 로 바꿔 legacy field grep noise 를 제거했다.
+- ADR-916 final SSOT closure 를 완료했다.
+  - IndexedDB `DB_VERSION` 을 10으로 올리고 `documents` object store 를 추가했다.
+  - `DatabaseAdapter.documents.{put,get,delete,getAll}` 와 `CanonicalDocumentRecord` 를 추가해 `CompositionDocument` 를 project primary persistence 로 저장한다.
+  - Builder hydrate 는 `db.documents.get(projectId)` 를 먼저 사용하고, 저장된 canonical document 가 있으면 `exportLegacyDocument()` 로만 legacy mirror elements 를 만든다.
+  - `BuilderCore` 는 active canonical document 변경을 microtask debounce 후 `db.documents.put(projectId, doc)` 으로 저장하고, page shell mutation 도 canonical document 에 반영한다.
+  - shared export/import schema 는 `document: CompositionDocument` 를 필수 payload 로 검증한다. `ProjectExportData` 와 Publish import path 는 canonical document-first 타입을 사용하고, legacy `pages` / `elements` 는 compatibility mirror 로만 유지한다.
+  - legacy `descendants` mirror field 를 Element/shared type schema 에서 제거했다. canonical `RefNode.descendants` 는 합법 canonical schema 로 유지한다.
+  - broader non-adapter raw fixture key bucket (`layout_id:` / `slot_name:` / `componentRole:` / `masterId:`) 을 0건으로 닫았다.
 - ADR-913 Phase 4 를 DB migration 없이 direct cutover 로 닫았다.
   - `normalizeLegacyElement` read-through helper 제거
   - `runTagTypeMigration` 및 관련 dry-run entry/test 제거
@@ -70,8 +78,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts src/resolvers/canonical/__tests__/cache.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts src/builder/utils/multiElementCopy.test.ts src/builder/stores/utils/__tests__/elementUpdateOriginImpact.test.ts src/builder/workspace/canvas/sprites/useResolvedElement.test.ts src/builder/workspace/canvas/skia/StoreRenderBridge.test.ts` — 5 files / 58 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/builder/utils/editingSemantics.test.ts src/builder/stores/utils/__tests__/elementUpdateOriginImpact.test.ts src/builder/stores/utils/__tests__/instanceActions.test.ts src/builder/workspace/canvas/interaction/canvasContextMenu.test.ts src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts` — 7 files / 65 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts` — 5 files / 30 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/lib/db/__tests__/metaStore.test.ts src/builder/main/BuilderCore.static.test.ts src/builder/hooks/__tests__/usePageManager.canonical.test.ts src/adapters/canonical/__tests__/adr913DescendantsGrepGate.test.ts src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts` — 5 files / 29 tests PASS
+- `pnpm -F @composition/shared exec vitest run src/utils/__tests__/exportCanonicalProject.test.ts` — 1 file / 3 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/integration.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/selection/selectionHitTest.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/hooks/useElementCreator.test.ts src/builder/stores/__tests__/pagesLayoutInvalidation.test.ts src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts src/builder/stores/utils/__tests__/frameActions.test.ts src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts` — 14 files / 130 tests PASS
 - `rg -n "\\b(layout_id|slot_name)\\??:" apps/builder/src/types packages/shared/src/types apps/builder/src/preview/store apps/builder/src/preview/types -g "*.ts" -g "*.tsx"` — 0건
 - `rg -n "\\b(layout_id|slot_name)\\s*:" apps/builder/src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts apps/builder/src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts apps/builder/src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts apps/builder/src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts` — 0건
+- `rg -n "\\b(layout_id|slot_name|componentRole|masterId)\\s*:" apps/builder/src packages/shared/src apps/publish/src -g "*.test.ts" -g "*.test.tsx" -g "!apps/builder/src/adapters/**"` — 0건
+- `rg -n "\\bdescendants\\??:" apps/builder/src/types/builder/unified.types.ts packages/shared/src/types/element.types.ts` — 0건
 - `pnpm run codex:typecheck` — PASS
 - `pnpm run codex:preflight` — PASS
 - `pnpm -F @composition/builder exec vitest run ...` — targeted 7 files / 75 tests PASS

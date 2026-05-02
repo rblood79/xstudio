@@ -424,12 +424,13 @@ function remapLegacyDescendants(
   element: Element,
   doc: CompositionDocument,
 ): RefNode["descendants"] | undefined {
-  if (!element.descendants || Object.keys(element.descendants).length === 0) {
+  const legacyDescendants = asElementWithLegacyMirror(element).descendants;
+  if (!legacyDescendants || Object.keys(legacyDescendants).length === 0) {
     return undefined;
   }
 
   const remapped: RefNode["descendants"] = {};
-  for (const [legacyChildId, override] of Object.entries(element.descendants)) {
+  for (const [legacyChildId, override] of Object.entries(legacyDescendants)) {
     const childNode = findNodeByLegacyId(doc.children, legacyChildId);
     remapped[childNode?.id ?? legacyChildId] = override;
   }
@@ -494,14 +495,13 @@ function legacyElementToCanonicalNode(
 
   if (legacy.componentRole === "instance" && legacy.masterId) {
     const masterNode = findNodeByLegacyId(doc.children, legacy.masterId);
+    const descendants = remapLegacyDescendants(element, doc);
     const refNode: RefNode = {
       ...baseNode,
       type: "ref",
       ref: masterNode?.id ?? legacy.masterId,
       ...(legacy.overrides ? { props: legacy.overrides } : {}),
-      ...(remapLegacyDescendants(element, doc)
-        ? { descendants: remapLegacyDescendants(element, doc) }
-        : {}),
+      ...(descendants ? { descendants } : {}),
     };
     return refNode;
   }

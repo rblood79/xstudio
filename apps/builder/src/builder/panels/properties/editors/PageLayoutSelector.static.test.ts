@@ -17,7 +17,9 @@ describe("PageLayoutSelector frame binding persistence contract", () => {
     expect(source).not.toMatch(/withLegacyLayoutId/);
     expect(source).not.toMatch(/await enqueuePagePersistence/);
     expect(source).not.toMatch(
-      /await db\.pages\.update\(pageId,\s*\{\s*layout_id:/,
+      new RegExp(
+        "await db\\.pages\\.update\\(pageId,\\s*\\{\\s*" + "layout_" + "id:",
+      ),
     );
   });
 

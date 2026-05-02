@@ -13,6 +13,7 @@ import type {
   HistoryEntry,
   SyncMetadata,
   MetaRecord,
+  CanonicalDocumentRecord,
 } from "../types";
 import type { Element, Page } from "../../../types/core/store.types";
 import type {
@@ -20,6 +21,7 @@ import type {
   DesignTheme,
   DesignVariable,
 } from "../../../types/theme";
+import type { CompositionDocument } from "@composition/shared";
 import type { Layout } from "../../../types/builder/layout.types";
 import type {
   DataTable,
@@ -30,7 +32,7 @@ import type {
 import { LRUCache } from "./LRUCache";
 
 const DB_NAME = "composition";
-const DB_VERSION = 9; // ADR-913 direct cutover: Element.type is the only runtime field.
+const DB_VERSION = 10; // ADR-916 direct cutover: CompositionDocument is primary storage.
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -59,11 +61,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
 
-        // ADR-913 direct cutover: 개발 단계에서는 기존 tag-only row 보존을
-        // 지원하지 않는다. DB schema bump 는 기존 로컬 DB 재초기화 marker.
-        if (oldVersion < 9 && oldVersion > 0) {
+        // ADR-916 direct cutover: 개발 단계에서는 기존 row 보존 migration 을
+        // 지원하지 않는다. DB schema bump 는 canonical document primary marker.
+        if (oldVersion < 10 && oldVersion > 0) {
           console.log(
-            `[IndexedDB] ADR-913 direct cutover: oldVersion=${oldVersion} → 9`,
+            `[IndexedDB] ADR-916 direct cutover: oldVersion=${oldVersion} → 10`,
           );
         }
 
@@ -71,6 +73,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         if (!db.objectStoreNames.contains("projects")) {
           db.createObjectStore("projects", { keyPath: "id" });
           console.log("[IndexedDB] Created store: projects");
+        }
+
+        // Canonical documents store (ADR-916 primary storage)
+        if (!db.objectStoreNames.contains("documents")) {
+          db.createObjectStore("documents", { keyPath: "project_id" });
+          console.log("[IndexedDB] Created store: documents");
         }
 
         // Pages store
@@ -1226,6 +1234,39 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
   };
 
+  // === Canonical Documents (ADR-916 primary storage) ===
+
+  documents = {
+    put: async (
+      projectId: string,
+      document: CompositionDocument,
+    ): Promise<CompositionDocument> => {
+      const record: CanonicalDocumentRecord = {
+        project_id: projectId,
+        document,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("documents", record);
+      return document;
+    },
+
+    get: async (projectId: string): Promise<CompositionDocument | null> => {
+      const record = await this.getFromStore<CanonicalDocumentRecord>(
+        "documents",
+        projectId,
+      );
+      return record?.document ?? null;
+    },
+
+    delete: async (projectId: string): Promise<void> => {
+      await this.deleteFromStore("documents", projectId);
+    },
+
+    getAll: async (): Promise<CanonicalDocumentRecord[]> => {
+      return this.getAllFromStore<CanonicalDocumentRecord>("documents");
+    },
+  };
+
   // === Data Tables (Data Panel System) ===
 
   data_tables = {
@@ -1580,9 +1621,10 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   batch = {
     export: async () => {
-      const [project, pages, elements, designTokens, metadata] =
+      const [project, documents, pages, elements, designTokens, metadata] =
         await Promise.all([
           this.projects.getAll().then((projects) => projects[0] || null),
+          this.documents.getAll(),
           this.pages.getAll(),
           this.elements.getAll(),
           this.designTokens.getAll(),
@@ -1591,6 +1633,10 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       return {
         project,
+        document: project
+          ? (documents.find((doc) => doc.project_id === project.id)?.document ??
+            null)
+          : (documents[0]?.document ?? null),
         pages,
         elements,
         designTokens,
@@ -1600,6 +1646,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
     import: async (data: {
       project?: Project;
+      document?: CompositionDocument;
       pages?: Page[];
       elements?: Element[];
       designTokens?: DesignToken[];
@@ -1607,6 +1654,16 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     }): Promise<void> => {
       if (data.project) {
         await this.projects.insert(data.project);
+      }
+
+      if (data.document) {
+        const projectId = data.project?.id ?? data.pages?.[0]?.project_id;
+        if (!projectId) {
+          throw new Error(
+            "Cannot import CompositionDocument without project id",
+          );
+        }
+        await this.documents.put(projectId, data.document);
       }
 
       if (data.pages && data.pages.length > 0) {
@@ -1626,6 +1683,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       }
 
       console.log("[IndexedDB] Import completed:", {
+        document: Boolean(data.document),
         pages: data.pages?.length || 0,
         elements: data.elements?.length || 0,
         designTokens: data.designTokens?.length || 0,
@@ -1637,6 +1695,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       return new Promise<void>((resolve, reject) => {
         const stores = [
           "projects",
+          "documents",
           "pages",
           "elements",
           "design_tokens",

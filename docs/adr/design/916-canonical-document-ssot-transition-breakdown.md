@@ -1858,6 +1858,32 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 - `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts` — 5 files / 30 tests PASS.
 - `pnpm run codex:typecheck` — PASS.
 
+### 10.2.33 Final SSOT closure: documents primary storage + export/import canonical-first + raw fixture bucket 0 (2026-05-02)
+
+**framing**: ADR-916 의 근본 목적은 projection 제거 자체가 아니라 `CompositionDocument` canonical schema 를 최종 SSOT 로 만드는 것이다. 따라서 최종 closure 는 (1) DB primary store, (2) export/import schema, (3) legacy mirror field quarantine, (4) docs/status sync 를 함께 닫을 때만 성립한다.
+
+**land 내용**:
+
+- IndexedDB `DB_VERSION` 을 10으로 올리고 `documents` object store 를 추가했다. `DatabaseAdapter.documents` 는 `put/get/delete/getAll` 을 제공하며 `CanonicalDocumentRecord` 가 `project_id + document + updated_at` 을 보관한다.
+- `usePageManager.initializeProject` 는 `db.documents.get(projectId)` 를 먼저 읽는다. 저장된 canonical document 가 있으면 canonical store 에 직접 주입하고 `exportLegacyDocument()` 로만 legacy mirror elements 를 만든다. 저장된 document 가 없을 때만 기존 `pages/elements/layouts` mirror hydrate fallback 을 사용한다.
+- `BuilderCore` 는 active canonical store 변경을 microtask debounce 후 `db.documents.put(projectId, doc)` 으로 저장한다. page shell 변경(`appendPageShell` / `setPages` / `removePageLocal`)도 `setElementsCanonicalPrimary()` 를 통해 canonical document 에 반영한다.
+- shared `ExportedProjectSchema` 는 `document: CompositionDocumentSchema` 를 필수로 검증한다. `ProjectExportData` 는 canonical document 를 primary payload 로 포함하고, legacy `pages` / `elements` 는 compatibility mirror 로 유지한다. Publish import 타입은 `ProjectExportData` 로 전환했다.
+- legacy `descendants` mirror field 는 `apps/builder` / `packages/shared` Element type schema 에서 제거했다. non-adapter raw fixture key bucket (`layout_id:` / `slot_name:` / `componentRole:` / `masterId:`) 은 broader test sweep 기준 0건이다. canonical `RefNode.descendants` fixture 는 합법 canonical schema 검증으로 유지한다.
+
+**grep 상태**:
+
+- `rg -n "\\b(layout_id|slot_name|componentRole|masterId)\\s*:" apps/builder/src packages/shared/src apps/publish/src -g "*.test.ts" -g "*.test.tsx" -g "!apps/builder/src/adapters/**"` 결과 0건.
+- `rg -n "\\b(layout_id|slot_name|componentRole|masterId|overrides)\\??:" apps/builder/src/types packages/shared/src/types apps/builder/src/preview/store apps/builder/src/preview/types -g "*.ts" -g "*.tsx"` 결과 0건.
+- `rg -n "\\.(layout_id|slot_name|componentRole|masterId|overrides)\\b|\\b(layout_id|slot_name|componentRole|masterId|overrides)\\s*:" apps/builder/src apps/publish/src packages/shared/src -g "*.ts" -g "*.tsx" -g "!**/__tests__/**" -g "!*.test.ts" -g "!*.test.tsx" -g "!apps/builder/src/adapters/**" -g "!apps/builder/src/lib/db/migration*.ts"` 결과 0건.
+- `rg -n "\\bdescendants\\??:" apps/builder/src/types/builder/unified.types.ts packages/shared/src/types/element.types.ts` 결과 0건.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/lib/db/__tests__/metaStore.test.ts src/builder/main/BuilderCore.static.test.ts src/builder/hooks/__tests__/usePageManager.canonical.test.ts src/adapters/canonical/__tests__/adr913DescendantsGrepGate.test.ts src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts` — 5 files / 29 tests PASS.
+- `pnpm -F @composition/shared exec vitest run src/utils/__tests__/exportCanonicalProject.test.ts` — 1 file / 3 tests PASS.
+- `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/integration.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/selection/selectionHitTest.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/hooks/useElementCreator.test.ts src/builder/stores/__tests__/pagesLayoutInvalidation.test.ts src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts src/builder/stores/utils/__tests__/frameActions.test.ts src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts` — 14 files / 130 tests PASS.
+- `pnpm run codex:typecheck` — PASS.
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
@@ -1871,13 +1897,13 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 
 ## 12. 완료 판정
 
-ADR-916은 아래 조건이 모두 충족될 때 `Implemented`로 이동한다.
+ADR-916은 아래 조건을 모두 충족해 `Implemented`로 이동했다.
 
-| 조건                       | 기준                                                         |
-| -------------------------- | ------------------------------------------------------------ |
-| canonical primary storage  | 신규 저장 source가 `CompositionDocument`                     |
-| legacy adapter quarantine  | legacy field runtime read/write가 adapter-only               |
-| hot path projection 0      | drag/selection/render/preview sync에 full projection 없음    |
-| extension boundary closure | events/dataBinding/actions가 `x-composition` 아래에만 직렬화 |
-| parity pass                | Skia/Preview/Publish/History/Slot/Ref 시나리오 회귀 0        |
-| docs sync                  | ADR-911/913/914 README row와 본 ADR gate 상태 일치           |
+| 조건                       | 기준                                                         | 상태 |
+| -------------------------- | ------------------------------------------------------------ | ---- |
+| canonical primary storage  | 신규 저장 source가 `CompositionDocument`                     | PASS |
+| legacy adapter quarantine  | legacy field runtime read/write가 adapter-only               | PASS |
+| hot path projection 0      | drag/selection/render/preview sync에 full projection 없음    | PASS |
+| extension boundary closure | events/dataBinding/actions가 `x-composition` 아래에만 직렬화 | PASS |
+| parity pass                | Skia/Preview/Publish/History/Slot/Ref 시나리오 회귀 0        | PASS |
+| docs sync                  | ADR-911/913/914 README row와 본 ADR gate 상태 일치           | PASS |

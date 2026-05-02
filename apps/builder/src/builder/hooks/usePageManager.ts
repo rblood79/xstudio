@@ -10,6 +10,7 @@ import {
   mergeElementsCanonicalPrimary,
   setElementsCanonicalPrimary,
 } from "../../adapters/canonical/canonicalMutations";
+import { exportLegacyDocument } from "../../adapters/canonical/exportLegacyDocument";
 import {
   getFrameElementMirrorId,
   getNullablePageFrameBindingId,
@@ -19,6 +20,7 @@ import {
   getCanonicalReusableFrameLayouts,
   seedCanonicalReusableFrameLayouts,
 } from "../stores/canonical/canonicalFrameStore";
+import { useCanonicalDocumentStore } from "../stores/canonical/canonicalDocumentStore";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
@@ -550,39 +552,55 @@ export const usePageManager = ({
         // 🚀 Pencil 방식: 전체 페이지 요소를 한 번에 로드 (Lazy Loading 비활성화)
         setLazyLoadingEnabled(false);
 
-        const pageIdSet = new Set(projectPages.map((p) => p.id));
-        const allElements = await db.elements.getAll();
-        const pageElements = allElements.filter(
-          (el) => el.page_id && pageIdSet.has(el.page_id),
-        );
-
-        // ADR-916 projection 제거: reusable frame ids 는 project layouts snapshot 을
-        // 직접 사용하고, legacy snapshot → canonical document rebuild 를 수행하지 않는다.
-        // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout binding 으로 필터링.
         const canonicalLayouts = await getProjectLayoutsForCanonical(
           db,
           projectId,
         );
         seedCanonicalReusableFrameLayouts(canonicalLayouts, projectId);
-        const layoutIdSet = new Set(
-          canonicalLayouts.map((layout) => layout.id),
-        );
-        const layoutElements = allElements.filter((el) => {
-          const elementLayoutId = getFrameElementMirrorId(el);
-          return elementLayoutId != null && layoutIdSet.has(elementLayoutId);
-        });
 
-        const mergedMap = new Map<string, Element>();
-        pageElements.forEach((el) => mergedMap.set(el.id, el));
-        layoutElements.forEach((el) => mergedMap.set(el.id, el));
-        const rawMerged = Array.from(mergedMap.values());
+        let mergedElements: Element[];
+        let orphanIds: string[] = [];
+        const persistedDocument = await db.documents.get(projectId);
 
-        // ADR-076 P5: Select/ComboBox/ListBox legacy child → items[] 마이그레이션
-        // ListBox 는 부모 단위 원자 판정 (Field 자식 보유 부모는 템플릿 모드 유지).
-        const { migratedElements: mergedElements, orphanIds } =
-          applyCollectionItemsMigration(rawMerged);
+        if (persistedDocument) {
+          // ADR-916 direct cutover: 저장 정본이 존재하면 legacy element rows 를
+          // 재구성하지 않고 CompositionDocument 를 그대로 hydrate 한다.
+          useCanonicalDocumentStore
+            .getState()
+            .setDocument(projectId, persistedDocument);
+          mergedElements = exportLegacyDocument(persistedDocument);
+          useStore.getState().setElements(mergedElements);
+        } else {
+          const pageIdSet = new Set(projectPages.map((p) => p.id));
+          const allElements = await db.elements.getAll();
+          const pageElements = allElements.filter(
+            (el) => el.page_id && pageIdSet.has(el.page_id),
+          );
 
-        setElementsCanonicalPrimary(mergedElements);
+          // ADR-916 projection 제거: reusable frame ids 는 project layouts snapshot 을
+          // 직접 사용하고, legacy snapshot → canonical document rebuild 를 수행하지 않는다.
+          // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout binding 으로 필터링.
+          const layoutIdSet = new Set(
+            canonicalLayouts.map((layout) => layout.id),
+          );
+          const layoutElements = allElements.filter((el) => {
+            const elementLayoutId = getFrameElementMirrorId(el);
+            return elementLayoutId != null && layoutIdSet.has(elementLayoutId);
+          });
+
+          const mergedMap = new Map<string, Element>();
+          pageElements.forEach((el) => mergedMap.set(el.id, el));
+          layoutElements.forEach((el) => mergedMap.set(el.id, el));
+          const rawMerged = Array.from(mergedMap.values());
+
+          // ADR-076 P5: Select/ComboBox/ListBox legacy child → items[] 마이그레이션
+          // ListBox 는 부모 단위 원자 판정 (Field 자식 보유 부모는 템플릿 모드 유지).
+          const migration = applyCollectionItemsMigration(rawMerged);
+          mergedElements = migration.migratedElements;
+          orphanIds = migration.orphanIds;
+
+          setElementsCanonicalPrimary(mergedElements);
+        }
 
         // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem/ListBoxItem(+subtree) 행 제거
         // (undo 스택 미오염)

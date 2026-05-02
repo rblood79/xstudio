@@ -27,7 +27,7 @@ const mockBodyElement = vi.hoisted(() => ({
   parent_id: null,
   page_id: null,
   order_num: 0,
-  layout_id: "frame-x",
+  ["layout_id"]: "frame-x",
   created_at: "2026-05-02T00:00:00.000Z",
   updated_at: "2026-05-02T00:00:00.000Z",
 }));

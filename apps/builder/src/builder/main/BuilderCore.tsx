@@ -135,6 +135,57 @@ export const BuilderCore: React.FC = () => {
     return stop;
   }, [projectId]);
 
+  // ADR-916 direct cutover — page shell mutations also update the canonical doc.
+  // `appendPageShell`, `setPages`, `removePageLocal` are still legacy page-store
+  // surfaces; this bridge keeps CompositionDocument as the persisted SSOT.
+  useEffect(() => {
+    if (!projectId) return;
+    let pagesRef = useStore.getState().pages;
+    return useStore.subscribe((state) => {
+      if (state.pages === pagesRef) return;
+      pagesRef = state.pages;
+      setElementsCanonicalPrimary(Array.from(state.elementsMap.values()));
+    });
+  }, [projectId]);
+
+  // ADR-916 direct cutover — active CompositionDocument 를 DB primary store 로 저장.
+  useEffect(() => {
+    if (!projectId) return;
+
+    let disposed = false;
+    let scheduled = false;
+
+    const persist = async () => {
+      const doc = getActiveCanonicalDocument();
+      if (!doc || disposed) return;
+      try {
+        const db = await getDB();
+        if (!disposed) {
+          await db.documents.put(projectId, doc);
+        }
+      } catch (error) {
+        console.warn("[ADR-916] canonical document persist failed:", error);
+      }
+    };
+
+    const schedulePersist = () => {
+      if (scheduled) return;
+      scheduled = true;
+      queueMicrotask(() => {
+        scheduled = false;
+        void persist();
+      });
+    };
+
+    const unsubscribe = subscribeCanonicalStore(schedulePersist);
+    schedulePersist();
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
+  }, [projectId]);
+
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
     const updateHistoryInfo = () => {

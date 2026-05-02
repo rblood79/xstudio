@@ -18,6 +18,7 @@ import type {
   Variable,
   Transformer,
 } from "../../types/builder/data.types";
+import type { CompositionDocument } from "@composition/shared";
 
 // === Project Types ===
 
@@ -92,6 +93,14 @@ export interface MetaRecord {
   schemaVersion: "legacy" | "composition-1.0" | "composition-1.1";
   migratedAt?: string;
   backupKey?: string;
+}
+
+// === Canonical Document Storage (ADR-916 direct cutover) ===
+
+export interface CanonicalDocumentRecord {
+  project_id: string;
+  document: CompositionDocument;
+  updated_at: string;
 }
 
 // === Database Adapter Interface ===
@@ -215,6 +224,17 @@ export interface DatabaseAdapter {
     getAll(): Promise<Layout[]>;
   };
 
+  // Canonical document primary storage (ADR-916)
+  documents: {
+    put(
+      projectId: string,
+      document: CompositionDocument,
+    ): Promise<CompositionDocument>;
+    get(projectId: string): Promise<CompositionDocument | null>;
+    delete(projectId: string): Promise<void>;
+    getAll(): Promise<CanonicalDocumentRecord[]>;
+  };
+
   // Data Tables (Data Panel System)
   data_tables: {
     insert(dataTable: DataTable): Promise<DataTable>;
@@ -285,6 +305,7 @@ export interface DatabaseAdapter {
     // Export all data for sync
     export(): Promise<{
       project: Project | null;
+      document: CompositionDocument | null;
       pages: Page[];
       elements: Element[];
       designTokens: DesignToken[];
@@ -294,6 +315,7 @@ export interface DatabaseAdapter {
     // Import data from sync
     import(data: {
       project?: Project;
+      document?: CompositionDocument;
       pages?: Page[];
       elements?: Element[];
       designTokens?: DesignToken[];

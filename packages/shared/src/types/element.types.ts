@@ -109,13 +109,6 @@ export interface Element {
 
   // --- G.1: Component-Instance System ---
   /**
-   * instance 하위 자손 노드별 오버라이드: { childId: { propKey: value } }
-   *
-   * @deprecated ADR-903 P3: key 의미 재정의 — 현재 runtime UUID 기반, canonical은
-   * stable id path (예: "ok-button/label"). Phase 3 id/path remap 완료 시 의미 전환.
-   */
-  descendants?: Record<string, Record<string, unknown>>;
-  /**
    * master 컴포넌트 표시 이름
    *
    * @deprecated ADR-903 P0: canonical 'name' 필드로 rename. 모든 노드에 사용자 표시

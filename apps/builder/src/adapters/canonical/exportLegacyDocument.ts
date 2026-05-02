@@ -35,6 +35,7 @@ import type { FillItem } from "@/types/builder/fill.types";
 import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "./legacyMetadata";
 import type {
   ElementWithLegacyMirror,
+  LegacyElementMirrorFields,
   LegacyComponentRole,
 } from "./legacyElementFields";
 
@@ -50,7 +51,7 @@ interface LegacyPropsShape {
   componentRole?: LegacyComponentRole;
   masterId?: string;
   overrides?: Record<string, unknown>;
-  descendants?: Element["descendants"];
+  descendants?: LegacyElementMirrorFields["descendants"];
   componentName?: string;
   [propKey: string]: unknown;
 }

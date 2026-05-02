@@ -23,7 +23,7 @@ const EXCLUDE_PATH_PATTERNS: readonly RegExp[] = [
   /\/__tests__\//,
   /\.test\.tsx?$/,
   /\/apps\/builder\/src\/adapters\/canonical\//,
-  /\/apps\/builder\/src\/types\//,
+  /\/packages\/shared\/src\/schemas\//,
   /\/packages\/shared\/src\/types\/composition-document\.types\.ts$/,
   /\/packages\/shared\/src\/types\/canonical-resolver\.types\.ts$/,
 ];
@@ -93,7 +93,7 @@ function scanDescendantsReferences(): DescendantsReference[] {
       const lines = content.split("\n");
       for (let i = 0; i < lines.length; i++) {
         if (COMMENT_LINE_PATTERN.test(lines[i])) continue;
-        if (!/\.descendants\b|\bdescendants\s*:/.test(lines[i])) continue;
+        if (!/\.descendants\b|\bdescendants\??\s*:/.test(lines[i])) continue;
         refs.push({
           file: relPath,
           line: i + 1,

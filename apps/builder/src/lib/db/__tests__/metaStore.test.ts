@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 
 describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
   // Test 1: DB_VERSION 갱신 검증 (regex 기반 source 검증)
-  // ADR-913 Phase 4 Step 4-1: DB_VERSION 8 → 9 schema bump
-  it("DB_VERSION 이 9 로 갱신된다 (ADR-913 Phase 4)", async () => {
+  // ADR-916 direct cutover: DB_VERSION 10 schema bump
+  it("DB_VERSION 이 10 으로 갱신된다 (ADR-916 direct cutover)", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
     const source = await fs.readFile(filePath, "utf-8");
-    // const DB_VERSION = 9 패턴 매칭
-    expect(source).toMatch(/const DB_VERSION\s*=\s*9\b/);
+    // const DB_VERSION = 10 패턴 매칭
+    expect(source).toMatch(/const DB_VERSION\s*=\s*10\b/);
   });
 
   // Test 2: _meta store 생성 코드 검증
@@ -47,6 +47,21 @@ describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
     expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?get\s*:/);
     expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?set\s*:/);
     expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?update\s*:/);
+  });
+
+  it("adapter 에 documents primary store 와 메서드 그룹이 추가된다", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const adapterPath = path.resolve(__dirname, "../indexedDB/adapter.ts");
+    const typesPath = path.resolve(__dirname, "../types.ts");
+    const adapterSource = await fs.readFile(adapterPath, "utf-8");
+    const typesSource = await fs.readFile(typesPath, "utf-8");
+
+    expect(adapterSource).toMatch(/createObjectStore\(\s*["']documents["']/);
+    expect(adapterSource).toMatch(/documents\s*=\s*\{[\s\S]*?put\s*:/);
+    expect(adapterSource).toMatch(/documents\s*=\s*\{[\s\S]*?get\s*:/);
+    expect(typesSource).toMatch(/interface\s+CanonicalDocumentRecord\b/);
+    expect(typesSource).toMatch(/documents\s*:\s*\{/);
   });
 
   // Test 5: getByLayout @deprecated JSDoc 검증

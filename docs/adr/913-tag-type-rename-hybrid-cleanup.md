@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-02 (Phase 4 direct cutover 완료, 잔여는 Phase 5 hybrid field cleanup)
+Implemented — 2026-05-02. `Element.tag → Element.type` direct cutover 와 hybrid mirror field quarantine 을 완료했다. DB migration/backup/feature flag/read-through helper 없이 현행 runtime 은 `type` 단일 기준이며, legacy mirror field 는 canonical adapter/export boundary 로 격리한다.
 
 ### 진행 로그
 
@@ -71,10 +71,15 @@ In Progress — 2026-05-02 (Phase 4 direct cutover 완료, 잔여는 Phase 5 hyb
   - frame body/render root 와 slot assignment regression fixture 는 `withFrameElementMirrorId()` / `withSlotMirrorName()` helper 로 전환했다. targeted raw `layout_id:` / `slot_name:` fixture grep 은 0건이다.
   - `g5LegacyFieldGrepGate.test.ts` 가 frame/slot type schema 재도입과 targeted raw fixture key 재도입을 차단한다.
   - 검증: targeted vitest 5 files / 30 tests PASS + type-schema grep 0건 + targeted fixture grep 0건.
+- **2026-05-02 — Phase 5 final quarantine closure**:
+  - legacy `descendants` mirror field 선언을 `apps/builder` / `packages/shared` Element type schema 에서 제거했다. canonical `RefNode.descendants` 는 합법 canonical field 로 유지한다.
+  - resolver/store/canvas/properties 비어댑터 테스트 fixture 의 raw legacy mirror key (`layout_id:` / `slot_name:` / `componentRole:` / `masterId:`) 를 adapter helper 기반으로 전환했다.
+  - broader non-adapter raw fixture key grep 은 0건이며, runtime strict field access / type schema / descendants schema grep gate 도 0건이다.
+  - 검증: fixture cleanup targeted vitest 14 files / 130 tests PASS + ADR-916 persistence/export/schema targeted builder vitest 5 files / 29 tests PASS + `pnpm run codex:typecheck` PASS.
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - ~~Phase 4 (DB schema migration DB_VERSION 8→9)~~ — **direct cutover 로 종결 (2026-05-02)**. Step 4-4 write-through / 4-5 normalize helper / 4-6 validation 은 별도 migration 없이 제거 완료.
-  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — runtime access gate 는 5-A/C/D/E 기준으로 통과. `componentRole` / `masterId` / legacy `overrides` type schema, frame/slot type schema, targeted component/frame/slot fixture cluster 는 정리 완료. 잔여는 broader test fixture raw mirror backlog, comment bucket, legacy `descendants` schema sweep, 필요 시 docs/inventory 갱신. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
+  - ~~Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외)~~ — **종결 (2026-05-02)**. runtime access gate, `componentRole` / `masterId` / legacy `overrides` type schema, frame/slot/descendants type schema, broader raw fixture key bucket 모두 0건. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
 
 ## Context
 
@@ -174,7 +179,7 @@ In Progress — 2026-05-02 (Phase 4 direct cutover 완료, 잔여는 Phase 5 hyb
 | R5  | hybrid 6 필드 중 사용 중인 영역 (예: descendants override) 의 의미 손실                 |  MED   | descendants 는 canonical 으로 의미 유지 (구조만 수정). componentRole 변환 시 `metadata.componentRole` 보존 (P5-B 결정 필요)                                                                                            |
 | R6  | tsc --noEmit 통과해도 runtime 동작 차이 (예: serializer 의 `tag` literal hardcode)      |  MED   | runtime smoke test — 샘플 프로젝트 100% 시각 회귀 검증 (mockLargeDataV2 + 사용자 프로젝트 5종)                                                                                                                         |
 
-잔존 HIGH 위험 = R1 — Phase 5 cleanup gate 와 type-check/grep 으로 관리.
+잔존 HIGH 위험 없음 — R1은 Phase 1+2 mechanical rename, Phase 4 direct cutover, Phase 5 quarantine grep/type-check gate 로 닫았다.
 
 ## Gates
 

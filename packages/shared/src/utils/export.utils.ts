@@ -11,10 +11,15 @@
  */
 
 import type { Element, Page } from "../types/element.types";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+} from "../types/composition-document.types";
+import { isCanonicalNode } from "../types/composition-vocabulary";
 import {
   ExportErrorCode,
   EXPORT_LIMITS,
-  type ExportedProjectData,
+  type ExportedProjectData as LegacyExportedProjectData,
   type ExportError,
   type ImportResult,
 } from "../types/export.types";
@@ -34,7 +39,30 @@ import type { FontRegistryV2 } from "../types/font.types";
 // ============================================
 
 const CURRENT_VERSION = "1.0.0";
+const CURRENT_DOCUMENT_VERSION = "composition-1.0";
 const DANGEROUS_KEYS = ["__proto__", "constructor", "prototype"];
+const LEGACY_EXPORT_MIRROR_METADATA_TYPE = "legacy-export-mirror";
+
+type CanonicalMetadata = {
+  type: string;
+  [key: string]: unknown;
+};
+
+export interface ProjectExportData extends LegacyExportedProjectData {
+  document: CompositionDocument;
+  pages: Page[];
+  elements: Element[];
+}
+
+export interface ProjectImportResultSuccess {
+  success: true;
+  data: ProjectExportData;
+  warnings?: ExportError[];
+}
+
+export type ProjectImportResult =
+  | ProjectImportResultSuccess
+  | Extract<ImportResult, { success: false }>;
 
 // ============================================
 // Error Helpers
@@ -122,6 +150,137 @@ function validateFileSize(size: number): ExportError | null {
 }
 
 // ============================================
+// Canonical Document Helpers
+// ============================================
+
+function toCanonicalNodeId(id: string): string {
+  const normalized = id.replace(/\//g, "_");
+  return normalized.length > 0 ? normalized : "node";
+}
+
+function sortByOrder<T extends { order_num?: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+}
+
+function createLegacyMirrorMetadata(source: Page | Element): CanonicalMetadata {
+  return {
+    type: LEGACY_EXPORT_MIRROR_METADATA_TYPE,
+    legacy: source,
+  };
+}
+
+function createCanonicalNodeFromLegacyElement(
+  element: Element,
+  childrenByParentId: Map<string, Element[]>,
+  visited: Set<string>,
+): CanonicalNode {
+  const nextVisited = new Set(visited);
+  nextVisited.add(element.id);
+
+  const childNodes = sortByOrder(childrenByParentId.get(element.id) ?? [])
+    .filter((child) => !nextVisited.has(child.id))
+    .map((child) =>
+      createCanonicalNodeFromLegacyElement(
+        child,
+        childrenByParentId,
+        nextVisited,
+      ),
+    );
+
+  const candidate: Record<string, unknown> = {
+    id: toCanonicalNodeId(element.id),
+    type: element.type,
+    props: element.props,
+    metadata: createLegacyMirrorMetadata(element),
+    children: childNodes,
+  };
+
+  if (element.componentName) {
+    candidate.name = element.componentName;
+  }
+
+  if (isCanonicalNode(candidate)) {
+    return candidate;
+  }
+
+  return {
+    id: toCanonicalNodeId(element.id),
+    type: "group",
+    props: element.props,
+    metadata: createLegacyMirrorMetadata(element),
+    children: childNodes,
+  };
+}
+
+function createPageNode(
+  page: Page,
+  rootElements: Element[],
+  childrenByParentId: Map<string, Element[]>,
+): CanonicalNode {
+  return {
+    id: toCanonicalNodeId(page.id),
+    type: "frame",
+    name: page.title,
+    metadata: createLegacyMirrorMetadata(page),
+    children: sortByOrder(rootElements).map((element) =>
+      createCanonicalNodeFromLegacyElement(
+        element,
+        childrenByParentId,
+        new Set<string>(),
+      ),
+    ),
+  };
+}
+
+export function createProjectCompositionDocument(
+  pages: Page[],
+  elements: Element[],
+): CompositionDocument {
+  const childrenByParentId = new Map<string, Element[]>();
+  const rootElementsByPageId = new Map<string, Element[]>();
+  const unpagedRootElements: Element[] = [];
+  const elementIds = new Set(elements.map((element) => element.id));
+
+  for (const element of elements) {
+    if (element.parent_id && elementIds.has(element.parent_id)) {
+      const children = childrenByParentId.get(element.parent_id) ?? [];
+      children.push(element);
+      childrenByParentId.set(element.parent_id, children);
+      continue;
+    }
+
+    if (element.page_id) {
+      const roots = rootElementsByPageId.get(element.page_id) ?? [];
+      roots.push(element);
+      rootElementsByPageId.set(element.page_id, roots);
+      continue;
+    }
+
+    unpagedRootElements.push(element);
+  }
+
+  return {
+    version: CURRENT_DOCUMENT_VERSION,
+    children: [
+      ...sortByOrder(pages).map((page) =>
+        createPageNode(
+          page,
+          rootElementsByPageId.get(page.id) ?? [],
+          childrenByParentId,
+        ),
+      ),
+      ...sortByOrder(unpagedRootElements).map((element) =>
+        createCanonicalNodeFromLegacyElement(
+          element,
+          childrenByParentId,
+          new Set<string>(),
+        ),
+      ),
+    ],
+  };
+}
+
+// ============================================
 // Export Functions
 // ============================================
 
@@ -134,14 +293,16 @@ export function serializeProjectData(
   pages: Page[],
   elements: Element[],
   currentPageId?: string | null,
+  document?: CompositionDocument,
 ): string {
-  const exportData: ExportedProjectData = {
+  const exportData: ProjectExportData = {
     version: CURRENT_VERSION,
     exportedAt: new Date().toISOString(),
     project: {
       id: projectId,
       name: projectName,
     },
+    document: document ?? createProjectCompositionDocument(pages, elements),
     pages,
     elements,
     currentPageId,
@@ -159,6 +320,7 @@ export function downloadProjectAsJson(
   pages: Page[],
   elements: Element[],
   currentPageId?: string | null,
+  canonicalDocument?: CompositionDocument,
 ): void {
   const jsonString = serializeProjectData(
     projectId,
@@ -166,6 +328,7 @@ export function downloadProjectAsJson(
     pages,
     elements,
     currentPageId,
+    canonicalDocument,
   );
 
   const blob = new Blob([jsonString], { type: "application/json" });
@@ -188,7 +351,7 @@ export function downloadProjectAsJson(
 /**
  * JSON 문자열에서 프로젝트 데이터 파싱 및 검증
  */
-export function parseProjectData(jsonString: string): ImportResult {
+export function parseProjectData(jsonString: string): ProjectImportResult {
   // 1. JSON 파싱
   let parsed: unknown;
   try {
@@ -232,7 +395,7 @@ export function parseProjectData(jsonString: string): ImportResult {
     };
   }
 
-  const data = result.data as ExportedProjectData;
+  const data = result.data as ProjectExportData;
   const warnings: ExportError[] = [];
 
   // 마이그레이션 경고 추가
@@ -310,7 +473,9 @@ export function parseProjectData(jsonString: string): ImportResult {
 /**
  * URL에서 프로젝트 데이터 로드
  */
-export async function loadProjectFromUrl(url: string): Promise<ImportResult> {
+export async function loadProjectFromUrl(
+  url: string,
+): Promise<ProjectImportResult> {
   try {
     const response = await fetch(url);
 
@@ -356,7 +521,9 @@ export async function loadProjectFromUrl(url: string): Promise<ImportResult> {
 /**
  * File 객체에서 프로젝트 데이터 로드
  */
-export async function loadProjectFromFile(file: File): Promise<ImportResult> {
+export async function loadProjectFromFile(
+  file: File,
+): Promise<ProjectImportResult> {
   // 파일 크기 검증
   const sizeError = validateFileSize(file.size);
   if (sizeError) {
@@ -409,11 +576,14 @@ export function generateStaticHtml(
   currentPageId?: string | null,
   fontRegistry?: FontRegistryV2,
   themeCSS: string = "",
+  canonicalDocument?: CompositionDocument,
 ): string {
-  const projectData: ExportedProjectData = {
+  const projectData: ProjectExportData = {
     version: CURRENT_VERSION,
     exportedAt: new Date().toISOString(),
     project: { id: projectId, name: projectName },
+    document:
+      canonicalDocument ?? createProjectCompositionDocument(pages, elements),
     pages,
     elements,
     currentPageId,
@@ -630,6 +800,7 @@ export function downloadStaticHtml(
   currentPageId?: string | null,
   fontRegistry?: FontRegistryV2,
   themeCSS: string = "",
+  canonicalDocument?: CompositionDocument,
 ): void {
   const html = generateStaticHtml(
     projectId,
@@ -639,6 +810,7 @@ export function downloadStaticHtml(
     currentPageId,
     fontRegistry,
     themeCSS,
+    canonicalDocument,
   );
 
   downloadBlob(
@@ -739,6 +911,7 @@ interface ExportProjectOptions {
   projectName: string;
   pages: Page[];
   elements: Element[];
+  document?: CompositionDocument;
   currentPageId?: string | null;
   fontRegistry?: FontRegistryV2;
   themeCSS?: string;
@@ -773,6 +946,7 @@ export async function exportProject(
     options.currentPageId,
     exportRegistry,
     options.themeCSS || "",
+    options.document,
   );
 
   // 폰트가 없으면 단일 HTML 다운로드
@@ -878,9 +1052,5 @@ function downloadBlob(blob: Blob, fileName: string): void {
 // Re-exports for convenience
 // ============================================
 
-export type {
-  ExportedProjectData,
-  ImportResult,
-  ExportError,
-} from "../types/export.types";
+export type { ImportResult, ExportError } from "../types/export.types";
 export { ExportErrorCode, EXPORT_LIMITS } from "../types/export.types";

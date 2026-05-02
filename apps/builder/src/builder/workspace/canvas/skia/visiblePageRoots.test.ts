@@ -11,7 +11,6 @@ const makeElement = (overrides: Partial<Element>): Element =>
     type: "body",
     parent_id: null,
     page_id: "page-1",
-    layout_id: null,
     order_num: 0,
     props: {},
     ...overrides,

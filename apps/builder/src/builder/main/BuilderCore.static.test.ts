@@ -36,4 +36,20 @@ describe("BuilderCore frame refresh hydration contract", () => {
       /if \(layoutElements\.length > 0\) \{[\s\S]*setElementsCanonicalPrimary\(mergedElements\);[\s\S]*\}/,
     );
   });
+
+  it("persists active CompositionDocument as primary storage and bridges page shell mutations", async () => {
+    const source = await readFile(
+      resolve(__dirname, "BuilderCore.tsx"),
+      "utf-8",
+    );
+
+    expect(source).toContain("db.documents.put(projectId, doc)");
+    expect(source).toContain(
+      "page shell mutations also update the canonical doc",
+    );
+    expect(source).toMatch(/if \(state\.pages === pagesRef\) return;/);
+    expect(source).toContain(
+      "setElementsCanonicalPrimary(Array.from(state.elementsMap.values()))",
+    );
+  });
 });

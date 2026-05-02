@@ -1,19 +1,28 @@
 import { describe, expect, it } from "vitest";
+import { withFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 import type { Element } from "../../../../types/core/store.types";
 import { resolveCanonicalRefElementsMap } from "../../../utils/canonicalRefResolution";
 import type { RendererSelectionInvalidation } from "../renderers";
 import { buildSelectionRenderData } from "./skiaWorkflowSelection";
 
-function makeElement(id: string, overrides: Partial<Element> = {}): Element {
-  return {
+function makeElement(
+  id: string,
+  overrides: Partial<Element> & { frameId?: string | null } = {},
+): Element {
+  const { frameId, ...elementOverrides } = overrides;
+  const element = {
     id,
     type: "Button",
     page_id: "page-1",
     parent_id: "body-1",
     order_num: 1,
     props: {},
-    ...overrides,
+    ...elementOverrides,
   } as Element;
+
+  return frameId === undefined
+    ? element
+    : withFrameElementMirrorId(element, frameId);
 }
 
 function makeSelection(
@@ -152,7 +161,7 @@ describe("buildSelectionRenderData editing semantics", () => {
     expect(result.slotMarkerRole).toBe("instance");
   });
 
-  it("single selected legacy Slot without component ancestry falls back to origin slot marker", () => {
+  it("single selected mirror Slot without component ancestry falls back to origin slot marker", () => {
     const result = buildSelectionRenderData(
       0,
       0,
@@ -188,7 +197,7 @@ describe("buildSelectionRenderData editing semantics", () => {
         [
           "frame-content-slot",
           makeElement("frame-content-slot", {
-            layout_id: "frame-layout-1",
+            frameId: "frame-layout-1",
             page_id: "page-1",
             parent_id: "page-body",
             props: {
@@ -219,7 +228,7 @@ describe("buildSelectionRenderData editing semantics", () => {
         [
           "frame-body",
           makeElement("frame-body", {
-            layout_id: "frame-layout-1",
+            frameId: "frame-layout-1",
             page_id: null,
             parent_id: null,
             type: "body",
@@ -245,7 +254,7 @@ describe("buildSelectionRenderData editing semantics", () => {
         [
           "frame-content-slot",
           makeElement("frame-content-slot", {
-            layout_id: "frame-layout-1",
+            frameId: "frame-layout-1",
             page_id: null,
             parent_id: "frame-body",
             props: { name: "content" },

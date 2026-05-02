@@ -36,6 +36,72 @@ const uuidPattern =
 // Element Schema
 // ============================================
 
+interface CanonicalNodeSchemaShape {
+  id: string;
+  type: string;
+  name?: string;
+  props?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  reusable?: boolean;
+  children?: CanonicalNodeSchemaShape[];
+  slot?: false | string[];
+  theme?: Record<string, unknown>;
+  ref?: string;
+  descendants?: Record<string, unknown>;
+  clip?: unknown;
+  placeholder?: boolean;
+  [key: string]: unknown;
+}
+
+const LooseRecordSchema = z.record(z.string(), z.unknown());
+
+export const CanonicalNodeSchema: z.ZodType<CanonicalNodeSchemaShape> = z.lazy(
+  () =>
+    z
+      .object({
+        id: z
+          .string()
+          .min(1, { message: "Canonical node ID is required" })
+          .refine((id) => !id.includes("/"), {
+            message: "Canonical node ID must not contain slash characters",
+          }),
+        type: z.string().min(1, {
+          message: "Canonical node type is required",
+        }),
+        name: z.string().optional(),
+        props: LooseRecordSchema.optional(),
+        metadata: LooseRecordSchema.optional(),
+        reusable: z.boolean().optional(),
+        children: z.array(CanonicalNodeSchema).optional(),
+        slot: z.union([z.literal(false), z.array(z.string())]).optional(),
+        theme: LooseRecordSchema.optional(),
+        ref: z.string().optional(),
+        descendants: LooseRecordSchema.optional(),
+        clip: z.unknown().optional(),
+        placeholder: z.boolean().optional(),
+      })
+      .catchall(z.unknown()),
+);
+
+export const CompositionDocumentSchema = z
+  .object({
+    version: z.string().regex(/^composition-\d+\.\d+$/, {
+      message:
+        'CompositionDocument version must use the "composition-<major>.<minor>" namespace',
+    }),
+    themes: LooseRecordSchema.optional(),
+    variables: LooseRecordSchema.optional(),
+    imports: z.record(z.string(), z.string()).optional(),
+    _meta: z
+      .object({
+        schemaVersion: z.literal("canonical-primary-1.0").optional(),
+      })
+      .catchall(z.unknown())
+      .optional(),
+    children: z.array(CanonicalNodeSchema),
+  })
+  .catchall(z.unknown());
+
 /**
  * Element props 스키마 (유연하게 허용)
  */
@@ -147,26 +213,29 @@ export const ExportedProjectSchema = z
       message: "exportedAt must be a valid ISO 8601 datetime",
     }),
     project: ProjectInfoSchema,
+    document: CompositionDocumentSchema,
     pages: z
       .array(PageSchema)
-      .min(1, "At least one page is required")
       .max(
         EXPORT_LIMITS.MAX_PAGES,
         `Maximum ${EXPORT_LIMITS.MAX_PAGES} pages allowed`,
-      ),
+      )
+      .default([]),
     elements: z
       .array(ElementSchema)
       .max(
         EXPORT_LIMITS.MAX_ELEMENTS,
         `Maximum ${EXPORT_LIMITS.MAX_ELEMENTS} elements allowed`,
-      ),
+      )
+      .default([]),
     currentPageId: z.string().nullable().optional(),
+    fontRegistry: z.unknown().optional(),
     metadata: MetadataSchema,
   })
   .refine(
     (data) => {
       // currentPageId가 있으면 pages에 해당 ID가 존재해야 함
-      if (data.currentPageId) {
+      if (data.currentPageId && data.pages.length > 0) {
         return data.pages.some((page) => page.id === data.currentPageId);
       }
       return true;

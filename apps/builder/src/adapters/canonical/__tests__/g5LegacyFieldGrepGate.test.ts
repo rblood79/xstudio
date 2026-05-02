@@ -45,6 +45,11 @@ const FRAME_SLOT_SCHEMA_FILES = [
   "apps/builder/src/preview/types/index.ts",
 ] as const;
 
+const LEGACY_DESCENDANTS_SCHEMA_FILES = [
+  "apps/builder/src/types/builder/unified.types.ts",
+  "packages/shared/src/types/element.types.ts",
+] as const;
+
 const TARGETED_FRAME_SLOT_FIXTURE_FILES = [
   "apps/builder/src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts",
   "apps/builder/src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts",
@@ -316,6 +321,21 @@ describe("ADR-916 Phase 4 G5 — §9.3.1 strict logic-access grep gate (PASS mar
     if (violations.length > 0) {
       throw new Error(
         `ADR-916 G5 frame/slot type schema regression:\n${violations.join(
+          "\n",
+        )}`,
+      );
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it("legacy descendants mirror stays out of Element type schemas", () => {
+    const violations = scanFilesForPattern(
+      LEGACY_DESCENDANTS_SCHEMA_FILES,
+      /\bdescendants\??:/,
+    );
+    if (violations.length > 0) {
+      throw new Error(
+        `ADR-916 G5 descendants type schema regression:\n${violations.join(
           "\n",
         )}`,
       );

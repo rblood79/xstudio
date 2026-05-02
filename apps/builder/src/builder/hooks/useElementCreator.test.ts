@@ -14,7 +14,6 @@ function makeElement(
     type,
     parent_id: null,
     page_id: null,
-    layout_id: null,
     order_num: 0,
     props: {},
     created_at: new Date().toISOString(),

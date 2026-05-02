@@ -8,7 +8,7 @@
  * 같은 directory tree (stores/utils/__tests__/) 로 유지한다.
  *
  * 범위: elementCreation.ts L74 + L191 + L108-126 (히스토리 조건 + reorder 분기)
- * 목표: layout_id / state.currentPageId 기반 → canonical parent context 기반
+ * 목표: frame ownership mirror / state.currentPageId 기반 → canonical parent context 기반
  *
  * 참조:
  * - docs/adr/design/903-phase3d-runtime-breakdown.md §4.2
@@ -39,7 +39,6 @@ function makeElement(
     type,
     parent_id: null,
     page_id: null,
-    layout_id: null,
     order_num: 0,
     props: {},
     created_at: new Date().toISOString(),
@@ -169,7 +168,7 @@ function setupStateMocks(opts: MockStateOpts = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 // P3-D-2: elementCreation.ts 히스토리 조건 교체
 // 범위: elementCreation.ts L74 + L191 + L108-126
-// 목표: layout_id 기반 조건 → canonical parent context 기반 조건
+// 목표: frame ownership mirror 기반 조건 → canonical parent context 기반 조건
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () => {
@@ -178,7 +177,7 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
   });
 
   describe("createAddElementAction — 히스토리 조건", () => {
-    // [RED] current code: state.currentPageId || layout_id 기준 → 둘 다 없으면 미기록
+    // [RED] current code: state.currentPageId || frame mirror 기준 → 둘 다 없으면 미기록
     // GREEN: parent_id 가 canonical doc 의 page-context frame 안에 있으면 기록
     it("canonical parent 가 page context(metadata.type=page) 면 historyManager.addEntry 호출된다", async () => {
       const pageId = "page-1";
@@ -200,7 +199,7 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
       );
     });
 
-    // [RED] current code: layout_id 없으면 미기록. GREEN: reusable frame parent 면 기록
+    // [RED] current code: frame mirror 없으면 미기록. GREEN: reusable frame parent 면 기록
     it("canonical parent 가 reusable frame context(reusable=true) 면 historyManager.addEntry 호출된다", async () => {
       const frame = makeReusableFrame("frame-reusable-1");
       const doc = makeDoc([frame]);
@@ -239,13 +238,13 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
     });
 
     // [Regression] page context + ownership marker 없는 조합 — GREEN 후에도 동작 보장
-    it("page context + layout_id undefined 조합에서도 히스토리 기록된다", async () => {
+    it("page context + frame mirror undefined 조합에서도 히스토리 기록된다", async () => {
       const pageId = "page-2";
       const pageFrame = makePageRefFrame("frame-page-2", pageId);
       const doc = makeDoc([pageFrame]);
       const element = makeElement("el-3", "Text", {
         parent_id: "frame-page-2",
-        // page_id, layout_id 모두 undefined (P3-D-1 후 ownership 제거 상태)
+        // page_id, frame mirror 모두 undefined (P3-D-1 후 ownership 제거 상태)
       });
 
       const { setMock, getMock } = setupStateMocks({
@@ -260,7 +259,7 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
   });
 
   describe("createAddComplexElementAction — 히스토리 조건", () => {
-    // [RED] current code: layout_id/currentPageId 없으면 미기록. GREEN: page context → 기록
+    // [RED] current code: frame mirror/currentPageId 없으면 미기록. GREEN: page context → 기록
     it("canonical parent 가 page context 면 부모+자식 모두 포함한 historyManager.addEntry 호출된다", async () => {
       const pageFrame = makePageRefFrame("frame-page-3", "page-3");
       const doc = makeDoc([pageFrame]);
@@ -293,7 +292,7 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
       );
     });
 
-    // [RED] reusable frame context (currentPageId/layout_id 없음) → 현재 미기록
+    // [RED] reusable frame context (currentPageId/frame mirror 없음) → 현재 미기록
     it("canonical parent 가 reusable frame context 면 historyManager.addEntry 호출된다", async () => {
       const frame = makeReusableFrame("frame-reusable-2");
       const doc = makeDoc([frame]);
@@ -334,7 +333,7 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
   });
 
   describe("order_num 재정렬 — reusable frame 기반", () => {
-    // [RED] current: layout_id 없으면 reorder 미호출. GREEN: reusable frame parent 면 호출
+    // [RED] current: frame mirror 없으면 reorder 미호출. GREEN: reusable frame parent 면 호출
     it("reusable frame 자식 추가 시 해당 frame 의 siblings 대상으로 재정렬된다", async () => {
       const frame = makeReusableFrame("frame-reusable-3");
       const doc = makeDoc([frame]);
@@ -387,7 +386,7 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
       );
     });
 
-    // [Regression] orphan + currentPageId 없음 + layout_id 없음 — reorder 미호출
+    // [Regression] orphan + currentPageId 없음 + frame mirror 없음 — reorder 미호출
     it("orphan element 추가 시 재정렬 호출되지 않는다", async () => {
       const doc = makeDoc([]);
       const element = makeElement("el-orphan-reorder", "Button", {
@@ -407,27 +406,29 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
       expect(elementReorderModule.reorderElements).not.toHaveBeenCalled();
     });
 
-    // [Static] dead code 제거 — GREEN 후 elementsMap.forEach + el.layout_id ===
+    // [Static] dead code 제거 — GREEN 후 elementsMap.forEach + direct frame mirror compare
     // 패턴이 elementCreation.ts 에서 제거됐는지 grep 검증
-    it("layout_id 기반 elementsMap.forEach 순회 코드가 제거된다 (dead code 없음)", async () => {
+    it("frame mirror 기반 elementsMap.forEach 순회 코드가 제거된다 (dead code 없음)", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../elementCreation.ts");
       const source = await fs.readFile(filePath, "utf-8");
-      // 정확한 패턴: elementsMap.forEach 안에서 el.layout_id 비교
-      const pattern = /elementsMap\.forEach[\s\S]{0,200}el\.layout_id\s*===/;
+      // 정확한 패턴: elementsMap.forEach 안에서 direct frame mirror 비교
+      const pattern = new RegExp(
+        "elementsMap\\.forEach[\\s\\S]{0,200}el\\." + "layout_id\\s*===",
+      );
       expect(source).not.toMatch(pattern);
     });
   });
 
   describe("P3-D-1 후 통합 — ownership 없는 element 처리", () => {
     // [RED] ownership 없는 element + page context — current 미기록, GREEN 기록
-    it("page_id / layout_id 필드 없는 element 추가 시 히스토리 조건이 canonical parent 기반으로만 판정된다", async () => {
+    it("page_id / frame mirror 없는 element 추가 시 히스토리 조건이 canonical parent 기반으로만 판정된다", async () => {
       const pageFrame = makePageRefFrame("frame-pure-1", "page-pure");
       const doc = makeDoc([pageFrame]);
       const element = makeElement("el-pure", "Button", {
         parent_id: "frame-pure-1",
-        // page_id, layout_id 모두 null (P3-D-1 ownership 제거 후)
+        // page_id, frame mirror 모두 null (P3-D-1 ownership 제거 후)
       });
 
       const { setMock, getMock } = setupStateMocks({
