@@ -49,7 +49,9 @@ describe("ADR-916 G6-3 Slot/Ref/Descendants/Frame parity completion contract", (
     expect(mutationsSource).toContain("descendants[slotPath]");
     expect(mutationsSource).toContain("appendChildToDescendants");
     expect(mutationsSource).toContain("removeNodeFromDescendants");
-    expect(exportSource).toContain("walkAndCollect(child, out)");
+    expect(exportSource).toContain(
+      "walkAndCollect(child, out, nextParentId, index)",
+    );
     expect(exportSource).toContain("componentRole");
     expect(exportSource).toContain("masterId");
     expect(exportSource).toContain("descendants");
@@ -62,7 +64,7 @@ describe("ADR-916 G6-3 Slot/Ref/Descendants/Frame parity completion contract", (
     expect(pageFrameBindingSource).toContain("resolvePageFrameRefId");
     expect(pageFrameBindingSource).toContain("getReusableFrameMirrorId(frame)");
     expect(frameMirrorSource).toContain("getReusableFrameMirrorId");
-    expect(pageLayoutSelectorSource).toContain("getReusableFrameMirrorId");
-    expect(framesTabSource).toContain("getReusableFrameMirrorId");
+    expect(pageLayoutSelectorSource).toContain("getPageFrameBindingId");
+    expect(framesTabSource).toContain("useCanonicalReusableFrameLayouts");
   });
 });

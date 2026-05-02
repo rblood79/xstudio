@@ -22,9 +22,8 @@
  * 2. Composition extension — `x-composition.events` / `actions` / `dataBinding` /
  *    `editor` (`CompositionExtension` 타입). canonical core 가 아닌 namespaced
  *    extension. function callback / React runtime object serialize 금지.
- * 3. adapter-only legacy — `metadata.legacyProps` (transition only) 및 legacy
- *    frame/slot/component mirror metadata. `apps/builder/src/adapters/canonical/**`
- *    디렉터리 외 read/write 0건이 G5 목표.
+ * 3. adapter quarantine — legacy frame/slot/component mirror metadata. Runtime
+ *    resolver/preview/store consumers must not extract props from metadata.
  * 4. Pencil primitive schema — 본 파일은 Pencil 호환 필드명 (frame/ref/
  *    descendants/slot/clip/placeholder) 만 채택. Pencil primitive schema 자체는
  *    채택 대상 아님 (대안 B 기각).
@@ -227,8 +226,7 @@ export interface CanonicalNode {
    * **ADR-916 G1 §2.1 — component props payload (canonical SSOT)**.
    *
    * `Button` / `TextField` / `Section` 등 composition component semantics 의
-   * 최종 저장 위치. Phase 1 이후 신규 canonical write 는 `metadata.legacyProps`
-   * 가 아닌 본 필드를 사용한다.
+   * 최종 저장 위치. 신규 canonical write 는 본 필드를 사용한다.
    *
    * **저장 가능**: serializable JSON payload (string/number/boolean/null/object/array).
    * **저장 금지**:
@@ -236,9 +234,8 @@ export interface CanonicalNode {
    * - React element / runtime object
    * - `events` / `actions` / `dataBinding` (이들은 `x-composition` extension 으로 분리)
    *
-   * legacy export adapter (`canonicalToLegacy`) 가 필요할 때만 본 필드에서
-   * legacy `Element.props` 를 생성한다. `metadata.legacyProps` 는 read-through
-   * adapter 출력 전용이며 write SSOT 아님.
+   * legacy export adapter (`canonicalToLegacy`) 가 필요할 때도 본 필드에서
+   * legacy `Element.props` 를 생성한다.
    */
   props?: Record<string, unknown>;
 
@@ -248,11 +245,8 @@ export interface CanonicalNode {
    * 사용 예:
    * - `metadata.compositionType`: export adapter 가 원본 composition component 이름 저장 (roundtrip 지원)
    * - `metadata.importedFrom`: import adapter 경유 시 `"<importKey>:<nodeId>"` 저장
-   * - `metadata.legacyProps`: **ADR-916 transition-only adapter 출력**. legacy
-   *   `Element.props` 보존용 read-through projection 결과. canonical primary
-   *   write 경로에서는 사용 금지 (대신 `CanonicalNode.props` 사용). Phase 4
-   *   Legacy Field Quarantine 이후 `apps/builder/src/adapters/canonical/**`
-   *   외 read/write 0건이 목표.
+   * - adapter/debug metadata: props extraction source 로 사용 금지. component
+   *   payload 는 항상 `CanonicalNode.props` 를 사용한다.
    */
   metadata?: {
     type: string;

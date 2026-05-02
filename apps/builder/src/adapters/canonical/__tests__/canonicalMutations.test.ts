@@ -112,7 +112,11 @@ describe("canonical mutation wrappers", () => {
       }),
     ]);
     expect(setElements).toHaveBeenCalledWith([
-      expect.objectContaining({ id: "body-1", layout_id: "frame-1" }),
+      expect.objectContaining({
+        id: "body-1",
+        page_id: null,
+        props: { role: "body" },
+      }),
     ]);
   });
 
@@ -165,11 +169,11 @@ describe("canonical mutation wrappers", () => {
       }),
     ]);
     expect(setElements).toHaveBeenCalledWith([
-      expect.objectContaining({ id: "parent-1", page_id: "page-1" }),
+      expect.objectContaining({ id: "parent-1", page_id: null }),
       expect.objectContaining({
         id: "child-1",
         parent_id: "parent-1",
-        page_id: "page-1",
+        page_id: null,
       }),
     ]);
   });
@@ -319,8 +323,8 @@ describe("canonical mutation wrappers", () => {
       }),
     ]);
     expect(setElements).toHaveBeenCalledWith([
-      expect.objectContaining({ id: "frame-body", layout_id: "frame-1" }),
-      expect.objectContaining({ id: "page-box", page_id: "page-1" }),
+      expect.objectContaining({ id: "frame-body", page_id: null }),
+      expect.objectContaining({ id: "page-box", page_id: null }),
     ]);
   });
 
@@ -414,8 +418,8 @@ describe("canonical mutation wrappers", () => {
     );
     expect(setElements).toHaveBeenCalledWith(
       expect.arrayContaining([
-        expect.objectContaining({ id: "slot-fill-a", page_id: "page-1" }),
-        expect.objectContaining({ id: "slot-fill-b", page_id: "page-1" }),
+        expect.objectContaining({ id: "slot-fill-a", page_id: null }),
+        expect.objectContaining({ id: "slot-fill-b", page_id: null }),
       ]),
     );
   });

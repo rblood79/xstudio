@@ -9,18 +9,12 @@
  * 진입점 testability + post-cutover refactor scope 좁힘.
  *
  * **변환 contract**:
- * - canonical 노드의 `metadata.legacyProps` 가 element 의 7 top-level fields
- *   (id / parent_id / page_id / layout_id / order_num / fills / type) + props
- *   전체 보존 (`buildLegacyElementMetadata` 단일 SSOT 출처).
- * - DFS 순회 시 `metadata.legacyProps` 가진 노드만 element 로 emit.
- * - synthetic 컨테이너 (page node / layout shell / reusable master 외부 wrapper)
- *   는 metadata.legacyProps 없으므로 자동 skip.
- * - round-trip 보장: `exportLegacyDocument(legacyToCanonical({elements,…})).length
- *   === elements.length` (모든 legacy fields 무손실 복원).
+ * - canonical 노드의 `props` 가 legacy `Element.props` 의 source 이다.
+ * - DFS 순회 시 `props` 가진 노드만 element 로 emit.
+ * - structural 컨테이너(page node / layout shell 등)는 props 없으면 자동 skip.
  *
  * **ADR-916 Phase 5 G7 본격 cutover** (2026-05-01): events / dataBinding 은
- * `x-composition` extension namespace 에서 reverse 추출. metadata.legacyProps
- * dual-storage 종결 — extension 이 단일 SSOT.
+ * `x-composition` extension namespace 에서 reverse 추출.
  */
 
 import type {
@@ -30,38 +24,13 @@ import type {
   RefNode,
 } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
-import type { FillItem } from "@/types/builder/fill.types";
-
-import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "./legacyMetadata";
-import type {
-  ElementWithLegacyMirror,
-  LegacyElementMirrorFields,
-  LegacyComponentRole,
-} from "./legacyElementFields";
-
-interface LegacyPropsShape {
-  id?: string;
-  parent_id?: string | null;
-  page_id?: string | null;
-  layout_id?: string | null;
-  slot_name?: string | null;
-  order_num?: number;
-  fills?: FillItem[];
-  type?: string;
-  componentRole?: LegacyComponentRole;
-  masterId?: string;
-  overrides?: Record<string, unknown>;
-  descendants?: LegacyElementMirrorFields["descendants"];
-  componentName?: string;
-  [propKey: string]: unknown;
-}
 
 /**
  * canonical document → legacy `Element[]` payload 역변환.
  *
- * `metadata.legacyProps` 보존된 노드만 element 로 복원. 보존 누락된 컨테이너 노드
- * (page / layout / reusable shell) 는 element[] 에서 제외 — pages[] / layouts[]
- * 는 별도 export 경로 사용.
+ * `props` 보존된 노드만 element 로 복원. 보존 누락된 컨테이너 노드
+ * (page / layout shell 등) 는 element[] 에서 제외 — pages[] / layouts[] 는 별도
+ * export 경로 사용.
  *
  * @param doc - canonical CompositionDocument (sync 결과 또는 primary write 결과)
  * @returns legacy Element[] (DFS 순회 결과, parent_id 그대로 보존)
@@ -69,24 +38,28 @@ interface LegacyPropsShape {
 export function exportLegacyDocument(doc: CompositionDocument): Element[] {
   const elements: Element[] = [];
 
-  for (const root of doc.children) {
-    walkAndCollect(root, elements);
-  }
+  doc.children.forEach((root, index) => {
+    walkAndCollect(root, elements, null, index);
+  });
 
   return elements;
 }
 
-function walkAndCollect(node: CanonicalNode, out: Element[]): void {
-  const legacy = extractLegacyElement(node);
+function walkAndCollect(
+  node: CanonicalNode,
+  out: Element[],
+  parentId: string | null,
+  orderNum: number,
+): void {
+  const legacy = extractElement(node, parentId, orderNum);
   if (legacy) {
     out.push(legacy);
   }
+  const nextParentId = legacy?.id ?? parentId;
 
-  if (node.children) {
-    for (const child of node.children) {
-      walkAndCollect(child, out);
-    }
-  }
+  node.children?.forEach((child, index) => {
+    walkAndCollect(child, out, nextParentId, index);
+  });
 
   if (node.type === "ref") {
     const descendants = (node as RefNode).descendants ?? {};
@@ -97,96 +70,48 @@ function walkAndCollect(node: CanonicalNode, out: Element[]): void {
         "children" in override &&
         Array.isArray(override.children)
       ) {
-        for (const child of override.children) {
-          walkAndCollect(child, out);
-        }
+        override.children.forEach((child, index) => {
+          walkAndCollect(child, out, nextParentId, index);
+        });
       }
     }
   }
 }
 
 /**
- * canonical node 에서 legacy Element 복원 — `metadata.legacyProps` 가 보존되어
- * 있으면 그것을 source 로 element 재구성. 보존 없으면 null (synthetic 컨테이너).
+ * canonical node 에서 Element 복원 — `props` 가 보존되어 있으면 그것을 source 로
+ * element 재구성. 보존 없으면 null (structural 컨테이너).
  */
-function extractLegacyElement(node: CanonicalNode): Element | null {
-  const meta = node.metadata as
-    | {
-        type?: string;
-        legacyProps?: LegacyPropsShape;
-      }
-    | undefined;
+function extractElement(
+  node: CanonicalNode,
+  parentId: string | null,
+  orderNum: number,
+): Element | null {
+  if (!node.props) return null;
 
-  if (
-    !meta ||
-    meta.type !== LEGACY_ELEMENT_PROPS_METADATA_TYPE ||
-    !meta.legacyProps
-  ) {
-    return null;
-  }
-
-  const legacyProps = meta.legacyProps;
-
-  // 7 top-level fields 분리 — 나머지는 props.
-  const {
-    id,
-    parent_id,
-    page_id,
-    layout_id,
-    slot_name,
-    order_num,
-    fills,
-    type,
-    componentRole,
-    masterId,
-    overrides,
-    descendants,
-    componentName,
-    ...restProps
-  } = legacyProps;
-
-  if (!id || typeof id !== "string") {
-    return null;
-  }
-
-  const elementType =
-    typeof type === "string" && type.length > 0 ? type : node.type;
-
-  const element: ElementWithLegacyMirror = {
-    id,
-    type: elementType,
-    props: restProps as Record<string, unknown>,
-    parent_id: parent_id ?? null,
-    order_num: typeof order_num === "number" ? order_num : 0,
-    page_id: page_id ?? null,
-    layout_id: layout_id ?? null,
+  const element: Element = {
+    id: node.id,
+    type: node.type,
+    props: { ...node.props },
+    parent_id: parentId,
+    order_num: orderNum,
+    page_id: null,
   };
 
-  if (fills !== undefined) {
-    element.fills = fills as FillItem[];
-  }
-  if (slot_name !== undefined) {
-    element.slot_name = slot_name;
-  }
-  if (componentRole !== undefined) {
-    element.componentRole = componentRole;
-  }
-  if (masterId !== undefined) {
-    element.masterId = masterId;
-  }
-  if (overrides !== undefined) {
-    element.overrides = overrides;
-  }
-  if (descendants !== undefined) {
-    element.descendants = descendants;
-  }
-  if (componentName !== undefined) {
-    element.componentName = componentName;
+  if (node.name !== undefined) element.componentName = node.name;
+  if (node.reusable === true) element.componentRole = "master";
+  if (node.type === "ref") {
+    const refNode = node as RefNode;
+    element.componentRole = "instance";
+    element.masterId = refNode.ref;
+    element.overrides = { ...node.props };
+    if (refNode.descendants) {
+      element.descendants = refNode.descendants as Element["descendants"];
+    }
   }
 
   // ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — events/dataBinding 은
-  // `x-composition` extension namespace 에서 reverse 복원. metadata.legacyProps
-  // dual-storage 종결 — extension 이 단일 SSOT.
+  // `x-composition` extension namespace 에서 reverse 복원.
   const ext = (
     node as CanonicalNode & { "x-composition"?: CompositionExtension }
   )["x-composition"];

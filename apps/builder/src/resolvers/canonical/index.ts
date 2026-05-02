@@ -145,12 +145,13 @@ function _resolveRefNodeUncached(
   // metadata 계약:
   //  - type: refNode.metadata.type 우선 (page ref 의 "legacy-page" 등 instance 식별자 보존)
   //          refNode metadata 없으면 master.metadata.type fallback
-  //  - legacyProps: resolvedProps (master + instance override merge 결과)
+  //  - resolved props 는 ResolvedNode.props 에만 저장
   //  - refNode 의 나머지 page 식별 필드 (pageId, slug, layoutId 등) 보존
   //
   // Why: resolver 가 master.metadata.type 으로 덮어쓰면 "legacy-layout" 등 master 타입이
   //      인스턴스의 "legacy-page" 식별자를 소실시켜 App.tsx page filter 에서 miss 됨.
   const importedMasterMetadata = getImportedMasterMetadata(master.metadata);
+  const refMetadata = getResolverRefMetadata(refNode.metadata);
   const resolvedBase: CanonicalNode = {
     ...master,
     ...refNode,
@@ -159,15 +160,11 @@ function _resolveRefNodeUncached(
     //       여기서는 refNode.id 를 그대로 유지 (인스턴스 identity 보존).
     id: refNode.id,
     type: master.type,
+    props: resolvedProps,
     metadata: {
       // refNode 의 instance-level metadata 를 base 로 (page 식별자 등 보존)
-      ...refNode.metadata,
+      ...refMetadata,
       ...importedMasterMetadata,
-      // master 의 element props 는 별도 키로 보존 (renderer 가 접근 가능하도록)
-      masterType: master.metadata?.type,
-      masterLegacyProps: master.metadata?.legacyProps,
-      // resolved props (master + instance override merge)
-      legacyProps: resolvedProps,
       // type 결정: refNode 우선 (page/legacy-page 식별자) → master fallback
       type:
         (refNode.metadata?.type as string | undefined) ??
@@ -507,6 +504,18 @@ function getImportedMasterMetadata(
     importNodeId: metadata.importNodeId,
     importSource: metadata.importSource,
   };
+}
+
+function getResolverRefMetadata(
+  metadata: CanonicalNode["metadata"],
+): Record<string, unknown> {
+  if (!metadata) return {};
+
+  const out: Record<string, unknown> = {};
+  for (const key of ["type", "pageId", "slug", "layoutId"] as const) {
+    if (metadata[key] !== undefined) out[key] = metadata[key];
+  }
+  return out;
 }
 
 /**

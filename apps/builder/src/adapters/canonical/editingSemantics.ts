@@ -152,9 +152,8 @@ export function canDetachInstance(element: unknown): boolean {
 function getCanonicalOverrideFieldKeys(
   override: Record<string, unknown>,
 ): string[] {
-  const metadata = asRecord(override.metadata);
-  const legacyProps = asRecord(metadata?.legacyProps);
-  if (legacyProps) return Object.keys(legacyProps);
+  const canonicalProps = asRecord(override.props);
+  if (canonicalProps) return Object.keys(canonicalProps);
 
   const {
     children: _children,
@@ -179,9 +178,6 @@ export function getEditingSemanticsOverrideFields(element: unknown): string[] {
   }
 
   if (candidate.type === "ref") {
-    const metadata = asRecord(candidate.metadata);
-    const legacyProps = asRecord(metadata?.legacyProps);
-    if (legacyProps) return Object.keys(legacyProps);
     return Object.keys(asRecord(candidate.props) ?? {});
   }
 

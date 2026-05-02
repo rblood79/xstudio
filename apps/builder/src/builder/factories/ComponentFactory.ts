@@ -175,7 +175,7 @@ export class ComponentFactory {
 
   /**
    * 복합 컴포넌트 생성 (메인 메서드)
-   * @param layoutId - Layout 모드에서 요소 생성 시 사용 (page_id 대신 layout_id 설정)
+   * @param layoutId - reusable frame 편집 컨텍스트 id
    * @param doc - Canonical CompositionDocument (ADR-903 P3-E E-6: layout body 변환 용)
    */
   static async createComplexComponent(
@@ -195,7 +195,7 @@ export class ComponentFactory {
       parentElement,
       pageId,
       elements,
-      layoutId, // ⭐ Layout/Slot System
+      layoutId,
       doc,
     };
 
@@ -204,7 +204,7 @@ export class ComponentFactory {
 
   /**
    * 공통 컴포넌트 생성 로직
-   * ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
+   * reusable frame context 우선, 없으면 page context 사용
    */
   private static async createComponent(
     definitionCreator: (
@@ -215,8 +215,7 @@ export class ComponentFactory {
     const { parentElement, pageId, elements, layoutId, doc } = context;
     let parentId = parentElement?.id || null;
 
-    // parent_id가 없으면 body 요소를 parent로 설정
-    // ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
+    // parent_id가 없으면 현재 page/frame body 요소를 parent로 설정
     if (!parentId) {
       parentId = ElementUtils.findBodyByContext(
         elements,
@@ -234,7 +233,7 @@ export class ComponentFactory {
     // 1. 컴포넌트 정의 생성
     const definition = definitionCreator(context);
 
-    // 2. Element 데이터 생성 (ADR-911: pageId/layoutId 명시 주입)
+    // 2. Element 데이터 생성 (ADR-911: page/frame ownership 명시 주입)
     const { parent, children } = createElementsFromDefinition(definition, {
       pageId: pageId || null,
       layoutId,
@@ -244,7 +243,6 @@ export class ComponentFactory {
     addElementsToStore(parent, children);
 
     // 4. DB에 저장 (백그라운드)
-    // ⭐ Layout/Slot System: layoutId 전달
     saveElementsInBackground(parent, children, parentId, pageId, layoutId);
 
     return {

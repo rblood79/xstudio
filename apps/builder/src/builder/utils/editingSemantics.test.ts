@@ -231,15 +231,11 @@ describe("editingSemantics", () => {
     ).toEqual(["label"]);
   });
 
-  it("prefers canonical metadata legacyProps for override fields", () => {
+  it("prefers canonical props for override fields", () => {
     expect(
       getEditingSemanticsOverrideFields({
         type: "ref",
-        props: { ignored: true },
-        metadata: {
-          type: "legacy-element-props",
-          legacyProps: { label: "Override" },
-        },
+        props: { label: "Override" },
       }),
     ).toEqual(["label"]);
   });
@@ -252,10 +248,7 @@ describe("editingSemantics", () => {
         descendants: {
           "slot/label": { text: "Descendant override" },
           icon: {
-            metadata: {
-              type: "legacy-element-props",
-              legacyProps: { name: "check" },
-            },
+            props: { name: "check" },
           },
           structure: { children: [{ type: "Text", text: "Ignored" }] },
         },

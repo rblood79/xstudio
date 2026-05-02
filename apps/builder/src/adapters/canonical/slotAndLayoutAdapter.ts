@@ -267,6 +267,7 @@ function convertElementToCanonical(
       id: segId(element.id, idSegmentMap),
       type: "frame",
       name: element.componentName,
+      props: { ...element.props },
       metadata: {
         type: "legacy-slot",
         slot_name: element.slot_name ?? null,
@@ -281,6 +282,7 @@ function convertElementToCanonical(
     id: idSegmentMap.get(element.id) ?? element.id,
     type: tagToType(element.type),
     name: element.componentName,
+    props: { ...element.props },
     children: childElements.map((c) =>
       convertElementToCanonical(c, allElements, idSegmentMap),
     ),
@@ -323,6 +325,7 @@ function convertElementWithSlotHoisting(
       placeholder: true,
       slot: [], // 추천 reusable IDs 미지정 (P3 UI에서 입력 예정)
       name: slotName,
+      props: { ...element.props },
       metadata: {
         type: "legacy-slot-hoisted",
         slotName,
@@ -339,6 +342,7 @@ function convertElementWithSlotHoisting(
     id: idSegmentMap.get(element.id) ?? element.id,
     type: tagToType(element.type),
     name: element.componentName,
+    props: { ...element.props },
     children: childElements.map((c) =>
       convertElementWithSlotHoisting(c, allElements, idSegmentMap),
     ),

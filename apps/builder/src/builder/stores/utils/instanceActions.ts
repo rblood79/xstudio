@@ -46,7 +46,7 @@ import {
 type CanonicalElementFields = {
   children?: unknown;
   [COMPONENT_DESCENDANTS_MIRROR_FIELD]?: Record<string, unknown>;
-  metadata?: { type?: string; legacyProps?: unknown; [key: string]: unknown };
+  metadata?: { type?: string; [key: string]: unknown };
   ref?: unknown;
 };
 
@@ -60,19 +60,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function getLegacyProps(element: Element): Record<string, unknown> {
-  const canonical = asCanonicalElement(element);
-  if (isRecord(canonical.metadata?.legacyProps)) {
-    return canonical.metadata.legacyProps;
-  }
+function getElementProps(element: Element): Record<string, unknown> {
   return element.props ?? {};
 }
 
 function getRootOverrideProps(element: Element): Record<string, unknown> {
-  const canonical = asCanonicalElement(element);
-  if (isRecord(canonical.metadata?.legacyProps)) {
-    return canonical.metadata.legacyProps;
-  }
   return element.props ?? {};
 }
 
@@ -96,11 +88,6 @@ function hasCanonicalOverridePayload(
   if (typeof override.type === "string") return true;
   if (Array.isArray(override.children)) return true;
 
-  const metadata = override.metadata;
-  if (isRecord(metadata) && isRecord(metadata.legacyProps)) {
-    if (Object.keys(metadata.legacyProps).length > 0) return true;
-  }
-
   return Object.keys(propsFromCanonicalOverride(override)).length > 0;
 }
 
@@ -108,17 +95,10 @@ function resetCanonicalOverrideRecordField(
   override: Record<string, unknown>,
   fieldKey: string,
 ): Record<string, unknown> | null {
-  const metadata = override.metadata;
-  if (isRecord(metadata) && isRecord(metadata.legacyProps)) {
-    const nextLegacyProps = removeRecordKey(metadata.legacyProps, fieldKey);
-    if (!nextLegacyProps) return null;
-    return {
-      ...override,
-      metadata: {
-        ...metadata,
-        legacyProps: nextLegacyProps,
-      },
-    };
+  if (isRecord(override.props)) {
+    const nextProps = removeRecordKey(override.props, fieldKey);
+    if (!nextProps) return null;
+    return { ...override, props: nextProps };
   }
 
   return removeRecordKey(override, fieldKey);
@@ -174,11 +154,6 @@ function getDescendantOverride(
 function propsFromCanonicalOverride(
   override: Record<string, unknown>,
 ): Record<string, unknown> {
-  const metadata = override.metadata;
-  if (isRecord(metadata) && isRecord(metadata.legacyProps)) {
-    return metadata.legacyProps;
-  }
-
   const {
     children: _children,
     [COMPONENT_DESCENDANTS_MIRROR_FIELD]: _legacyOverrideMap,
@@ -190,7 +165,7 @@ function propsFromCanonicalOverride(
     type: _type,
     ...props
   } = override;
-  return props;
+  return isRecord(override.props) ? override.props : props;
 }
 
 function stripCanonicalRuntimeFields(element: Element): Element {
@@ -361,7 +336,7 @@ function buildCanonicalDetachSnapshot(
         ? override.id
         : undefined;
     const id = nextId(replacementId);
-    const baseProps = getLegacyProps(materializationSource);
+    const baseProps = getElementProps(materializationSource);
     const patchProps =
       override && !hasReplacement && !hasChildrenReplacement
         ? propsFromCanonicalOverride(override)
@@ -428,7 +403,7 @@ function buildCanonicalDetachSnapshot(
   };
 
   const rootProps = mergePropsWithStyleDeep(
-    getLegacyProps(master),
+    getElementProps(master),
     getRootOverrideProps(refElement),
   );
   const detachedRoot: Element = withFrameElementMirrorId(
@@ -818,8 +793,8 @@ export async function toggleComponentOrigin(
 /**
  * Instance override 필드를 제거한다.
  *
- * legacy instance는 root patch, canonical ref는 `metadata.legacyProps` 또는
- * `props`를 root override 저장소로 사용한다. canonical child override는
+ * legacy instance는 root patch, canonical ref는 `props`를 root override
+ * 저장소로 사용한다. canonical child override는
  * `descendantPath`가 지정된 경우 slot path 단위로 제거한다.
  */
 export function resetInstanceOverrideField(
@@ -864,37 +839,21 @@ export function resetInstanceOverrideField(
       [COMPONENT_DESCENDANTS_MIRROR_FIELD]: nextLegacyDescendantMap,
     } as Element;
   } else if (isComponentInstanceMirrorElement(instance)) {
-    const legacyPropsPatch = getComponentOverridesMirror(instance) ?? {};
-    const nextLegacyPropsPatch = removeRecordKey(legacyPropsPatch, fieldKey);
-    if (!nextLegacyPropsPatch) return null;
+    const overridePatch = getComponentOverridesMirror(instance) ?? {};
+    const nextOverridePatch = removeRecordKey(overridePatch, fieldKey);
+    if (!nextOverridePatch) return null;
     nextElement = {
       ...instance,
-      [COMPONENT_OVERRIDES_MIRROR_FIELD]: nextLegacyPropsPatch,
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: nextOverridePatch,
     };
   } else if (instance.type === "ref") {
-    const canonical = asCanonicalElement(instance);
-    if (isRecord(canonical.metadata?.legacyProps)) {
-      const nextLegacyProps = removeRecordKey(
-        canonical.metadata.legacyProps,
-        fieldKey,
-      );
-      if (!nextLegacyProps) return null;
-      nextElement = {
-        ...instance,
-        metadata: {
-          ...canonical.metadata,
-          legacyProps: nextLegacyProps,
-        },
-      };
-    } else {
-      const props = instance.props ?? {};
-      const nextProps = removeRecordKey(props, fieldKey);
-      if (!nextProps) return null;
-      nextElement = {
-        ...instance,
-        props: nextProps,
-      };
-    }
+    const props = instance.props ?? {};
+    const nextProps = removeRecordKey(props, fieldKey);
+    if (!nextProps) return null;
+    nextElement = {
+      ...instance,
+      props: nextProps,
+    };
   }
 
   if (!nextElement) return null;

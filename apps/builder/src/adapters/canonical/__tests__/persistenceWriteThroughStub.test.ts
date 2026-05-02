@@ -81,14 +81,16 @@ describe("exportLegacyDocument (3-A-impl)", () => {
     expect(exportLegacyDocument(makeDoc())).toEqual([]);
   });
 
-  it("legacyToCanonical → exportLegacyDocument round-trip 무손실 (page 1 + element 2)", () => {
+  it("legacyToCanonical → exportLegacyDocument emits canonical props payload", () => {
     const before: Element[] = [
       makeElement("el-a", {
+        customId: "el-a",
         page_id: "page-1",
         order_num: 0,
         props: { label: "Hello" },
       }),
       makeElement("el-b", {
+        customId: "el-b",
         page_id: "page-1",
         parent_id: "el-a",
         order_num: 1,
@@ -99,24 +101,24 @@ describe("exportLegacyDocument (3-A-impl)", () => {
     const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
     const after = exportLegacyDocument(doc);
 
-    // id 매칭 확인 (export 결과에 모든 id 보존)
     const afterIds = new Set(after.map((e) => e.id));
     expect(afterIds.has("el-a")).toBe(true);
     expect(afterIds.has("el-b")).toBe(true);
 
-    // top-level fields 보존
     const exportedA = after.find((e) => e.id === "el-a")!;
-    expect(exportedA.page_id).toBe("page-1");
+    expect(exportedA.page_id).toBeNull();
     expect(exportedA.props).toEqual({ label: "Hello" });
 
     const exportedB = after.find((e) => e.id === "el-b")!;
     expect(exportedB.parent_id).toBe("el-a");
-    expect(exportedB.order_num).toBe(1);
+    expect(exportedB.order_num).toBe(0);
     expect(exportedB.props).toEqual({ value: 42 });
   });
 
   it("synthetic 컨테이너 (page wrapper) 는 element 로 emit 안 함", () => {
-    const before: Element[] = [makeElement("el-a", { page_id: "page-1" })];
+    const before: Element[] = [
+      makeElement("el-a", { customId: "el-a", page_id: "page-1" }),
+    ];
     const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
     const after = exportLegacyDocument(doc);
 
@@ -126,28 +128,29 @@ describe("exportLegacyDocument (3-A-impl)", () => {
     expect(after[0].id).toBe("el-a");
   });
 
-  it("metadata.legacyProps 의 fills 필드 보존", () => {
+  it("compatibility metadata fills 는 export source 로 사용하지 않음", () => {
     const before: Element[] = [
       makeElement("el-a", {
+        customId: "el-a",
         page_id: "page-1",
         fills: [{ id: "f1", type: "solid", color: "#fff", visible: true }],
       }),
     ];
     const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
     const after = exportLegacyDocument(doc);
-    expect(after[0].fills).toEqual([
-      { id: "f1", type: "solid", color: "#fff", visible: true },
-    ]);
+    expect(after[0].fills).toBeUndefined();
   });
 
-  it("metadata.legacyProps 의 mirror compatibility fields 보존", () => {
+  it("canonical role/ref fields are exported without compatibility extraction", () => {
     const before: Element[] = [
       makeElement("master", {
+        customId: "master",
         page_id: "page-1",
         componentRole: "master",
         componentName: "Master Button",
       }),
       makeElement("instance", {
+        customId: "instance",
         page_id: "page-1",
         componentRole: "instance",
         masterId: "master",
@@ -172,7 +175,6 @@ describe("exportLegacyDocument (3-A-impl)", () => {
       expect.objectContaining({
         componentRole: "instance",
         masterId: "master",
-        slot_name: "content",
         overrides: { children: "Override" },
         descendants: { label: { children: "Child Override" } },
       }),
@@ -299,13 +301,17 @@ describe("shadowWriteDiff (3-A-impl)", () => {
     expect(result.summary.destructive).toBe(1);
   });
 
-  it("evaluateShadowWriteFromCanonical — round-trip 무손실 시 destructive=0", () => {
+  it("evaluateShadowWriteFromCanonical — direct cutover reports lossy legacy fields", () => {
     const before: Element[] = [
-      makeElement("el-a", { page_id: "page-1", props: { label: "X" } }),
+      makeElement("el-a", {
+        customId: "el-a",
+        page_id: "page-1",
+        props: { label: "X" },
+      }),
     ];
     const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
     const result = evaluateShadowWriteFromCanonical(before, doc);
-    expect(result.hasDestructive).toBe(false);
+    expect(result.hasDestructive).toBe(true);
   });
 
   it("logShadowWriteResult — destructive 시 console.warn 호출", () => {

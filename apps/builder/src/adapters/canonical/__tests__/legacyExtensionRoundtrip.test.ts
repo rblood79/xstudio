@@ -271,16 +271,7 @@ describe("exportLegacyDocument — G7 cutover extension reverse", () => {
       {
         id: "seg-1",
         type: "Button",
-        metadata: {
-          type: "legacy-element-props",
-          legacyProps: {
-            id: "uuid-1",
-            parent_id: null,
-            page_id: "page-1",
-            order_num: 0,
-            type: "Button",
-          },
-        },
+        props: {},
         "x-composition": {
           events: [{ id: "evt-1", kind: "onPress" }],
         },
@@ -299,16 +290,7 @@ describe("exportLegacyDocument — G7 cutover extension reverse", () => {
       {
         id: "seg-2",
         type: "ListBox",
-        metadata: {
-          type: "legacy-element-props",
-          legacyProps: {
-            id: "uuid-2",
-            parent_id: null,
-            page_id: "page-1",
-            order_num: 0,
-            type: "ListBox",
-          },
-        },
+        props: {},
         "x-composition": {
           dataBinding: {
             type: "collection",
@@ -333,15 +315,7 @@ describe("exportLegacyDocument — G7 cutover extension reverse", () => {
       {
         id: "seg-3",
         type: "Button",
-        metadata: {
-          type: "legacy-element-props",
-          legacyProps: {
-            id: "uuid-3",
-            parent_id: null,
-            order_num: 0,
-            type: "Button",
-          },
-        },
+        props: {},
       },
     ]);
 
@@ -350,24 +324,13 @@ describe("exportLegacyDocument — G7 cutover extension reverse", () => {
     expect(el.dataBinding).toBeUndefined();
   });
 
-  it("legacyProps.events / legacyProps.dataBinding 가 (transition 잔여 상태로) 있어도 extension 우선 — extension 미정의 시 props 로 잔존", () => {
-    // G7 본격 cutover 후에는 buildLegacyElementMetadata 가 events/dataBinding 을
-    // metadata.legacyProps 에 넣지 않는다. 그러나 legacy fixture / 외부 입력이
-    // legacyProps 에 events/dataBinding 을 넣고 들어오면, extractLegacyElement 는
-    // 이를 props 로 쓸어 담는다 (extension 우선 contract). 본 test 는 contract 명시.
+  it("props.events 는 extension 미정의 시 props 로 잔존", () => {
     const doc = makeCanonicalDoc([
       {
         id: "seg-4",
         type: "Button",
-        metadata: {
-          type: "legacy-element-props",
-          legacyProps: {
-            id: "uuid-4",
-            parent_id: null,
-            order_num: 0,
-            type: "Button",
-            events: [{ id: "stale-evt", kind: "onPress" }],
-          },
+        props: {
+          events: [{ id: "stale-evt", kind: "onPress" }],
         },
       } as CanonicalNode,
     ]);
@@ -375,7 +338,6 @@ describe("exportLegacyDocument — G7 cutover extension reverse", () => {
     const [el] = exportLegacyDocument(doc);
     // top-level events 는 미설정 (extension 미정의)
     expect(el.events).toBeUndefined();
-    // legacyProps.events 는 props 로 잔존 (transition 잔여 호환)
     expect(el.props.events).toEqual([{ id: "stale-evt", kind: "onPress" }]);
   });
 });
@@ -385,9 +347,10 @@ describe("exportLegacyDocument — G7 cutover extension reverse", () => {
 // ─────────────────────────────────────────────
 
 describe("Round-trip — legacy → canonical (extension) → legacy 동등", () => {
-  it("Button + events round-trip 동등", () => {
+  it("Button + events round-trip preserves canonical props and extension", () => {
     const original: Element = {
       id: "el-rt-1",
+      customId: "el-rt-1",
       type: "Button",
       props: { variant: "primary", children: "Click" },
       parent_id: null,
@@ -402,8 +365,8 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
     expect(restored.type).toBe(original.type);
     expect(restored.props).toEqual(original.props);
     expect(restored.parent_id).toBe(original.parent_id);
-    expect(restored.page_id).toBe(original.page_id);
-    expect(restored.order_num).toBe(original.order_num);
+    expect(restored.page_id).toBeNull();
+    expect(restored.order_num).toBe(0);
     expect(restored.events).toEqual(original.events);
     // props 에 events 누락 (extension 으로 분리됨)
     expect(restored.props).not.toHaveProperty("events");
@@ -412,6 +375,7 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
   it("ListBox + dataBinding round-trip 동등", () => {
     const original: Element = {
       id: "el-rt-2",
+      customId: "el-rt-2",
       type: "ListBox",
       props: { variant: "default" },
       parent_id: null,
@@ -433,6 +397,7 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
   it("events + dataBinding 동시 round-trip 동등", () => {
     const original: Element = {
       id: "el-rt-3",
+      customId: "el-rt-3",
       type: "Button",
       props: { variant: "primary" },
       parent_id: null,
@@ -459,6 +424,7 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
   it("events/dataBinding 미정의 element round-trip — restored 도 미정의", () => {
     const original: Element = {
       id: "el-rt-4",
+      customId: "el-rt-4",
       type: "Box",
       props: { name: "container" },
       parent_id: null,
@@ -475,6 +441,7 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
   it("element.props.events 와 top-level events 공존 — props.events 보존 + top-level 우선 분리", () => {
     const original: Element = {
       id: "el-rt-5",
+      customId: "el-rt-5",
       type: "Button",
       props: {
         variant: "primary",
@@ -490,7 +457,7 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
     const [restored] = exportLegacyDocument(doc);
     // top-level events = extension 으로 분리 후 복원
     expect(restored.events).toEqual([{ id: "top-evt", kind: "onClick" }]);
-    // props.events 는 metadata.legacyProps 통해 복원
+    // props.events 는 CanonicalNode.props 통해 복원
     expect(restored.props.events).toEqual([
       { id: "props-evt", kind: "onPress" },
     ]);

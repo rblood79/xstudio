@@ -33,8 +33,6 @@ export async function createTable(
 
   const defaultProps = createDefaultTableProps();
 
-  // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
-
   // 부모 요소 생성
   const parent: Element = {
     id: ElementUtils.generateId(),

@@ -5,10 +5,10 @@
  * DOM/CSS 요소로 렌더링하는 React 컴포넌트.
  *
  * 역할:
- * - ResolvedNode → legacyProps 추출 (extractLegacyPropsFromResolved)
- * - legacyProps 에서 type + props 복원 → 기존 rendererMap 위임
+ * - ResolvedNode.props 에서 canonical props 추출
+ * - canonical props 에서 type + props 복원 → 기존 rendererMap 위임
  * - 재귀 children 렌더링
- * - DOM 마커: data-canonical-id (stable path) + data-legacy-uuid (원본 UUID)
+ * - DOM 마커: data-canonical-id + data-element-id
  *
  * feature flag `?canonical=1` 시에만 활성화됨.
  * legacy 경로(App.tsx hybrid 분기)는 feature flag 기본 false 상태에서 무변경 보존.
@@ -21,7 +21,7 @@ import { rendererMap } from "@composition/shared/renderers";
 import { adaptElementFillStyle } from "@composition/shared";
 import type { ResolvedNode } from "@composition/shared";
 import type { SharedRenderContext } from "@composition/shared/types";
-import { extractLegacyPropsFromResolved } from "../../resolvers/canonical/storeBridge";
+import { extractCanonicalPropsFromResolved } from "../../resolvers/canonical/storeBridge";
 import type { RenderContext } from "../types/index";
 import type { PreviewElement } from "../types/index";
 import {
@@ -50,11 +50,11 @@ interface CanonicalNodeRendererProps {
  * 단일 `ResolvedNode` 를 DOM 요소로 렌더링한다.
  *
  * 렌더링 순서:
- * 1. `extractLegacyPropsFromResolved` 로 legacy props 추출
+ * 1. `extractCanonicalPropsFromResolved` 로 canonical props 추출
  * 2. props 에서 `type` 복원 (metadata.type → node.type fallback)
  * 3. rendererMap 위임 (기존 shared renderer 재사용)
  * 4. rendererMap 미등록 시 generic div 렌더링 + children 재귀
- * 5. DOM 마커: `data-canonical-id` + `data-legacy-uuid`
+ * 5. DOM 마커: `data-canonical-id` + `data-element-id`
  */
 export function CanonicalNodeRenderer({
   node,
@@ -63,45 +63,43 @@ export function CanonicalNodeRenderer({
 }: CanonicalNodeRendererProps): React.ReactElement | null {
   const currentPath = parentPath ? `${parentPath}/${node.id}` : node.id;
 
-  // ── legacyProps 추출 ──────────────────────────────────────────────────────
-  const legacyProps = extractLegacyPropsFromResolved(node);
+  // ── canonical props 추출 ──────────────────────────────────────────────────
+  const canonicalProps = extractCanonicalPropsFromResolved(node);
 
   // ── type 복원 ─────────────────────────────────────────────────────────────
   // node.type 이 ComponentTag (예: "button", "text", "frame") 이므로
-  // legacy type 는 legacyProps._tag → metadata.originalTag → node.type 순으로 fallback
+  // type 은 canonical props marker → metadata.originalTag → node.type 순으로 fallback
   const type =
-    (legacyProps._tag as string | undefined) ??
-    (legacyProps.type as string | undefined) ??
+    (canonicalProps._tag as string | undefined) ??
+    (canonicalProps.type as string | undefined) ??
     ((node.metadata as Record<string, unknown> | undefined)?.originalTag as
       | string
       | undefined) ??
     String(node.type);
 
   // ── PreviewElement 재구성 (rendererMap 시그니처 맞춤) ────────────────────
-  // node.id 는 stable path (idPath.ts segId 결과) 이지만
-  // legacy DOM 마커는 원본 UUID 가 필요하므로 legacyProps.id 를 우선.
-  const legacyUuid = (legacyProps.id as string | undefined) ?? node.id;
+  const elementId = node.id;
 
   const previewEl: PreviewElement = withFrameElementMirrorId(
     {
-      id: legacyUuid,
+      id: elementId,
       type,
-      props: legacyProps as PreviewElement["props"],
-      parent_id: (legacyProps.parent_id as string | undefined) ?? null,
-      page_id: (legacyProps.page_id as string | undefined) ?? null,
-      order_num: (legacyProps.order_num as number | undefined) ?? 0,
-      fills: (legacyProps.fills as unknown[] | undefined) ?? [],
+      props: canonicalProps as PreviewElement["props"],
+      parent_id: null,
+      page_id: null,
+      order_num: 0,
+      fills: [],
     },
-    getFrameElementMirrorId(legacyProps),
+    getFrameElementMirrorId(canonicalProps),
   );
 
   // fills + style 변환 (adaptElementFillStyle)
   const adaptedEl = adaptElementFillStyle(previewEl);
 
-  // DOM 마커 props (canonical-id = stable path, legacy-uuid = 원본 UUID)
+  // DOM 마커 props
   const markerProps = {
     "data-canonical-id": node.id,
-    "data-legacy-uuid": legacyUuid,
+    "data-element-id": elementId,
   };
 
   // ── rendererMap 위임 ──────────────────────────────────────────────────────
@@ -124,7 +122,6 @@ export function CanonicalNodeRenderer({
     {
       key: node.id,
       ...markerProps,
-      "data-element-id": legacyUuid,
       style: adaptedEl.props?.style as React.CSSProperties | undefined,
       className: adaptedEl.props?.className as string | undefined,
     },

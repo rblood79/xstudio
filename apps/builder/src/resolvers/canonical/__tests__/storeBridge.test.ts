@@ -4,7 +4,7 @@
  * 검증 대상:
  * - `selectResolvedTree(doc, cache?)` — canonical document 진입점
  * - `buildResolvedNodeIndex(tree)` — DFS flatten Map
- * - `extractLegacyPropsFromResolved(resolved)` — 두 metadata 패턴 대응
+ * - `extractCanonicalPropsFromResolved(resolved)` — canonical props 추출
  * - `resolveInstanceWithSharedCache(instance, master, cache?)` — mini-doc + cache 통과한
  *   Element 재구성 — legacy `resolveInstanceElement` 와 시각 등가성 보장
  * - `buildParentIndex(tree)` — DFS child → parent id Map (P3-B)
@@ -22,7 +22,7 @@ import { resolveInstanceElement } from "@/utils/component/instanceResolver";
 import {
   buildResolvedNodeIndex,
   buildParentIndex,
-  extractLegacyPropsFromResolved,
+  extractCanonicalPropsFromResolved,
   getCanonicalParentId,
   prefetchResolvedTreeImports,
   resolveInstanceWithSharedCache,
@@ -69,10 +69,7 @@ describe("selectResolvedTree", () => {
           id: "MasterBtn",
           type: "Button",
           reusable: true,
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { label: "Submit", color: "blue" },
-          },
+          props: { label: "Submit", color: "blue" },
         },
         {
           id: "P1",
@@ -83,10 +80,7 @@ describe("selectResolvedTree", () => {
               id: "InstanceBtn",
               type: "ref",
               ref: "MasterBtn",
-              metadata: {
-                type: "legacy-instance-overrides",
-                legacyProps: { label: "Send" },
-              },
+              props: { label: "Send" },
             },
           ],
         },
@@ -116,10 +110,7 @@ describe("selectResolvedTree", () => {
           id: "master-A",
           type: "Button",
           reusable: true,
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { label: "A" },
-          },
+          props: { label: "A" },
         },
         {
           id: "P1",
@@ -224,50 +215,37 @@ describe("buildResolvedNodeIndex", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// extractLegacyPropsFromResolved
+// extractCanonicalPropsFromResolved
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("extractLegacyPropsFromResolved", () => {
-  it("TC5: metadata.legacyProps 필드 존재 — 그 값을 그대로 반환 (adapter / descendants mode A 패턴)", () => {
+describe("extractCanonicalPropsFromResolved", () => {
+  it("TC5: props 필드 존재 — 그 값을 shallow copy 로 반환", () => {
     const node: ResolvedNode = {
       id: "n1",
       type: "Button",
-      metadata: {
-        type: "legacy-element-props",
-        legacyProps: { label: "Hello", color: "red" },
-      },
+      props: { label: "Hello", color: "red" },
     };
-    const props = extractLegacyPropsFromResolved(node);
+    const props = extractCanonicalPropsFromResolved(node);
     expect(props).toEqual({ label: "Hello", color: "red" });
+    expect(props).not.toBe(node.props);
   });
 
-  it("TC6: metadata 에 type + spread props 패턴 (ref-resolve) — type 제외 나머지 반환", () => {
+  it("TC6: metadata 만 있는 노드는 props extraction 대상이 아니다", () => {
     const node: ResolvedNode = {
       id: "n1",
       type: "Button",
       metadata: {
-        type: "legacy-element-props",
+        type: "debug",
         label: "Direct",
         color: "blue",
       },
     };
-    const props = extractLegacyPropsFromResolved(node);
-    expect(props).toEqual({ label: "Direct", color: "blue" });
-    expect(props).not.toHaveProperty("type");
+    expect(extractCanonicalPropsFromResolved(node)).toEqual({});
   });
 
   it("TC7: metadata 없으면 빈 객체", () => {
     const node: ResolvedNode = { id: "n1", type: "Button" };
-    expect(extractLegacyPropsFromResolved(node)).toEqual({});
-  });
-
-  it("TC8: metadata.legacyProps 가 null/undefined 이면 빈 객체", () => {
-    const node: ResolvedNode = {
-      id: "n1",
-      type: "Button",
-      metadata: { type: "legacy-element-props", legacyProps: null },
-    } as unknown as ResolvedNode;
-    expect(extractLegacyPropsFromResolved(node)).toEqual({});
+    expect(extractCanonicalPropsFromResolved(node)).toEqual({});
   });
 });
 

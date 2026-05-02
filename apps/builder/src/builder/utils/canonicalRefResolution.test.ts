@@ -181,9 +181,7 @@ describe("canonicalRefResolution", () => {
             {
               id: "custom-body",
               type: "Text",
-              metadata: {
-                legacyProps: { text: "Custom body" },
-              },
+              props: { text: "Custom body" },
             },
           ],
         },

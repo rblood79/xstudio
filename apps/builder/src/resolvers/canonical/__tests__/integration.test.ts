@@ -291,11 +291,8 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
       | ResolvedNode
       | undefined;
     if (labelChild) {
-      const legacyProps = labelChild.metadata?.legacyProps as
-        | Record<string, unknown>
-        | undefined;
       // text 는 "Cancel"(override 성공) 또는 "OK"(UUID remap 실패 fallback) 둘 중 하나
-      expect(["Cancel", "OK"]).toContain(legacyProps?.text);
+      expect(["Cancel", "OK"]).toContain(labelChild.props?.text);
     }
   });
 

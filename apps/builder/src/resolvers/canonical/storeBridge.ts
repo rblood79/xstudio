@@ -43,7 +43,7 @@ import {
   type CanonicalImportRegistry,
   type PrefetchDocumentImportsResult,
 } from "./importRegistry";
-import { extractLegacyPropsFromResolved } from "./extractLegacyProps";
+import { extractCanonicalPropsFromResolved } from "./extractCanonicalProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1) CompositionDocument → ResolvedNode[] selector (full tree)
@@ -165,13 +165,13 @@ export function getCanonicalParentId(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3) ResolvedNode → legacy props 추출 (두 metadata 패턴 대응)
+// 3) ResolvedNode → canonical props 추출
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ADR-916 G6-2 — `extractLegacyPropsFromResolved` 는 `extractLegacyProps.ts` 로
-// 분리됨 (storeBridge import chain 의 vitest mock 함정 우회 + isolated unit test).
+// ADR-916 direct cutover — `extractCanonicalPropsFromResolved` 는 store 무관
+// helper 로 분리됨 (storeBridge import chain 의 vitest mock 함정 우회).
 // 본 re-export 는 production caller (CanonicalNodeRenderer 등) 의 import path 보존.
-export { extractLegacyPropsFromResolved } from "./extractLegacyProps";
+export { extractCanonicalPropsFromResolved } from "./extractCanonicalProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4) per-instance shared-cache resolve (mini-doc)
@@ -184,9 +184,8 @@ export { extractLegacyPropsFromResolved } from "./extractLegacyProps";
  * `useResolvedElement` 등 per-instance hook 이 doc 전체 build 없이 canonical
  * 경로로 진입하면서도 shared cache hit 효과를 누리도록 설계.
  *
- * - master / instance 둘 다 P1 adapter 의 metadata 계약 (`type: "legacy-element-props"`,
- *   `legacyProps: ...`) 을 그대로 모사 — P2 resolver 의 `resolveCanonicalRefProps`
- *   가 동일 머지 결과 산출
+ * - master / instance 둘 다 canonical `props` 계약으로 mini document 를 구성 —
+ *   P2 resolver 의 `resolveCanonicalRefProps` 가 동일 머지 결과 산출
  * - cache hit 단위는 `(refNode.id, descendantsFingerprint, slotBindingFingerprint)`
  *   조합. 같은 instance / master pair 의 반복 호출은 cache hit
  * - master 가 없으면 `null` 반환 — caller 는 legacy fallback 또는 element 그대로 처리
@@ -208,9 +207,9 @@ export function resolveInstanceWithSharedCache(
     id: master.id,
     type: master.type as ComponentTag,
     reusable: true,
+    props: master.props,
     metadata: {
-      type: "legacy-element-props",
-      legacyProps: master.props,
+      type: "canonical-element",
     },
   };
 
@@ -218,9 +217,9 @@ export function resolveInstanceWithSharedCache(
     id: instance.id,
     type: "ref",
     ref: master.id,
+    props: getComponentOverridesMirror(instance) ?? {},
     metadata: {
-      type: "legacy-instance-overrides",
-      legacyProps: getComponentOverridesMirror(instance) ?? {},
+      type: "canonical-instance",
     },
   };
 
@@ -232,7 +231,7 @@ export function resolveInstanceWithSharedCache(
   const [, resolvedRef] = resolveCanonicalDocument(miniDoc, cache);
   if (!resolvedRef) return null;
 
-  const props = extractLegacyPropsFromResolved(resolvedRef);
+  const props = extractCanonicalPropsFromResolved(resolvedRef);
 
   return {
     ...instance,

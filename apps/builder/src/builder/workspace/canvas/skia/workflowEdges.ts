@@ -30,7 +30,6 @@ export interface WorkflowPageInput {
   id: string;
   title: string;
   slug: string;
-  layout_id?: string | null;
 }
 
 /** 입력 요소 최소 인터페이스 */
@@ -364,14 +363,11 @@ export function computeDataSourceEdges(
 // ============================================
 
 /**
- * 페이지들을 Layout 기준으로 그룹화.
+ * 페이지들을 canonical reusable frame binding 기준으로 그룹화.
  *
- * pages에서 layout_id를 읽고 layouts 배열과 매칭하여
- * 1개 이상의 페이지가 속한 LayoutGroup 목록을 반환.
- *
- * ADR-903 P3-D-5 step 5b: doc parameter 추가 (canonical-aware indirection).
- * 현재는 getLegacyPageLayoutId 내부가 noop 이라 doc 무관, step 5c 에서
- * helper 내부 canonical lookup 활성화 시 caller chain 자동 적용.
+ * active CompositionDocument 에서 page -> reusable frame ref 를 읽고 layouts
+ * mirror 배열은 이름 lookup 에만 사용한다. legacy page binding fallback 은 direct
+ * cutover 이후 유지하지 않는다.
  */
 export function computeLayoutGroups(
   pages: WorkflowPageInput[],
@@ -386,7 +382,7 @@ export function computeLayoutGroups(
   const groupMap = new Map<string, string[]>();
 
   for (const page of pages) {
-    const layoutId = getLegacyPageLayoutId(page, doc);
+    const layoutId = getLegacyPageLayoutId({ id: page.id }, doc);
     if (!layoutId) continue;
 
     const existing = groupMap.get(layoutId);

@@ -5,7 +5,7 @@ import type { LegacyElementMirrorFields } from "./legacyElementFields";
 
 type CanonicalRefFields = {
   descendants?: unknown;
-  metadata?: { legacyProps?: unknown; [key: string]: unknown };
+  metadata?: { [key: string]: unknown };
   ref?: unknown;
 };
 
@@ -19,15 +19,11 @@ function asCanonicalRefFields(element: Element): Element & CanonicalRefFields {
   return element as Element & CanonicalRefFields;
 }
 
-function getLegacyProps(element: Element): Record<string, unknown> {
-  const metadata = asCanonicalRefFields(element).metadata;
-  if (isRecord(metadata?.legacyProps)) return metadata.legacyProps;
+function getElementProps(element: Element): Record<string, unknown> {
   return element.props ?? {};
 }
 
 function getRefOverrideProps(element: Element): Record<string, unknown> {
-  const metadata = asCanonicalRefFields(element).metadata;
-  if (isRecord(metadata?.legacyProps)) return metadata.legacyProps;
   return element.props ?? {};
 }
 
@@ -77,7 +73,7 @@ export function resolveCanonicalRefElement(
     layout_id: element.layout_id ?? null,
     order_num: element.order_num,
     props: mergePropsWithStyleDeep(
-      getLegacyProps(master),
+      getElementProps(master),
       getRefOverrideProps(element),
     ),
     ref,
@@ -157,13 +153,7 @@ function propsFromDescendantPatch(
     type: _type,
     ...props
   } = patch;
-
-  const metadata = patch.metadata;
-  if (isRecord(metadata) && isRecord(metadata.legacyProps)) {
-    return metadata.legacyProps;
-  }
-
-  return props;
+  return isRecord(patch.props) ? patch.props : props;
 }
 
 function getOverrideNodeSegment(node: OverrideNode, index: number): string {
@@ -180,11 +170,6 @@ function getOverrideNodeSegment(node: OverrideNode, index: number): string {
 }
 
 function getOverrideNodeProps(node: OverrideNode): Record<string, unknown> {
-  const metadata = node.metadata;
-  if (isRecord(metadata) && isRecord(metadata.legacyProps)) {
-    return metadata.legacyProps;
-  }
-
   const {
     children: _children,
     customId: _customId,
@@ -199,7 +184,7 @@ function getOverrideNodeProps(node: OverrideNode): Record<string, unknown> {
     ...props
   } = node;
 
-  return props;
+  return isRecord(node.props) ? node.props : props;
 }
 
 function getOverrideNodeSlot(node: OverrideNode): false | string[] | undefined {
@@ -320,7 +305,7 @@ function materializeSyntheticDescendants(
       page_id: refElement.page_id ?? sourceChild.page_id ?? null,
       layout_id: refElement.layout_id ?? sourceChild.layout_id ?? null,
       order_num: sourceChild.order_num ?? index,
-      props: mergePropsWithStyleDeep(getLegacyProps(sourceChild), patchProps),
+      props: mergePropsWithStyleDeep(getElementProps(sourceChild), patchProps),
       reusable: undefined,
     } as Element;
 

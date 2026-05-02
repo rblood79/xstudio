@@ -52,7 +52,7 @@ import { getSlotMirrorName } from "../adapters/canonical/slotMirror";
  * Why default true:
  * - ADR-903 P2 옵션 C 검증 PASS (Chrome MCP, 2026-04-25 세션 28)
  * - canonical resolve 정상 작동 + DOM dual marker (data-canonical-id +
- *   data-legacy-uuid) 부착 확인
+ *   data-element-id) 부착 확인
  * - canonical render 실패 시 안전망 (legacy fallback) 정상 작동
  * - pages hydration sender (UPDATE_PAGES) land 후 production 데이터 검증 완료
  */

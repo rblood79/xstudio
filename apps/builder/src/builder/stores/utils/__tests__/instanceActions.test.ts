@@ -181,34 +181,6 @@ describe("instance store actions", () => {
     });
   });
 
-  it("resets a canonical ref metadata legacyProps override field", () => {
-    const ref = makeElement("ref", {
-      type: "ref",
-      ref: "master",
-      metadata: {
-        type: "legacy-element-props",
-        legacyProps: { label: "Instance", tone: "accent" },
-      },
-      props: { ignored: true },
-    } as never);
-
-    useStore.setState({
-      elements: [ref],
-      elementsMap: new Map([["ref", ref]]),
-    } as never);
-    useStore.getState()._rebuildIndexes();
-
-    useStore.getState().resetInstanceOverrideField("ref", "label");
-
-    expect(useStore.getState().elementsMap.get("ref")).toMatchObject({
-      metadata: {
-        type: "legacy-element-props",
-        legacyProps: { tone: "accent" },
-      },
-      props: { ignored: true },
-    });
-  });
-
   it("resets a canonical ref descendant override field with history", async () => {
     const ref = makeElement("ref", {
       type: "ref",
@@ -216,10 +188,7 @@ describe("instance store actions", () => {
       descendants: {
         "slot/label": { text: "Custom label", tone: "accent" },
         icon: {
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { name: "check", size: "sm" },
-          },
+          props: { name: "check", size: "sm" },
         },
       },
     } as never);
@@ -239,10 +208,7 @@ describe("instance store actions", () => {
       descendants: {
         "slot/label": { tone: "accent" },
         icon: {
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { name: "check", size: "sm" },
-          },
+          props: { name: "check", size: "sm" },
         },
       },
     });
@@ -269,16 +235,13 @@ describe("instance store actions", () => {
     });
   });
 
-  it("resets a canonical ref descendant metadata legacyProps field", () => {
+  it("resets a canonical ref descendant props field", () => {
     const ref = makeElement("ref", {
       type: "ref",
       ref: "master",
       descendants: {
         icon: {
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { name: "check", size: "sm" },
-          },
+          props: { name: "check", size: "sm" },
         },
       },
     } as never);
@@ -294,10 +257,7 @@ describe("instance store actions", () => {
     expect(useStore.getState().elementsMap.get("ref")).toMatchObject({
       descendants: {
         icon: {
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { size: "sm" },
-          },
+          props: { size: "sm" },
         },
       },
     });
@@ -411,18 +371,12 @@ describe("instance store actions", () => {
             {
               id: "card",
               type: "Card",
-              metadata: {
-                type: "legacy-element-props",
-                legacyProps: { title: "Card title" },
-              },
+              props: { title: "Card title" },
               children: [
                 {
                   id: "card-label",
                   type: "Text",
-                  metadata: {
-                    type: "legacy-element-props",
-                    legacyProps: { text: "Nested label" },
-                  },
+                  props: { text: "Nested label" },
                 },
               ],
             },
@@ -485,10 +439,7 @@ describe("instance store actions", () => {
         label: {
           id: "replacement",
           type: "Heading",
-          metadata: {
-            type: "legacy-element-props",
-            legacyProps: { text: "Replacement" },
-          },
+          props: { text: "Replacement" },
         },
       },
     } as never);

@@ -115,7 +115,7 @@ function groupElementsBySlot(
 
   // Page elements를 해당 Slot에 할당
   rootPageElements.forEach((element) => {
-    // ⭐ FIX: slot_name은 props 내부에 저장됨 (Inspector에서 설정)
+    // Slot mirror name 은 props 또는 adapter mirror payload 에서 읽는다.
     const slotName =
       getSlotMirrorName(element.props) ||
       getSlotMirrorName(element) ||
@@ -126,7 +126,7 @@ function groupElementsBySlot(
       content.pageElements.push(element);
       content.isEmpty = false;
     } else {
-      // 유효하지 않은 slot_name → "content" 또는 첫 번째 Slot에 추가
+      // 유효하지 않은 slot mirror name → "content" 또는 첫 번째 Slot에 추가
       const defaultContent =
         slotContents.get("content") ||
         (slotContents.size > 0 ? slotContents.values().next().value : null);

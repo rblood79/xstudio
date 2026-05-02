@@ -142,8 +142,8 @@ export interface SetEditModeMessage extends PreviewMessage {
 }
 
 /**
- * Layout/Slot System: Page 정보 업데이트 메시지
- * Page가 변경될 때 해당 Page의 layout_id를 Preview에 전달
+ * Page 정보 업데이트 메시지.
+ * Page가 변경될 때 해당 Page의 reusable frame binding을 Preview에 전달
  */
 export interface UpdatePageInfoMessage extends PreviewMessage {
   type: "UPDATE_PAGE_INFO";

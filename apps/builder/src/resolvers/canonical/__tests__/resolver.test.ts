@@ -156,7 +156,7 @@ describe("resolveCanonicalDocument", () => {
     const labelChild: CanonicalNode = {
       id: "label",
       type: "Label",
-      metadata: { type: "legacy-element-props", legacyProps: { text: "OK" } },
+      props: { text: "OK" },
     };
     const master = makeReusable("btn", "Button", [labelChild]);
     const ref = makeRef("i1", "btn", {
@@ -177,11 +177,8 @@ describe("resolveCanonicalDocument", () => {
       (c) => c.id === "label",
     ) as ResolvedNode;
     expect(resolvedLabel).toBeDefined();
-    // mode A 적용 결과: legacyProps 에 머지된 text
-    const mergedProps = resolvedLabel.metadata?.legacyProps as
-      | Record<string, unknown>
-      | undefined;
-    expect(mergedProps?.text).toBe("Cancel");
+    // mode A 적용 결과: props 에 머지된 text
+    expect(resolvedLabel.props?.text).toBe("Cancel");
   });
 
   // ────────────────────────────────────────────
@@ -425,7 +422,7 @@ describe("resolveCanonicalDocument", () => {
     const labelChild: CanonicalNode = {
       id: "label",
       type: "Label",
-      metadata: { type: "legacy-element-props", legacyProps: { text: "OK" } },
+      props: { text: "OK" },
     };
     const master = makeReusable("btn", "Button", [labelChild]);
     const ref = makeRef("i1", "btn", {

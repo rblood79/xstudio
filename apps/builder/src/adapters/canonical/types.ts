@@ -28,8 +28,8 @@ export type ConvertComponentRoleFn = (
   ref?: string;
   /** descendants UUID key를 stable id path로 remap한 결과 */
   descendantsRemapped?: Record<string, unknown>;
-  /** instance overrides → CanonicalNode 루트 속성 patch */
-  rootOverrides?: Record<string, unknown>;
+  /** instance overrides → RefNode.props patch */
+  rootOverrides?: { props: Record<string, unknown> };
 };
 
 export type ConvertSlotElementFn = (slotElement: Element) => {

@@ -19,7 +19,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  * Layer Tree에는 표시되지만 Preview에서는 렌더링되지 않습니다.
  */
 export function createDataTableDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
@@ -68,18 +68,16 @@ export function createDataTableDefinition(
  * Layout Body에서만 생성 가능합니다.
  */
 export function createSlotDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, elements } = context;
+  const { parentElement, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  // Slot은 Layout에서만 사용 가능
+  // Slot은 reusable frame 편집 컨텍스트에서만 사용 가능
   if (!layoutId) {
-    console.warn("⚠️ Slot can only be created in Layout mode");
+    console.warn("⚠️ Slot can only be created in reusable frame mode");
   }
-
-  // ⭐ Layout/Slot System - Slot은 항상 layout_id 사용
 
   return {
     type: "Slot",

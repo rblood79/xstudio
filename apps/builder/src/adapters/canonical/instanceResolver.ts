@@ -64,30 +64,16 @@ export function mergePropsWithStyleDeep(
  * legacy resolveInstanceProps와 동일한 mergePropsWithStyleDeep semantics 사용
  * — 시각 결과 대칭 보장.
  *
- * **metadata 계약**: P1 adapter는 legacy element.props를
- * `metadata.type = "legacy-element-props"` + `metadata.legacyProps` 로 보존.
- * RefNode의 인스턴스 override props는 `metadata.type = "legacy-instance-overrides"`
- * + `metadata.legacyProps` 에 저장된다 (P1 componentRoleAdapter.ts 계약).
- * P2 구현 시 올바른 source를 채운다.
+ * **props 계약**: ADR-916 direct cutover 이후 master/ref props source는
+ * `CanonicalNode.props` 하나다. `metadata.legacyProps` 는 adapter/export 경계의
+ * quarantine payload이며 resolver 입력으로 사용하지 않는다.
  */
 export function resolveCanonicalRefProps(
   master: CanonicalNode,
   refNode: RefNode,
 ): Record<string, unknown> {
-  const masterProps =
-    master.metadata?.type === "legacy-element-props"
-      ? ((master.metadata.legacyProps as Record<string, unknown> | undefined) ??
-        {})
-      : {};
-
-  // P1 Stage 2: instance override props stub
-  // P2에서 refNode.metadata.legacyProps 또는 RefNode 루트 필드에서 채워진다.
-  const refOverrides: Record<string, unknown> =
-    refNode.metadata?.type === "legacy-instance-overrides"
-      ? ((refNode.metadata.legacyProps as
-          | Record<string, unknown>
-          | undefined) ?? {})
-      : {};
+  const masterProps = master.props ?? {};
+  const refOverrides = refNode.props ?? {};
 
   return mergePropsWithStyleDeep(masterProps, refOverrides);
 }
@@ -119,11 +105,7 @@ export function resolveCanonicalDescendantOverride(
     );
   }
 
-  const childProps =
-    child.metadata?.type === "legacy-element-props"
-      ? ((child.metadata.legacyProps as Record<string, unknown> | undefined) ??
-        {})
-      : {};
+  const childProps = child.props ?? {};
   const mergedProps = mergePropsWithStyleDeep(
     childProps,
     override as Record<string, unknown>,
@@ -131,11 +113,7 @@ export function resolveCanonicalDescendantOverride(
 
   return {
     ...child,
-    metadata: {
-      ...child.metadata,
-      type: child.metadata?.type ?? "legacy-element-props",
-      legacyProps: mergedProps,
-    },
+    props: mergedProps,
   };
 }
 

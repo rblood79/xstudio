@@ -3,17 +3,17 @@ import { asElementWithLegacyMirror } from "./legacyElementFields";
 
 /**
  * canonical CanonicalNode.metadata 의 type discriminator.
- * `CanonicalNodeRenderer.legacyUuid` resolution 이 의존하는 contract.
+ * adapter quarantine payload 식별용 contract.
  */
 export const LEGACY_ELEMENT_PROPS_METADATA_TYPE =
   "legacy-element-props" as const;
 
 /**
- * legacyToCanonical 의 metadata.legacyProps 표준 빌더.
+ * legacyToCanonical 의 adapter quarantine payload 표준 빌더.
  *
- * `CanonicalNodeRenderer` 가 `legacyProps.id` 로 element 의 원본 UUID 를 식별 →
- * shared renderer 의 `childrenMap.get(element.id)` 가 자식의 `parent_id` 와 정합.
- * 미주입 시 fallback 으로 canonical path-id (segId) 사용 → mismatch → 자식 미렌더 회귀.
+ * ADR-916 direct cutover 이후 runtime resolver/preview/store 는 이 payload 를
+ * props source 로 읽지 않는다. 남은 용도는 adapter boundary 감사와 legacy
+ * export 테스트 fixture 검증이다.
  *
  * **보존 필수 fields**:
  * - core top-level: `id` / `parent_id` / `page_id` / `layout_id` / `order_num` /

@@ -165,35 +165,22 @@ function sortElementsForUpsert(elements: Element[]): Element[] {
   });
 }
 
-function getLegacyNodeId(node: CanonicalNode): string | null {
-  const legacyProps = node.metadata?.legacyProps;
-  if (
-    legacyProps &&
-    typeof legacyProps === "object" &&
-    "id" in legacyProps &&
-    typeof legacyProps.id === "string"
-  ) {
-    return legacyProps.id;
-  }
-  return null;
+function nodeMatchesId(node: CanonicalNode, elementId: string): boolean {
+  return node.id === elementId;
 }
 
-function nodeMatchesLegacyId(node: CanonicalNode, legacyId: string): boolean {
-  return node.id === legacyId || getLegacyNodeId(node) === legacyId;
-}
-
-function findNodeByLegacyId(
+function findNodeById(
   nodes: CanonicalNode[],
-  legacyId: string | null | undefined,
+  elementId: string | null | undefined,
 ): CanonicalNode | null {
-  if (!legacyId) return null;
+  if (!elementId) return null;
   for (const node of nodes) {
-    if (nodeMatchesLegacyId(node, legacyId)) return node;
-    const child = findNodeByLegacyId(node.children ?? [], legacyId);
+    if (nodeMatchesId(node, elementId)) return node;
+    const child = findNodeById(node.children ?? [], elementId);
     if (child) return child;
     if (node.type === "ref") {
       for (const children of getDescendantChildrenArrays(node as RefNode)) {
-        const descendantChild = findNodeByLegacyId(children, legacyId);
+        const descendantChild = findNodeById(children, elementId);
         if (descendantChild) return descendantChild;
       }
     }
@@ -201,38 +188,25 @@ function findNodeByLegacyId(
   return null;
 }
 
-function getNodeOrder(node: CanonicalNode): number {
-  const legacyProps = node.metadata?.legacyProps;
-  if (
-    legacyProps &&
-    typeof legacyProps === "object" &&
-    "order_num" in legacyProps &&
-    typeof legacyProps.order_num === "number"
-  ) {
-    return legacyProps.order_num;
-  }
-  return 0;
-}
-
 function sortCanonicalChildren(children: CanonicalNode[]): CanonicalNode[] {
-  return [...children].sort((a, b) => getNodeOrder(a) - getNodeOrder(b));
+  return [...children];
 }
 
-function removeNodeByLegacyId(
+function removeNodeById(
   nodes: CanonicalNode[],
-  legacyId: string,
+  elementId: string,
 ): { nodes: CanonicalNode[]; removed: CanonicalNode | null } {
   let removed: CanonicalNode | null = null;
   const nextNodes: CanonicalNode[] = [];
 
   for (const node of nodes) {
-    if (nodeMatchesLegacyId(node, legacyId)) {
+    if (nodeMatchesId(node, elementId)) {
       removed = node;
       continue;
     }
 
     let nextNode = node;
-    const childResult = removeNodeByLegacyId(node.children ?? [], legacyId);
+    const childResult = removeNodeById(node.children ?? [], elementId);
     if (childResult.removed) {
       removed = childResult.removed;
       nextNode = { ...nextNode, children: childResult.nodes };
@@ -241,7 +215,7 @@ function removeNodeByLegacyId(
     if (nextNode.type === "ref") {
       const descendantResult = removeNodeFromDescendants(
         nextNode as RefNode,
-        legacyId,
+        elementId,
       );
       if (descendantResult.removed) {
         removed = descendantResult.removed;
@@ -277,7 +251,7 @@ function getDescendantChildrenArrays(refNode: RefNode): CanonicalNode[][] {
 
 function removeNodeFromDescendants(
   refNode: RefNode,
-  legacyId: string,
+  elementId: string,
 ): { node: RefNode; removed: CanonicalNode | null } {
   const descendants = refNode.descendants ?? {};
   let removed: CanonicalNode | null = null;
@@ -291,7 +265,7 @@ function removeNodeFromDescendants(
       "children" in override &&
       Array.isArray(override.children)
     ) {
-      const result = removeNodeByLegacyId(override.children, legacyId);
+      const result = removeNodeById(override.children, elementId);
       if (result.removed) {
         removed = result.removed;
         changed = true;
@@ -314,23 +288,20 @@ function upsertChild(
   children: CanonicalNode[] | undefined,
   child: CanonicalNode,
 ): CanonicalNode[] {
-  const withoutExisting = (children ?? []).filter((node) => {
-    const legacyId = getLegacyNodeId(child);
-    return legacyId
-      ? !nodeMatchesLegacyId(node, legacyId)
-      : node.id !== child.id;
-  });
+  const withoutExisting = (children ?? []).filter(
+    (node) => node.id !== child.id,
+  );
   return sortCanonicalChildren([...withoutExisting, child]);
 }
 
 function appendChildToNode(
   nodes: CanonicalNode[],
-  parentLegacyId: string,
+  parentElementId: string,
   child: CanonicalNode,
 ): { nodes: CanonicalNode[]; inserted: boolean } {
   let inserted = false;
   const nextNodes = nodes.map((node) => {
-    if (nodeMatchesLegacyId(node, parentLegacyId)) {
+    if (nodeMatchesId(node, parentElementId)) {
       inserted = true;
       return {
         ...node,
@@ -341,7 +312,7 @@ function appendChildToNode(
     let nextNode = node;
     const childResult = appendChildToNode(
       node.children ?? [],
-      parentLegacyId,
+      parentElementId,
       child,
     );
     if (childResult.inserted) {
@@ -352,7 +323,7 @@ function appendChildToNode(
     if (nextNode.type === "ref") {
       const descendantResult = appendChildToDescendants(
         nextNode as RefNode,
-        parentLegacyId,
+        parentElementId,
         child,
       );
       if (descendantResult.inserted) {
@@ -369,7 +340,7 @@ function appendChildToNode(
 
 function appendChildToDescendants(
   refNode: RefNode,
-  parentLegacyId: string,
+  parentElementId: string,
   child: CanonicalNode,
 ): { node: RefNode; inserted: boolean } {
   const descendants = refNode.descendants ?? {};
@@ -385,7 +356,7 @@ function appendChildToDescendants(
     ) {
       const result = appendChildToNode(
         override.children,
-        parentLegacyId,
+        parentElementId,
         child,
       );
       if (result.inserted) {
@@ -431,7 +402,7 @@ function remapLegacyDescendants(
 
   const remapped: RefNode["descendants"] = {};
   for (const [legacyChildId, override] of Object.entries(legacyDescendants)) {
-    const childNode = findNodeByLegacyId(doc.children, legacyChildId);
+    const childNode = findNodeById(doc.children, legacyChildId);
     remapped[childNode?.id ?? legacyChildId] = override;
   }
   return remapped;
@@ -494,7 +465,7 @@ function legacyElementToCanonicalNode(
   }
 
   if (legacy.componentRole === "instance" && legacy.masterId) {
-    const masterNode = findNodeByLegacyId(doc.children, legacy.masterId);
+    const masterNode = findNodeById(doc.children, legacy.masterId);
     const descendants = remapLegacyDescendants(element, doc);
     const refNode: RefNode = {
       ...baseNode,
@@ -769,8 +740,8 @@ function upsertElementIntoDocument(
   snapshot: LegacySnapshot,
 ): CompositionDocument {
   const legacy = asElementWithLegacyMirror(element);
-  const previousNode = findNodeByLegacyId(doc.children, element.id);
-  const removed = removeNodeByLegacyId(doc.children, element.id);
+  const previousNode = findNodeById(doc.children, element.id);
+  const removed = removeNodeById(doc.children, element.id);
   const docWithoutExisting: CompositionDocument = {
     ...doc,
     children: removed.nodes,

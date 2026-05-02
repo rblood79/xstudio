@@ -92,8 +92,8 @@ describe("convertComponentRole — instance ref 변환", () => {
   });
 });
 
-describe("convertComponentRole — overrides → rootOverrides", () => {
-  it("overrides: { fontSize: 14 } → rootOverrides: { fontSize: 14 }", () => {
+describe("convertComponentRole — overrides → rootOverrides.props", () => {
+  it("overrides: { fontSize: 14 } → rootOverrides.props", () => {
     // Arrange
     const el = makeEl({
       id: "i2",
@@ -107,7 +107,7 @@ describe("convertComponentRole — overrides → rootOverrides", () => {
     const result = convertComponentRole(el, { idPathMap });
 
     // Assert
-    expect(result.rootOverrides).toEqual({ fontSize: 14 });
+    expect(result.rootOverrides).toEqual({ props: { fontSize: 14 } });
   });
 
   it("overrides: {} (빈 객체) → rootOverrides: undefined", () => {

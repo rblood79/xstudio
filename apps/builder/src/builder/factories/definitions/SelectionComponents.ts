@@ -22,8 +22,6 @@ export function createSelectDefinition(
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
-
   const items: StoredSelectItem[] = [
     { id: crypto.randomUUID(), label: "Aardvark", value: "aardvark" },
     { id: crypto.randomUUID(), label: "Cat", value: "cat" },
@@ -316,7 +314,6 @@ export function createListDefinition(
   const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
 
   return {
     type: "List",

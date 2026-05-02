@@ -165,6 +165,7 @@ export function legacyToCanonical(
         id: segId(element.id, idPathCtx.idSegmentMap),
         type: "frame",
         name: element.componentName,
+        props: { ...element.props },
         metadata: {
           type: "legacy-slot",
           slot_name: element.slot_name,
@@ -174,10 +175,15 @@ export function legacyToCanonical(
       };
     }
 
+    const nodeProps = roleResult.ref
+      ? (roleResult.rootOverrides?.props ?? {})
+      : { ...element.props };
+
     const node: CanonicalNode = {
       id: segId(element.id, idPathCtx.idSegmentMap),
       type: roleResult.ref ? "ref" : baseType,
       name: element.componentName,
+      props: nodeProps,
       ...(roleResult.reusable ? { reusable: true } : {}),
       ...(roleResult.ref
         ? ({
@@ -188,15 +194,13 @@ export function legacyToCanonical(
           } satisfies Partial<RefNode>)
         : {}),
       children: canonicalChildren,
-      ...(roleResult.rootOverrides ?? {}),
       ...getCanonicalSlotDeclaration(element),
       // legacy Element.props + top-level fields 를 metadata 로 보존 (ADR-911).
-      // CanonicalNodeRenderer 의 legacyUuid resolution 이 의존하는 contract.
+      // adapter/export quarantine 전용 payload이며 runtime props source 가 아니다.
       metadata: buildLegacyElementMetadata(element),
       // ADR-916 Phase 5 G7 본격 cutover (2026-05-01): events/dataBinding 을
-      // `x-composition` namespaced extension 으로 분리. metadata.legacyProps
-      // dual-storage 제거 — extension 이 단일 SSOT. exportLegacyDocument 는
-      // extension 에서 reverse, canonicalNodeToElement 는 extension 에서 복원.
+      // `x-composition` namespaced extension 으로 분리. extension 이 단일 SSOT.
+      // exportLegacyDocument 와 canonicalNodeToElement 는 extension 에서 복원.
       ...buildCompositionExtensionField(element),
     };
 

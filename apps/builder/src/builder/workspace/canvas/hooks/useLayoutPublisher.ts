@@ -172,7 +172,7 @@ export function useLayoutPublisher(
 
       // D5=A: publishLayoutMap key fallback chain.
       // - page bodyElement: page_id 확정 → 기존 동작 유지
-      // - frame bodyElement: page_id=null, layout_id=frameId → frameId 키로 발행
+      // - frame bodyElement: frame mirror id → frameId 키로 발행
       // - 양쪽 모두 미정 시 element id fallback (graceful degradation)
       layoutUpdates.push({ key, map: layoutMap });
     }

@@ -37,9 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `storeBridge.selectResolvedTree`, `pageFrameBinding`, `frameLayoutCascade` 의 잔여 `selectCanonicalDocument()` rebuild 호출을 제거했다. reusable frame delete/page binding 변경은 active canonical document 를 직접 갱신하고, legacy page/elements payload 는 adapter mirror/persistence 경계에서만 생성한다.
   - `canonicalMutations` wrapper 내부 `legacyToCanonical()` rebuild 도 제거했다. `mergeElementsCanonicalPrimary` 는 active document upsert, `setElementsCanonicalPrimary` 는 pages/layouts shell rebuild 후 element upsert 로 동작하며, legacy mirror 는 `exportLegacyDocument()` 단일 경계로 생성한다.
   - `exportLegacyDocument()` 는 `RefNode.descendants[].children` 까지 순회해 page frame slot fill element 가 legacy mirror 에서 누락되지 않도록 보강했다.
+  - Compatibility extraction deep cleanup 을 진행했다. resolver/storeBridge/Preview/canonicalElementsView/instanceActions/canonicalRefResolution/editingSemantics/canonicalMutations/exportLegacyDocument 는 더 이상 `metadata.legacyProps` 를 props source 로 읽지 않고 `CanonicalNode.props` / `ResolvedNode.props` 만 사용한다.
+  - `extractLegacyPropsFromResolved` 를 제거하고 `extractCanonicalPropsFromResolved` 로 전환했으며, `g5LegacyFieldGrepGate` 가 runtime compatibility extraction 재도입을 차단한다.
   - `exportSsotGrepGate` 는 ADR-912 dev-only editing semantics fixture 의 raw visual marker write 만 명시 allowlist 로 분리했다. runtime/persistence write gate baseline 은 0을 유지한다.
   - `elements.ts` 의 deprecated `selectCanonicalDocument()` projection selector 를 삭제했다. production source 의 `selectCanonicalDocument()` 호출/정의는 0건이며, `legacyToCanonical()` 은 adapter import/export boundary 와 adapter 테스트 경계에만 남긴다.
-  - ADR-916 G6-3 parity 첫 slice 로 canonical primary native mutation 의 slot append/clear, ref/descendants mirror export 를 보강했다. `metadata.legacyProps` 는 export boundary 에서만 `slot_name` / `componentRole` / `masterId` / legacy `overrides` / legacy `descendants` / `componentName` mirror payload 를 복원하고, resolver 는 RefNode 를 master type 으로 명시 resolve 한다.
+  - ADR-916 G6-3 parity 첫 slice 로 canonical primary native mutation 의 slot append/clear, ref/descendants mirror export 를 보강했다. Deep cleanup 이후 export mirror 는 canonical `props` / `reusable` / `ref` / `descendants` 기반으로 생성하고, resolver 는 RefNode 를 master type 으로 명시 resolve 한다.
   - ADR-916 G6-3 Ref navigation parity 를 보강했다. `Go to component` 는 canonical reference alias helper 로 origin 을 찾고, origin impact 계산은 canonical `name` 과 metadata `customId`/`componentName` alias 를 포함한다.
   - ADR-916 G6-3 Frame connection parity 를 보강했다. PageLayoutSelector/FramesTab 은 reusable FrameNode 선택값을 `frameMirror` helper 로 정규화하고, page-frame binding 은 native canonical FrameNode id 를 실제 RefNode.ref 로 사용해 `layout-${id}` broken ref 재생성을 막는다.
   - ADR-916 G6-3 Slot/Ref/Descendants/Frame parity completion sweep 으로 native slot descendants mutation, ref mirror export, resolver master-type parity, origin/instance navigation, frame binding id parity 를 하나의 static contract gate 로 고정했다.
@@ -79,6 +81,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `normalizeLegacyElement` read-through helper 제거
   - `runTagTypeMigration` 및 관련 dry-run entry/test 제거
   - `descendants` runtime access gate 를 추가해 non-adapter 접근을 canonical resolver/store/type validation allowlist 로 제한
+- ADR-916/911/913 format 누락 sweep 을 추가로 닫았다.
+  - `PagesApiService.Page.layout_id` optional legacy schema 를 제거하고, `workflowEdges.computeLayoutGroups` 는 page `layout_id` fallback 없이 active `CompositionDocument` 의 reusable frame binding 만 사용한다.
+  - `g5LegacyFieldGrepGate` 가 optional legacy field declaration (`layout_id?:` 등) 도 strict gate 로 잡도록 보강했다.
+  - Slot factory 의 미정의 `layoutId` 참조와 stale Layout/Slot 주석을 reusable frame context 기준으로 정리했다.
 
 ### Documentation
 

@@ -116,12 +116,12 @@ describe("computeSlotBindingFingerprint", () => {
     const nodeA: CanonicalNode = {
       id: "card-1",
       type: "Card",
-      metadata: { type: "legacy-element-props", legacyProps: { title: "A" } },
+      props: { title: "A" },
     };
     const nodeB: CanonicalNode = {
       id: "card-1",
       type: "Card",
-      metadata: { type: "legacy-element-props", legacyProps: { title: "B" } },
+      props: { title: "B" },
     };
     const fpA = computeSlotBindingFingerprint([nodeA]);
     const fpB = computeSlotBindingFingerprint([nodeB]);

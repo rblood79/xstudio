@@ -57,6 +57,19 @@ const TARGETED_FRAME_SLOT_FIXTURE_FILES = [
   "apps/builder/src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts",
 ] as const;
 
+const COMPAT_EXTRACTION_RUNTIME_FILES = [
+  "apps/builder/src/resolvers/canonical/index.ts",
+  "apps/builder/src/resolvers/canonical/storeBridge.ts",
+  "apps/builder/src/resolvers/canonical/extractCanonicalProps.ts",
+  "apps/builder/src/preview/components/CanonicalNodeRenderer.tsx",
+  "apps/builder/src/builder/stores/canonical/canonicalElementsView.ts",
+  "apps/builder/src/builder/stores/utils/instanceActions.ts",
+  "apps/builder/src/adapters/canonical/canonicalRefResolution.ts",
+  "apps/builder/src/adapters/canonical/editingSemantics.ts",
+  "apps/builder/src/adapters/canonical/canonicalMutations.ts",
+  "apps/builder/src/adapters/canonical/exportLegacyDocument.ts",
+] as const;
+
 /** design §9.3 grep -g exclude pattern 정합 */
 const EXCLUDE_PATH_PATTERNS: readonly RegExp[] = [
   /\/__tests__\//,
@@ -67,7 +80,7 @@ const EXCLUDE_PATH_PATTERNS: readonly RegExp[] = [
 
 /** design §9.3 첫번째 grep 의 5 필드 (legacy field name) */
 const VIOLATION_PATTERN =
-  /\.(layout_id|slot_name|componentRole|masterId|overrides)\b|\b(layout_id|slot_name|componentRole|masterId|overrides)\s*:/;
+  /\.(layout_id|slot_name|componentRole|masterId|overrides)\b|\b(layout_id|slot_name|componentRole|masterId|overrides)\??\s*:/;
 
 // design §9.3.1 bucket 분류 — strict 측정에서 제외하는 noise 패턴.
 //
@@ -351,6 +364,21 @@ describe("ADR-916 Phase 4 G5 — §9.3.1 strict logic-access grep gate (PASS mar
     if (violations.length > 0) {
       throw new Error(
         `ADR-916 G5 frame/slot fixture regression:\n${violations.join("\n")}`,
+      );
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it("runtime compatibility extraction does not read metadata legacy props", () => {
+    const violations = scanFilesForPattern(
+      COMPAT_EXTRACTION_RUNTIME_FILES,
+      /metadata\.legacyProps|\blegacyProps\b|extractLegacyProps/,
+    );
+    if (violations.length > 0) {
+      throw new Error(
+        `ADR-916 compatibility extraction regression:\n${violations.join(
+          "\n",
+        )}`,
       );
     }
     expect(violations).toEqual([]);

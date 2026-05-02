@@ -295,8 +295,8 @@ export function getPublishedFilteredChildrenMap(
 // ─── 공유 Synthetic Elements Map ──────────────────────────────────
 // Command Stream 경로에서 synthetic element를 조회할 수 있도록 root별로 공유.
 // Tabs virtual Tab 처럼 layout pass 중 생성되는 element 는 elementsMap 에 없고
-// filteredChildrenMap 에 id만 남으므로, layoutMap/filteredMap 과 같은 key
-// fallback(page_id ?? layout_id ?? id)으로 저장해야 multi-page/frame 렌더에서
+// filteredChildrenMap 에 id만 남으므로, layoutMap/filteredMap 과 같은 root key
+// fallback으로 저장해야 multi-page/frame 렌더에서
 // 마지막 root 의 synthetic children 만 남는 회귀를 막을 수 있다.
 const _perPageSyntheticElementsMaps = new Map<string, Map<string, Element>>();
 let _activeSyntheticElementsMap: Map<string, Element> | null = null;
@@ -1991,9 +1991,9 @@ export function calculateFullTreeLayout(
   }
 
   // Fix 1: 트리 소스 일원화 — filteredChildIdsMap 공유
-  // Multi-page + frame authoring: layout map 과 동일한 key fallback chain 사용.
-  // frame body 는 page_id 가 null 이므로 `layout_id` 로 저장해야 page-mode
-  // filtered tree 와 frame-mode filtered tree 가 서로 `__default__` 에서 덮이지 않는다.
+  // Multi-page + frame authoring: layout map 과 동일한 root key fallback chain 사용.
+  // frame body 는 frame mirror id 로 저장해야 page-mode filtered tree 와
+  // frame-mode filtered tree 가 서로 `__default__` 에서 덮이지 않는다.
   publishFilteredChildrenMap(filteredChildIdsMap, rootKey);
   publishCollectedSyntheticElements(rootKey);
 

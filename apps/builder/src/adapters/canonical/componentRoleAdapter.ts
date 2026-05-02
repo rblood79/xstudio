@@ -4,7 +4,7 @@
  * Legacy Element의 component-instance 메타필드를 canonical 형태로 변환:
  *   componentRole === "master"  → reusable: true
  *   componentRole === "instance" + masterId → ref: <stable id path>
- *   overrides → rootOverrides (RefNode 루트 속성 patch)
+ *   overrides → rootOverrides.props (RefNode props patch)
  *   descendants (UUID key) → descendantsRemapped (stable id path key)
  *
  * **legacy descendants는 항상 속성 patch 모드 (mode A)**:
@@ -42,9 +42,9 @@ export const convertComponentRole: ConvertComponentRoleFn = (
     }
   }
 
-  // overrides → instance root props (속성 patch)
+  // overrides → canonical ref props (속성 patch)
   if (element.overrides && Object.keys(element.overrides).length > 0) {
-    result.rootOverrides = { ...element.overrides };
+    result.rootOverrides = { props: { ...element.overrides } };
   }
 
   // descendants UUID key → stable id path remap

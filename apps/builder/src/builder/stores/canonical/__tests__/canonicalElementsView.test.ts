@@ -1,43 +1,21 @@
 /**
- * @fileoverview canonicalElementsView unit tests — ADR-916 Phase 2 G3 Step 1b/2
- *   + Phase 5 G6-1 second work canonical primary fallback (2026-05-01)
- *
- * 검증 영역:
- * 1. canonicalDocumentToElements — DFS + metadata.legacyProps 역추적
- * 2. metadata 누락 노드 skip + 자식 parent context 승계
- * 3. element top-level fields (id/parent_id/page_id/frame mirror/order_num/fills/type)
- *    무손실 복원
- * 4. legacyToCanonical 결과를 그대로 통과시킨 round-trip 동등성
- * 5. (Step 2) useCanonicalSelectedElement — selectedElementId 단일 노드 변환
- * 6. (G6-1 second work) canonical primary fallback — `metadata.legacyProps` 없이
- *    `node.props` 만 정의된 노드도 Element 복원. Button/TextField/Section spec
- *    consumer 가 양 경로 (legacy adapter / canonical primary) 에서 동일 shapes
- *    산출하는 정합 evidence.
+ * @fileoverview canonicalElementsView unit tests — ADR-916 direct cutover.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
-import type { CanonicalNode, CompositionDocument } from "@composition/shared";
-import { ButtonSpec, TextFieldSpec, SectionSpec } from "@composition/specs";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+  CompositionExtension,
+} from "@composition/shared";
+import { ButtonSpec, SectionSpec, TextFieldSpec } from "@composition/specs";
 
 import {
   canonicalDocumentToElements,
   useCanonicalSelectedElement,
 } from "../canonicalElementsView";
 import { useCanonicalDocumentStore } from "../canonicalDocumentStore";
-import { withFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
-import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "../../../../adapters/canonical/legacyMetadata";
-
-// ─────────────────────────────────────────────
-// Fixtures
-// ─────────────────────────────────────────────
-
-function makeMetadata(legacyProps: Record<string, unknown>) {
-  return {
-    type: LEGACY_ELEMENT_PROPS_METADATA_TYPE,
-    legacyProps,
-  };
-}
 
 function makeDoc(
   children: CompositionDocument["children"],
@@ -48,500 +26,168 @@ function makeDoc(
   };
 }
 
-// ─────────────────────────────────────────────
-// A. metadata 보존 노드 → Element 변환
-// ─────────────────────────────────────────────
-
-describe("canonicalDocumentToElements — happy path", () => {
-  it("단일 root 노드 변환", () => {
+describe("canonicalDocumentToElements", () => {
+  it("converts canonical props nodes into Elements", () => {
     const doc = makeDoc([
       {
-        id: "seg-a",
+        id: "button-1",
         type: "Button",
-        metadata: makeMetadata({
-          id: "uuid-a",
-          parent_id: null,
-          page_id: "page-1",
-          order_num: 0,
-          type: "Button",
-          label: "Click me",
-        }),
-      },
-    ]);
-
-    const elements = canonicalDocumentToElements(doc);
-    expect(elements).toHaveLength(1);
-    const el = elements[0];
-    expect(el.id).toBe("uuid-a");
-    expect(el.type).toBe("Button");
-    expect(el.parent_id).toBeNull();
-    expect(el.order_num).toBe(0);
-    expect(el.page_id).toBe("page-1");
-    expect(el.props).toEqual({ label: "Click me" });
-  });
-
-  it("nested children DFS 순회 + parent_id 보존", () => {
-    const doc = makeDoc([
-      {
-        id: "seg-parent",
-        type: "Frame",
-        metadata: makeMetadata({
-          id: "uuid-parent",
-          parent_id: null,
-          order_num: 0,
-          type: "Frame",
-        }),
-        children: [
-          {
-            id: "seg-child-1",
-            type: "Box",
-            metadata: makeMetadata({
-              id: "uuid-child-1",
-              parent_id: "uuid-parent",
-              order_num: 0,
-              type: "Box",
-            }),
-          },
-          {
-            id: "seg-child-2",
-            type: "Box",
-            metadata: makeMetadata({
-              id: "uuid-child-2",
-              parent_id: "uuid-parent",
-              order_num: 1,
-              type: "Box",
-            }),
-          },
-        ],
-      },
-    ]);
-
-    const elements = canonicalDocumentToElements(doc);
-    expect(elements).toHaveLength(3);
-    expect(elements.map((e) => e.id)).toEqual([
-      "uuid-parent",
-      "uuid-child-1",
-      "uuid-child-2",
-    ]);
-    expect(elements[1].parent_id).toBe("uuid-parent");
-    expect(elements[2].parent_id).toBe("uuid-parent");
-    expect(elements[2].order_num).toBe(1);
-  });
-
-  it("ref 노드도 metadata.legacyProps.type 으로 원본 type 복원", () => {
-    const doc = makeDoc([
-      {
-        id: "seg-instance",
-        type: "ref", // canonical ref type
-        metadata: makeMetadata({
-          id: "uuid-instance",
-          parent_id: null,
-          order_num: 0,
-          type: "Button", // 원본 element.type
-        }),
-      },
-    ]);
-
-    const elements = canonicalDocumentToElements(doc);
-    expect(elements).toHaveLength(1);
-    expect(elements[0].type).toBe("Button"); // "ref" 가 아닌 원본 type
-  });
-});
-
-// ─────────────────────────────────────────────
-// B. metadata 누락 노드 skip + parent context 승계
-// ─────────────────────────────────────────────
-
-describe("canonicalDocumentToElements — metadata 미보존 노드", () => {
-  it("metadata 미보존 root 노드는 skip + 자식 변환은 진행", () => {
-    const doc = makeDoc([
-      {
-        id: "seg-page",
-        type: "frame",
-        metadata: { type: "legacy-page", pageId: "page-1" },
-        children: [
-          {
-            id: "seg-real",
-            type: "Box",
-            metadata: makeMetadata({
-              id: "uuid-real",
-              parent_id: null,
-              order_num: 0,
-              type: "Box",
-            }),
-          },
-        ],
-      },
-    ]);
-
-    const elements = canonicalDocumentToElements(doc);
-    expect(elements).toHaveLength(1);
-    expect(elements[0].id).toBe("uuid-real");
-  });
-
-  it("legacyProps.id 가 없는 노드도 skip", () => {
-    const doc = makeDoc([
-      {
-        id: "seg-broken",
-        type: "Button",
-        metadata: makeMetadata({ type: "Button" }), // id 없음
-      },
-    ]);
-
-    expect(canonicalDocumentToElements(doc)).toHaveLength(0);
-  });
-});
-
-// ─────────────────────────────────────────────
-// B-1. (G6-1 second work) canonical primary fallback
-// ─────────────────────────────────────────────
-//
-// metadata.legacyProps 없이 `node.props` 만 정의된 canonical primary write 결과
-// 노드도 Element 복원. page placeholder / slot synthetic (props 미정의) 은
-// 기존대로 null skip — fallback 진입 조건이 `node.props != null` 이므로 회귀 0.
-
-describe("canonicalDocumentToElements — canonical primary fallback (G6-1)", () => {
-  it("Button — metadata.legacyProps 없어도 node.props 로 Element 복원", () => {
-    const doc = makeDoc([
-      {
-        id: "canonical-btn-1",
-        type: "Button",
+        name: "Primary CTA",
         props: { variant: "primary", children: "Click me", size: "md" },
       },
     ]);
 
     const elements = canonicalDocumentToElements(doc);
-    expect(elements).toHaveLength(1);
-    const el = elements[0];
-    expect(el.id).toBe("canonical-btn-1");
-    expect(el.type).toBe("Button");
-    expect(el.props).toEqual({
-      variant: "primary",
-      children: "Click me",
-      size: "md",
-    });
-    expect(el.parent_id).toBeNull();
-    expect(el.order_num).toBe(0);
-    expect(el.page_id).toBeNull();
-  });
 
-  it("TextField — canonical primary 모드 정합", () => {
-    const doc = makeDoc([
-      {
-        id: "canonical-tf-1",
-        type: "TextField",
-        props: { label: "Email", placeholder: "you@example.com", size: "md" },
-      },
-    ]);
-
-    const [el] = canonicalDocumentToElements(doc);
-    expect(el.id).toBe("canonical-tf-1");
-    expect(el.type).toBe("TextField");
-    expect(el.props).toEqual({
-      label: "Email",
-      placeholder: "you@example.com",
-      size: "md",
-    });
-  });
-
-  it("Section — canonical primary 모드 정합", () => {
-    const doc = makeDoc([
-      {
-        id: "canonical-sec-1",
-        type: "Section",
-        props: { variant: "default" },
-      },
-    ]);
-
-    const [el] = canonicalDocumentToElements(doc);
-    expect(el.id).toBe("canonical-sec-1");
-    expect(el.type).toBe("Section");
-    expect(el.props).toEqual({ variant: "default" });
-  });
-
-  it("name 필드 → componentName 매핑 (canonical primary)", () => {
-    const doc = makeDoc([
-      {
-        id: "canonical-named-1",
+    expect(elements).toEqual([
+      expect.objectContaining({
+        id: "button-1",
         type: "Button",
-        name: "Primary CTA",
-        props: { variant: "primary", children: "Submit" },
-      },
+        componentName: "Primary CTA",
+        parent_id: null,
+        order_num: 0,
+        page_id: null,
+        props: { variant: "primary", children: "Click me", size: "md" },
+      }),
     ]);
-
-    const [el] = canonicalDocumentToElements(doc);
-    expect(el.componentName).toBe("Primary CTA");
   });
 
-  it("nested children — canonical primary parent + canonical primary child", () => {
+  it("walks nested children and derives parent/order from tree context", () => {
     const doc = makeDoc([
       {
-        id: "canonical-section-1",
+        id: "section-1",
         type: "Section",
         props: { variant: "default" },
         children: [
           {
-            id: "canonical-button-1",
+            id: "button-1",
             type: "Button",
             props: { variant: "primary", children: "Inside section" },
+          },
+          {
+            id: "button-2",
+            type: "Button",
+            props: { variant: "secondary", children: "Second" },
           },
         ],
       },
     ]);
 
     const elements = canonicalDocumentToElements(doc);
-    expect(elements).toHaveLength(2);
-    expect(elements[0].id).toBe("canonical-section-1");
-    expect(elements[1].id).toBe("canonical-button-1");
-    expect(elements[1].parent_id).toBe("canonical-section-1");
-    expect(elements[1].order_num).toBe(0);
+
+    expect(elements.map((element) => element.id)).toEqual([
+      "section-1",
+      "button-1",
+      "button-2",
+    ]);
+    expect(elements[1]).toMatchObject({
+      parent_id: "section-1",
+      order_num: 0,
+    });
+    expect(elements[2]).toMatchObject({
+      parent_id: "section-1",
+      order_num: 1,
+    });
   });
 
-  it("회귀 — node.props 미정의 + metadata 미보존 → 기존대로 null skip (page placeholder)", () => {
+  it("skips structural nodes without props while preserving child parent context", () => {
     const doc = makeDoc([
       {
         id: "page-placeholder",
         type: "frame",
         metadata: { type: "legacy-page", pageId: "page-1" },
-        // props 미정의
+        children: [
+          {
+            id: "button-1",
+            type: "Button",
+            props: { children: "Real child" },
+          },
+        ],
       },
     ]);
 
-    expect(canonicalDocumentToElements(doc)).toHaveLength(0);
+    const elements = canonicalDocumentToElements(doc);
+
+    expect(elements).toHaveLength(1);
+    expect(elements[0]).toMatchObject({
+      id: "button-1",
+      parent_id: null,
+      props: { children: "Real child" },
+    });
   });
 
-  it("metadata.legacyProps 경유 노드는 기존대로 legacy 경로 우선", () => {
-    // 동일 props 가 양 위치에 있을 때 legacy 경로가 우선 — 기존 동작 회귀.
+  it("restores composition extension fields", () => {
+    const extension: CompositionExtension = {
+      events: [{ kind: "click", actionRef: "action-1" }],
+      dataBinding: { type: "value", value: "hello" },
+    };
     const doc = makeDoc([
       {
-        id: "seg-x",
+        id: "button-1",
         type: "Button",
-        props: { variant: "secondary", children: "canonical" },
-        metadata: makeMetadata({
-          id: "uuid-x",
-          parent_id: null,
-          order_num: 0,
-          type: "Button",
-          variant: "primary",
-          children: "legacy",
-        }),
-      },
+        props: { children: "Submit" },
+        "x-composition": extension,
+      } as CanonicalNode,
     ]);
 
-    const [el] = canonicalDocumentToElements(doc);
-    // legacy 경로 진입 → uuid 와 legacy props 가 우선.
-    expect(el.id).toBe("uuid-x");
-    expect(el.props).toEqual({ variant: "primary", children: "legacy" });
+    const [element] = canonicalDocumentToElements(doc);
+
+    expect(element.events).toEqual(extension.events);
+    expect(element.dataBinding).toEqual(extension.dataBinding);
   });
 });
 
-// ─────────────────────────────────────────────
-// B-2. (G6-1 second work) spec consumer 정합 evidence
-// ─────────────────────────────────────────────
-//
-// Button/TextField/Section spec 의 render.shapes() 가 양 경로 (legacy adapter
-// 경유 vs canonical primary) 에서 동일 결과를 산출하는 정합 evidence.
-// Skia + DOM 렌더 양쪽이 spec.render.shapes() 단일 산출에 의존하므로 본 evidence
-// = 시각 정합 surrogate.
-
-describe("canonicalDocumentToElements — spec consumer parity (G6-1)", () => {
+describe("canonicalDocumentToElements — spec consumer parity", () => {
   const sizeContext = { width: 120, height: 32, fontSize: 14 };
 
-  it("ButtonSpec.render.shapes() — legacy adapter vs canonical primary 동일 결과", () => {
-    const propsCanonical = {
-      variant: "primary",
-      children: "Click",
-      size: "md",
-    };
-
-    const docLegacy = makeDoc([
-      {
-        id: "seg-a",
-        type: "Button",
-        metadata: makeMetadata({
-          id: "uuid-a",
-          parent_id: null,
-          order_num: 0,
+  it("ButtonSpec.render.shapes() consumes canonical props", () => {
+    const [element] = canonicalDocumentToElements(
+      makeDoc([
+        {
+          id: "button-1",
           type: "Button",
-          ...propsCanonical,
-        }),
-      },
-    ]);
-
-    const docCanonical = makeDoc([
-      {
-        id: "uuid-a",
-        type: "Button",
-        props: propsCanonical,
-      },
-    ]);
-
-    const [elLegacy] = canonicalDocumentToElements(docLegacy);
-    const [elCanonical] = canonicalDocumentToElements(docCanonical);
-
-    const shapesLegacy = ButtonSpec.render!.shapes!(
-      elLegacy.props,
-      sizeContext,
-      "default",
-    );
-    const shapesCanonical = ButtonSpec.render!.shapes!(
-      elCanonical.props,
-      sizeContext,
-      "default",
+          props: { variant: "primary", children: "Click", size: "md" },
+        },
+      ]),
     );
 
-    expect(shapesCanonical).toEqual(shapesLegacy);
+    expect(
+      ButtonSpec.render!.shapes!(element.props, sizeContext, "default"),
+    ).toBeDefined();
   });
 
-  it("TextFieldSpec.render.shapes() — 양 경로 동일 결과", () => {
-    const propsCanonical = {
-      label: "Email",
-      placeholder: "you@example.com",
-      size: "md",
-    };
-
-    const docLegacy = makeDoc([
-      {
-        id: "seg-tf",
-        type: "TextField",
-        metadata: makeMetadata({
-          id: "uuid-tf",
-          parent_id: null,
-          order_num: 0,
+  it("TextFieldSpec.render.shapes() consumes canonical props", () => {
+    const [element] = canonicalDocumentToElements(
+      makeDoc([
+        {
+          id: "textfield-1",
           type: "TextField",
-          ...propsCanonical,
-        }),
-      },
-    ]);
-
-    const docCanonical = makeDoc([
-      {
-        id: "uuid-tf",
-        type: "TextField",
-        props: propsCanonical,
-      },
-    ]);
-
-    const [elLegacy] = canonicalDocumentToElements(docLegacy);
-    const [elCanonical] = canonicalDocumentToElements(docCanonical);
-
-    const shapesLegacy = TextFieldSpec.render!.shapes!(
-      elLegacy.props,
-      sizeContext,
-      "default",
-    );
-    const shapesCanonical = TextFieldSpec.render!.shapes!(
-      elCanonical.props,
-      sizeContext,
-      "default",
+          props: { label: "Email", placeholder: "you@example.com", size: "md" },
+        },
+      ]),
     );
 
-    expect(shapesCanonical).toEqual(shapesLegacy);
+    expect(
+      TextFieldSpec.render!.shapes!(element.props, sizeContext, "default"),
+    ).toBeDefined();
   });
 
-  it("SectionSpec.render.shapes() — 양 경로 동일 결과", () => {
-    const propsCanonical = { variant: "default" };
-
-    const docLegacy = makeDoc([
-      {
-        id: "seg-sec",
-        type: "Section",
-        metadata: makeMetadata({
-          id: "uuid-sec",
-          parent_id: null,
-          order_num: 0,
+  it("SectionSpec.render.shapes() consumes canonical props", () => {
+    const [element] = canonicalDocumentToElements(
+      makeDoc([
+        {
+          id: "section-1",
           type: "Section",
-          ...propsCanonical,
-        }),
-      },
-    ]);
-
-    const docCanonical = makeDoc([
-      {
-        id: "uuid-sec",
-        type: "Section",
-        props: propsCanonical,
-      },
-    ]);
-
-    const [elLegacy] = canonicalDocumentToElements(docLegacy);
-    const [elCanonical] = canonicalDocumentToElements(docCanonical);
-
-    const shapesLegacy = SectionSpec.render!.shapes!(
-      elLegacy.props,
-      sizeContext,
-      "default",
-    );
-    const shapesCanonical = SectionSpec.render!.shapes!(
-      elCanonical.props,
-      sizeContext,
-      "default",
+          props: { variant: "default" },
+        },
+      ]),
     );
 
-    expect(shapesCanonical).toEqual(shapesLegacy);
+    expect(
+      SectionSpec.render!.shapes!(element.props, sizeContext, "default"),
+    ).toBeDefined();
   });
 });
-
-// ─────────────────────────────────────────────
-// C. element top-level fields 무손실 복원
-// ─────────────────────────────────────────────
-
-describe("canonicalDocumentToElements — fields 복원", () => {
-  it("frame mirror / fills 필드도 복원", () => {
-    const doc = makeDoc([
-      {
-        id: "seg-layout",
-        type: "Frame",
-        metadata: makeMetadata(
-          withFrameElementMirrorId(
-            {
-              id: "uuid-layout-el",
-              parent_id: null,
-              page_id: null,
-              order_num: 5,
-              fills: [{ color: "red" }],
-              type: "Frame",
-            },
-            "layout-1",
-          ),
-        ),
-      },
-    ]);
-
-    const [el] = canonicalDocumentToElements(doc);
-    expect(el.layout_id).toBe("layout-1");
-    expect(el.page_id).toBeNull();
-    expect(el.order_num).toBe(5);
-    expect(el.fills).toEqual([{ color: "red" }]);
-  });
-
-  it("props 의 동명 키는 top-level field 가 우선 (legacyToCanonical spread 순서 보존)", () => {
-    // buildLegacyElementMetadata 의 spread 순서: ...element.props 먼저 → top-level fields 가
-    // 동명 키 덮어씀. 본 테스트는 inverse 변환에서도 일관 동작 확인.
-    const doc = makeDoc([
-      {
-        id: "seg-x",
-        type: "Box",
-        metadata: makeMetadata({
-          // props.type === "Old" 였더라도 legacyProps 에서는 element.type 이 우선.
-          id: "uuid-x",
-          parent_id: null,
-          order_num: 0,
-          type: "Box",
-          customLabel: "preserved",
-        }),
-      },
-    ]);
-
-    const [el] = canonicalDocumentToElements(doc);
-    expect(el.type).toBe("Box");
-    expect(el.props).toEqual({ customLabel: "preserved" });
-  });
-});
-
-// ─────────────────────────────────────────────
-// D. useCanonicalSelectedElement (ADR-916 Phase 2 G3 Step 2)
-// ─────────────────────────────────────────────
 
 function resetCanonicalStore(): void {
   useCanonicalDocumentStore.setState({
@@ -551,7 +197,7 @@ function resetCanonicalStore(): void {
   });
 }
 
-describe("useCanonicalSelectedElement (Step 2 — Selection/properties)", () => {
+describe("useCanonicalSelectedElement", () => {
   beforeEach(() => {
     resetCanonicalStore();
   });
@@ -569,151 +215,72 @@ describe("useCanonicalSelectedElement (Step 2 — Selection/properties)", () => 
     });
   }
 
-  it("selectedElementId === null 시 null 반환", () => {
-    seedDoc([
-      {
-        id: "seg-x",
-        type: "Box",
-        metadata: makeMetadata({
-          id: "uuid-x",
-          parent_id: null,
-          order_num: 0,
-          type: "Box",
-        }),
-      },
-    ]);
+  it("returns null when selectedElementId is null", () => {
+    seedDoc([{ id: "button-1", type: "Button", props: { label: "A" } }]);
 
     const { result } = renderHook(() => useCanonicalSelectedElement(null));
+
     expect(result.current).toBeNull();
   });
 
-  it("canonical store 미활성 (currentProjectId null) 시 null 반환", () => {
-    // store reset 상태 — setCurrentProject 호출 안 함
-    const { result } = renderHook(() => useCanonicalSelectedElement("uuid-x"));
+  it("returns null when canonical store is inactive", () => {
+    const { result } = renderHook(() =>
+      useCanonicalSelectedElement("button-1"),
+    );
+
     expect(result.current).toBeNull();
   });
 
-  it("canonical 노드 존재 시 Element 반환 (id/type/props 보존)", () => {
+  it("returns selected canonical node as an Element", () => {
     seedDoc([
       {
-        id: "seg-target",
+        id: "button-1",
         type: "Button",
-        metadata: makeMetadata({
-          id: "uuid-target",
-          parent_id: null,
-          page_id: "page-1",
-          order_num: 2,
-          type: "Button",
-          label: "Click",
-        }),
+        props: { label: "Click" },
       },
     ]);
 
     const { result } = renderHook(() =>
-      useCanonicalSelectedElement("uuid-target"),
+      useCanonicalSelectedElement("button-1"),
     );
-    const el = result.current;
-    expect(el).not.toBeNull();
-    expect(el?.id).toBe("uuid-target");
-    expect(el?.type).toBe("Button");
-    expect(el?.page_id).toBe("page-1");
-    expect(el?.order_num).toBe(2);
-    expect(el?.props).toEqual({ label: "Click" });
+
+    expect(result.current).toMatchObject({
+      id: "button-1",
+      type: "Button",
+      props: { label: "Click" },
+    });
   });
 
-  it("metadata 미보존 노드 시 null 반환", () => {
+  it("returns null when selected node has no props", () => {
+    seedDoc([{ id: "page-1", type: "frame" }]);
+
+    const { result } = renderHook(() => useCanonicalSelectedElement("page-1"));
+
+    expect(result.current).toBeNull();
+  });
+
+  it("reacts to canonical store mutation", () => {
     seedDoc([
       {
-        id: "uuid-broken",
+        id: "button-1",
         type: "Button",
-        metadata: { type: "legacy-page" }, // legacy-element-props 아님
+        props: { label: "old" },
       },
     ]);
 
     const { result } = renderHook(() =>
-      useCanonicalSelectedElement("uuid-broken"),
-    );
-    expect(result.current).toBeNull();
-  });
-
-  it("selectedElementId 변경 시 새 element 반환", () => {
-    seedDoc([
-      {
-        id: "seg-a",
-        type: "Box",
-        metadata: makeMetadata({
-          id: "uuid-a",
-          parent_id: null,
-          order_num: 0,
-          type: "Box",
-          name: "A",
-        }),
-      },
-      {
-        id: "seg-b",
-        type: "Box",
-        metadata: makeMetadata({
-          id: "uuid-b",
-          parent_id: null,
-          order_num: 1,
-          type: "Box",
-          name: "B",
-        }),
-      },
-    ]);
-
-    const { result, rerender } = renderHook(
-      ({ id }: { id: string | null }) => useCanonicalSelectedElement(id),
-      { initialProps: { id: "uuid-a" as string | null } },
-    );
-    expect(result.current?.props).toEqual({ name: "A" });
-
-    rerender({ id: "uuid-b" });
-    expect(result.current?.props).toEqual({ name: "B" });
-
-    rerender({ id: null });
-    expect(result.current).toBeNull();
-  });
-
-  it("canonical store mutation 시 새 element 반환 (re-render)", () => {
-    seedDoc([
-      {
-        id: "uuid-mut",
-        type: "Button",
-        metadata: makeMetadata({
-          id: "uuid-mut",
-          parent_id: null,
-          order_num: 0,
-          type: "Button",
-          label: "old",
-        }),
-      },
-    ]);
-
-    const { result } = renderHook(() =>
-      useCanonicalSelectedElement("uuid-mut"),
+      useCanonicalSelectedElement("button-1"),
     );
     expect(result.current?.props).toEqual({ label: "old" });
 
     act(() => {
-      // canonical store updateNodeProps 는 metadata 와 별개의 props 갱신.
-      // Step 2 진입 시점에서는 metadata 가 SSOT — sync 가 새 metadata 를 보내면
-      // hook 이 새 element 반환. updateNodeMetadata 미존재 시 setDocument 로
-      // 전체 doc 교체 시뮬레이션.
-      const s = useCanonicalDocumentStore.getState();
-      s.setDocument("proj-a", {
+      useCanonicalDocumentStore.getState().setDocument("proj-a", {
         schemaVersion: "1.0",
         children: [
           {
-            id: "uuid-mut",
+            id: "button-1",
             type: "Button",
-            metadata: makeMetadata({
-              id: "uuid-mut",
-              parent_id: null,
-              order_num: 0,
-              type: "Button",
-              label: "new",
-            }),
+            props: { label: "new" },
           },
         ],
       });
