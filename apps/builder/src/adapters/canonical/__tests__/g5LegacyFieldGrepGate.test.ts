@@ -76,6 +76,9 @@ const EXCLUDE_PATH_PATTERNS: readonly RegExp[] = [
   /\.test\.tsx?$/,
   /\/apps\/builder\/src\/adapters\//,
   /\/apps\/builder\/src\/lib\/db\/migration[^/]*\.ts$/,
+  // canonical → legacy compat extraction view: COMPAT_EXTRACTION_RUNTIME_FILES
+  // 목록과 정합. store layer 에 위치하지만 의도적 legacy emit 영역.
+  /\/apps\/builder\/src\/builder\/stores\/canonical\/canonicalElementsView\.ts$/,
 ];
 
 /** design §9.3 첫번째 grep 의 5 필드 (legacy field name) */

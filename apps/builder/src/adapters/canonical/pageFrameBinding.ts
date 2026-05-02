@@ -5,9 +5,9 @@ import type {
   RefNode,
 } from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
-import { getDB } from "@/lib/db";
-import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
-import { enqueuePagePersistence } from "@/builder/utils/pagePersistenceQueue";
+import { getDB } from "../../lib/db";
+import { useCanonicalDocumentStore } from "../../builder/stores/canonical/canonicalDocumentStore";
+import { enqueuePagePersistence } from "../../builder/utils/pagePersistenceQueue";
 import { mergeElementsCanonicalPrimary } from "./canonicalMutations";
 import { loadFrameElements } from "./frameElementLoader";
 import { LEGACY_LAYOUT_ID_FIELD } from "./legacyElementFields";

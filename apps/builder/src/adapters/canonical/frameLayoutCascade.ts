@@ -5,10 +5,10 @@ import type {
   RefNode,
 } from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
-import { getDefaultProps } from "@/types/builder/unified.types";
+import { getDefaultProps } from "../../types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
-import { getDB } from "@/lib/db";
-import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import { getDB } from "../../lib/db";
+import { useCanonicalDocumentStore } from "../../builder/stores/canonical/canonicalDocumentStore";
 import { exportLegacyDocument } from "./exportLegacyDocument";
 import { mergeElementsCanonicalPrimary } from "./canonicalMutations";
 import {

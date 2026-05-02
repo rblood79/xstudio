@@ -5,7 +5,7 @@ import type {
   RefNode,
 } from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
-import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import { useCanonicalDocumentStore } from "../../../builder/stores/canonical/canonicalDocumentStore";
 import { applyPageFrameBindingCanonicalPrimary } from "../pageFrameBinding";
 
 const mocks = vi.hoisted(() => ({

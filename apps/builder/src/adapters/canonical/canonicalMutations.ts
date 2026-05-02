@@ -41,9 +41,9 @@ import type {
   SerializedDataBinding,
   SerializedEventHandler,
 } from "@composition/shared";
-import { elementsApi } from "@/adapters/canonical/legacyElementsApiService";
+import { elementsApi } from "./legacyElementsApiService";
 import { exportLegacyDocument } from "./exportLegacyDocument";
-import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import { useCanonicalDocumentStore } from "../../builder/stores/canonical/canonicalDocumentStore";
 import { buildLegacyElementMetadata } from "./legacyMetadata";
 import { getCanonicalSlotDeclaration } from "./slotDeclaration";
 import { isLegacySlotTag, tagToType } from "./tagRename";

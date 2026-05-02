@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompositionDocument } from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
-import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import { useCanonicalDocumentStore } from "../../../builder/stores/canonical/canonicalDocumentStore";
 import {
   mergeElementsCanonicalPrimary,
   registerCanonicalMutationStoreActions,
