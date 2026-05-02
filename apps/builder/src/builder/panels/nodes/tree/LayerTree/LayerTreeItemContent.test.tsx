@@ -7,6 +7,13 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  COMPONENT_MASTER_ID_MIRROR_FIELD,
+  COMPONENT_OVERRIDES_MIRROR_FIELD,
+  COMPONENT_ROLE_MIRROR_FIELD,
+  withComponentInstanceMirror,
+  withComponentOriginMirror,
+} from "@/adapters/canonical/componentSemanticsMirror";
 import { useStore } from "../../../../stores";
 import { historyManager } from "../../../../stores/history";
 import { LayerTreeItemContent } from "./LayerTreeItemContent";
@@ -105,22 +112,22 @@ describe("LayerTreeItemContent editing semantics marker", () => {
 
   it("legacy instance node exposes detach through row context menu", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    const origin = {
+    const origin = withComponentOriginMirror({
       id: "origin",
       type: "Button",
       props: { label: "Origin" },
-      componentRole: "master",
       page_id: "page-1",
-    };
-    const instance = {
-      id: "instance",
-      type: "Button",
-      props: {},
-      componentRole: "instance",
-      masterId: "origin",
-      overrides: { label: "Detached" },
-      page_id: "page-1",
-    };
+    });
+    const instance = withComponentInstanceMirror(
+      {
+        id: "instance",
+        type: "Button",
+        props: {},
+        page_id: "page-1",
+      },
+      "origin",
+      { overrideProps: { label: "Detached" } },
+    );
     historyManager.setCurrentPage("page-1");
     useStore.setState({
       currentPageId: "page-1",
@@ -151,9 +158,9 @@ describe("LayerTreeItemContent editing semantics marker", () => {
 
     await waitFor(() => {
       expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-        componentRole: undefined,
-        masterId: undefined,
-        overrides: undefined,
+        [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+        [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+        [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
         props: { label: "Detached" },
       });
     });

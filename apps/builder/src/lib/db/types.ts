@@ -148,7 +148,7 @@ export interface DatabaseAdapter {
      * @deprecated ADR-903 P3-E: migration script 완료 후 제거 예정.
      * canonical document 기반 layout elements 조회 (`selectCanonicalReusableFrames`
      * + `allElements.filter(layout_id 매칭)`) 로 대체. legacy ownership marker
-     * (`element.layout_id`) 의존을 제거하기 위함.
+     * legacy element frame ownership field 의존을 제거하기 위함.
      */
     getByLayout(layoutId: string): Promise<Element[]>;
     getChildren(parentId: string): Promise<Element[]>;

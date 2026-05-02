@@ -1,12 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { withComponentInstanceMirror } from "@/adapters/canonical/componentSemanticsMirror";
 import type { Element } from "../../../../types/core/store.types";
 import { clearRegistry, updateElementBounds } from "../elementRegistry";
 import { resolveCanvasDetachContextTarget } from "./canvasContextMenu";
 
-function makeElement(
-  id: string,
-  overrides: Partial<Element> = {},
-): Element {
+function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
     id,
     type: "Button",
@@ -43,10 +41,10 @@ describe("resolveCanvasDetachContextTarget", () => {
   it("returns a legacy instance hit target", () => {
     clearRegistry();
     updateElementBounds("instance", { x: 0, y: 0, width: 100, height: 40 });
-    const instance = makeElement("instance", {
-      componentRole: "instance",
-      masterId: "origin",
-    });
+    const instance = withComponentInstanceMirror(
+      makeElement("instance"),
+      "origin",
+    );
 
     expect(
       resolveCanvasDetachContextTarget(

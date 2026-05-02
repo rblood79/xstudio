@@ -63,6 +63,7 @@ import {
   snapshotVariablesFromTokens,
   type ResolvedTokenMap,
 } from "./variablesAdapter";
+import { isComponentOriginMirrorElement } from "./componentSemanticsMirror";
 
 // ─────────────────────────────────────────────
 // P3-A 신규 타입 surface
@@ -248,7 +249,7 @@ export function legacyToCanonical(
   // 선행 정의가 보장됨 (resolver가 순서 의존 없이도 동작해야 하지만, 직렬화
   // 가독성 + diff 안정성을 위해 masters first).
   const reusableMasters: CanonicalNode[] = elements
-    .filter((e) => e.componentRole === "master")
+    .filter(isComponentOriginMirrorElement)
     .map(buildNode);
 
   // 5. Layout shells → canonical reusable FrameNodes.

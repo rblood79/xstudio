@@ -1,4 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  COMPONENT_DESCENDANTS_MIRROR_FIELD,
+  COMPONENT_MASTER_ID_MIRROR_FIELD,
+  COMPONENT_OVERRIDES_MIRROR_FIELD,
+  COMPONENT_ROLE_MIRROR_FIELD,
+  withComponentInstanceMirror,
+  withComponentOriginMirror,
+} from "@/adapters/canonical/componentSemanticsMirror";
 import type { Element } from "../../../../types/core/store.types";
 import {
   resolveEditingSemanticsImpactConfirmation,
@@ -40,16 +48,18 @@ describe("instance store actions", () => {
   });
 
   it("detaches a legacy instance into a standalone element", () => {
-    const master = makeElement("master", {
-      componentRole: "master",
-      props: { label: "Master", style: { color: "red", padding: "8px" } },
-    });
-    const instance = makeElement("instance", {
-      componentRole: "instance",
-      masterId: "master",
-      overrides: { label: "Instance", style: { color: "blue" } },
-      props: { ignored: true },
-    });
+    const master = withComponentOriginMirror(
+      makeElement("master", {
+        props: { label: "Master", style: { color: "red", padding: "8px" } },
+      }),
+    );
+    const instance = withComponentInstanceMirror(
+      makeElement("instance", {
+        props: { ignored: true },
+      }),
+      "master",
+      { overrideProps: { label: "Instance", style: { color: "blue" } } },
+    );
 
     useStore.setState({
       elements: [master, instance],
@@ -65,19 +75,20 @@ describe("instance store actions", () => {
     const detached = useStore.getState().elementsMap.get("instance");
 
     expect(result?.previousState).toMatchObject({
-      componentRole: "instance",
-      masterId: "master",
+      [COMPONENT_ROLE_MIRROR_FIELD]: "instance",
+      [COMPONENT_MASTER_ID_MIRROR_FIELD]: "master",
     });
     expect(detached).toMatchObject({
       id: "instance",
-      componentRole: undefined,
-      masterId: undefined,
-      overrides: undefined,
-      descendants: undefined,
+      [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+      [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
+      [COMPONENT_DESCENDANTS_MIRROR_FIELD]: undefined,
       props: { label: "Instance", style: { color: "blue", padding: "8px" } },
     });
-    expect(useStore.getState().componentIndex.masterToInstances.get("master"))
-      .toBeUndefined();
+    expect(
+      useStore.getState().componentIndex.masterToInstances.get("master"),
+    ).toBeUndefined();
     expect(useStore.getState().selectedElementProps.label).toBe("Instance");
     expect(addEntrySpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -92,15 +103,16 @@ describe("instance store actions", () => {
   });
 
   it("resets a legacy instance root override field with history", async () => {
-    const master = makeElement("master", {
-      componentRole: "master",
-      props: { label: "Master", style: { color: "red" } },
-    });
-    const instance = makeElement("instance", {
-      componentRole: "instance",
-      masterId: "master",
-      overrides: { label: "Instance", style: { color: "blue" } },
-    });
+    const master = withComponentOriginMirror(
+      makeElement("master", {
+        props: { label: "Master", style: { color: "red" } },
+      }),
+    );
+    const instance = withComponentInstanceMirror(
+      makeElement("instance"),
+      "master",
+      { overrideProps: { label: "Instance", style: { color: "blue" } } },
+    );
 
     useStore.setState({
       elements: [master, instance],
@@ -118,7 +130,7 @@ describe("instance store actions", () => {
 
     expect(result?.previousState).toEqual(instance);
     expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-      overrides: { style: { color: "blue" } },
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: { style: { color: "blue" } },
     });
     expect(addEntrySpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -127,7 +139,9 @@ describe("instance store actions", () => {
         data: expect.objectContaining({
           prevElement: instance,
           element: expect.objectContaining({
-            overrides: { style: { color: "blue" } },
+            [COMPONENT_OVERRIDES_MIRROR_FIELD]: {
+              style: { color: "blue" },
+            },
           }),
         }),
       }),
@@ -135,12 +149,15 @@ describe("instance store actions", () => {
 
     await useStore.getState().undo();
     expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-      overrides: { label: "Instance", style: { color: "blue" } },
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: {
+        label: "Instance",
+        style: { color: "blue" },
+      },
     });
 
     await useStore.getState().redo();
     expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-      overrides: { style: { color: "blue" } },
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: { style: { color: "blue" } },
     });
   });
 
@@ -500,8 +517,8 @@ describe("instance store actions", () => {
     });
     expect(
       useStore
-      .getState()
-      .elements.filter((element) => element.parent_id === "replacement"),
+        .getState()
+        .elements.filter((element) => element.parent_id === "replacement"),
     ).toHaveLength(0);
   });
 
@@ -535,13 +552,7 @@ describe("instance store actions", () => {
     } as never);
 
     useStore.setState({
-      elements: [
-        iconMaster,
-        iconLabel,
-        buttonMaster,
-        nestedIconRef,
-        buttonRef,
-      ],
+      elements: [iconMaster, iconLabel, buttonMaster, nestedIconRef, buttonRef],
       elementsMap: new Map([
         ["icon-master", iconMaster],
         ["icon-label", iconLabel],
@@ -564,7 +575,9 @@ describe("instance store actions", () => {
       type: "Icon",
       props: { name: "override-icon" },
     });
-    expect((materializedIcon as Element & { ref?: string })?.ref).toBeUndefined();
+    expect(
+      (materializedIcon as Element & { ref?: string })?.ref,
+    ).toBeUndefined();
     expect(materializedLabel).toMatchObject({
       type: "Text",
       props: { text: "Nested label" },
@@ -622,7 +635,7 @@ describe("instance store actions", () => {
     expect(useStore.getState().elementsMap.get("origin")).toMatchObject({
       componentName: "CTA",
       reusable: false,
-      componentRole: undefined,
+      [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
     });
     expect(confirmSpy).not.toHaveBeenCalled();
   });
@@ -793,9 +806,11 @@ describe("instance store actions", () => {
       props: { label: "Instance 999" },
     });
     expect(
-      (useStore.getState().elementsMap.get("instance-999") as Element & {
-        ref?: string;
-      })?.ref,
+      (
+        useStore.getState().elementsMap.get("instance-999") as Element & {
+          ref?: string;
+        }
+      )?.ref,
     ).toBeUndefined();
   });
 
@@ -862,22 +877,24 @@ describe("instance store actions", () => {
     );
 
     try {
-      const togglePromise = useStore.getState().toggleComponentOrigin("origin", {
-        beforeMutation: () => {
-          const raceInstance = makeElement("race-instance", {
-            type: "ref",
-            ref: "origin",
-          } as never);
-          useStore.setState({
-            elements: [...useStore.getState().elements, raceInstance],
-            elementsMap: new Map(useStore.getState().elementsMap).set(
-              "race-instance",
-              raceInstance,
-            ),
-          } as never);
-          useStore.getState()._rebuildIndexes();
-        },
-      });
+      const togglePromise = useStore
+        .getState()
+        .toggleComponentOrigin("origin", {
+          beforeMutation: () => {
+            const raceInstance = makeElement("race-instance", {
+              type: "ref",
+              ref: "origin",
+            } as never);
+            useStore.setState({
+              elements: [...useStore.getState().elements, raceInstance],
+              elementsMap: new Map(useStore.getState().elementsMap).set(
+                "race-instance",
+                raceInstance,
+              ),
+            } as never);
+            useStore.getState()._rebuildIndexes();
+          },
+        });
 
       await vi.waitFor(() => {
         expect(requests).toHaveLength(1);

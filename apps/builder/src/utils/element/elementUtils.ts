@@ -40,9 +40,8 @@ export class ElementUtils {
   /**
    * Find the body element for a given layout (canonical reusable frame).
    *
-   * ADR-903 P3-E E-6: write-through 전환 후 element.layout_id 는 null. canonical
-   * frame node id (`legacyOwnershipToCanonicalParent({ layout_id }, doc)`) 를
-   * `el.parent_id` 와 매칭한다.
+   * ADR-903 P3-E E-6: write-through 전환 후 legacy frame ownership field 는
+   * null. canonical frame node id 를 `el.parent_id` 와 매칭한다.
    */
   static findLayoutBodyElement(
     elements: Element[],

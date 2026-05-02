@@ -26,7 +26,12 @@ import { debounce, DebouncedFunc } from "lodash";
 import { markBegin, markEnd } from "../utils/perfMarks";
 import { useStore } from "../stores";
 import { useEditModeStore } from "../stores/editMode";
-import { useLayoutsStore, useSelectedReusableFrameId } from "../stores/layouts";
+import {
+  getCanonicalReusableFrameLayouts,
+  getSelectedReusableFrameId,
+  useCanonicalReusableFrameLayouts,
+  useSelectedReusableFrameId,
+} from "../stores/canonical/canonicalFrameStore";
 import {
   useDataTables,
   useApiEndpoints,
@@ -148,8 +153,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const pages = useStore((state) => state.pages);
   const currentEditMode = useEditModeStore((state) => state.mode);
 
-  // ⭐ Nested Routes & Slug System: Layouts 구독
-  const layouts = useLayoutsStore((state) => state.layouts);
+  // ⭐ Nested Routes & Slug System: canonical reusable frame surface 구독
+  const layouts = useCanonicalReusableFrameLayouts();
   const selectedReusableFrameId = useSelectedReusableFrameId();
 
   // ⭐ DataTables 구독 (PropertyDataBinding용)
@@ -221,8 +226,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ Layout/Slot System: editMode에 따라 pageInfo 결정
     const currentEditMode = useEditModeStore.getState().mode;
-    const selectedReusableFrameId =
-      useLayoutsStore.getState().selectedReusableFrameId;
+    const selectedReusableFrameId = getSelectedReusableFrameId();
     const { currentPageId, pages } = useStore.getState();
     const currentPage = pages.find((p) => p.id === currentPageId);
     const scopedElements =
@@ -337,8 +341,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // 🔧 FIX: Ref를 사용하여 최신 상태 확인
     const currentReadyState = iframeReadyStateRef.current;
 
-    // 현재 layouts 가져오기
-    const currentLayouts = useLayoutsStore.getState().layouts;
+    // 현재 reusable frame surface 가져오기
+    const currentLayouts = getCanonicalReusableFrameLayouts();
 
     // PreviewLayout 형태로 변환 (id, name, slug만 전송)
     const previewLayouts = currentLayouts.map((l) => ({
@@ -696,18 +700,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // persist hydration 완료 확인
         const editModeHydrated =
           useEditModeStore.persist?.hasHydrated?.() ?? true;
-        const layoutsHydrated =
-          useLayoutsStore.persist?.hasHydrated?.() ?? true;
-
-        if (editModeHydrated && layoutsHydrated) {
+        if (editModeHydrated) {
           // 이미 hydration 완료 → 즉시 전송
           sendInitialData();
         } else {
           // hydration 대기 후 전송
           const checkHydration = () => {
             const editDone = useEditModeStore.persist?.hasHydrated?.() ?? true;
-            const layoutDone = useLayoutsStore.persist?.hasHydrated?.() ?? true;
-            if (editDone && layoutDone) {
+            if (editDone) {
               sendInitialData();
             } else {
               // 다음 프레임에서 다시 확인

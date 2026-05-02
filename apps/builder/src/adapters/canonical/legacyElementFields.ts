@@ -7,26 +7,35 @@ export const LEGACY_DESCENDANTS_FIELD = "descendants" as const;
 export const LEGACY_LAYOUT_ID_FIELD = "layout_id" as const;
 export const LEGACY_SLOT_NAME_FIELD = "slot_name" as const;
 
-type LegacyElementFields = {
-  [LEGACY_COMPONENT_ROLE_FIELD]?: unknown;
-  [LEGACY_DESCENDANTS_FIELD]?: unknown;
-  [LEGACY_LAYOUT_ID_FIELD]?: unknown;
-  [LEGACY_MASTER_ID_FIELD]?: unknown;
-  [LEGACY_OVERRIDES_FIELD]?: unknown;
-  [LEGACY_SLOT_NAME_FIELD]?: unknown;
+export type LegacyComponentRole = "master" | "instance";
+
+export type LegacyElementMirrorFields = {
+  [LEGACY_COMPONENT_ROLE_FIELD]?: LegacyComponentRole;
+  [LEGACY_DESCENDANTS_FIELD]?: Record<string, Record<string, unknown>>;
+  [LEGACY_LAYOUT_ID_FIELD]?: string | null;
+  [LEGACY_MASTER_ID_FIELD]?: string;
+  [LEGACY_OVERRIDES_FIELD]?: Record<string, unknown>;
+  [LEGACY_SLOT_NAME_FIELD]?: string | null;
+  componentName?: string;
 };
+
+export type ElementWithLegacyMirror = Element & LegacyElementMirrorFields;
 
 type CanonicalRefLike = {
   ref?: unknown;
 };
 
-function asLegacyFields(element: Element): Element & LegacyElementFields {
-  return element as Element & LegacyElementFields;
+export function asElementWithLegacyMirror(
+  element: Element,
+): ElementWithLegacyMirror {
+  return element as ElementWithLegacyMirror;
 }
 
-function asAnyLegacyFields(value: unknown): LegacyElementFields | null {
+function asAnyLegacyFields(
+  value: unknown,
+): Partial<LegacyElementMirrorFields> | null {
   if (!value || typeof value !== "object") return null;
-  return value as LegacyElementFields;
+  return value as Partial<LegacyElementMirrorFields>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -34,20 +43,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function isLegacyMasterElement(element: Element): boolean {
-  return asLegacyFields(element)[LEGACY_COMPONENT_ROLE_FIELD] === "master";
+  return (
+    asElementWithLegacyMirror(element)[LEGACY_COMPONENT_ROLE_FIELD] === "master"
+  );
 }
 
 export function isLegacyInstanceElement(element: Element): boolean {
   return (
-    asLegacyFields(element)[LEGACY_COMPONENT_ROLE_FIELD] === "instance" &&
-    typeof asLegacyFields(element)[LEGACY_MASTER_ID_FIELD] === "string"
+    asElementWithLegacyMirror(element)[LEGACY_COMPONENT_ROLE_FIELD] ===
+      "instance" &&
+    typeof asElementWithLegacyMirror(element)[LEGACY_MASTER_ID_FIELD] ===
+      "string"
   );
 }
 
 export function getInstanceMasterReference(
   element: Element,
 ): string | undefined {
-  const legacyMasterId = asLegacyFields(element)[LEGACY_MASTER_ID_FIELD];
+  const legacyMasterId =
+    asElementWithLegacyMirror(element)[LEGACY_MASTER_ID_FIELD];
   if (typeof legacyMasterId === "string" && legacyMasterId) {
     return legacyMasterId;
   }
@@ -67,14 +81,14 @@ export function getInstanceMasterReference(
 export function getLegacyOverrides(
   element: Element,
 ): Record<string, unknown> | undefined {
-  const value = asLegacyFields(element)[LEGACY_OVERRIDES_FIELD];
+  const value = asElementWithLegacyMirror(element)[LEGACY_OVERRIDES_FIELD];
   return isRecord(value) ? value : undefined;
 }
 
 export function getLegacyDescendants(
   element: Element,
 ): Record<string, unknown> | undefined {
-  const value = asLegacyFields(element)[LEGACY_DESCENDANTS_FIELD];
+  const value = asElementWithLegacyMirror(element)[LEGACY_DESCENDANTS_FIELD];
   return isRecord(value) ? value : undefined;
 }
 
@@ -106,7 +120,7 @@ export function getLegacySlotName(value: unknown): string | null {
 }
 
 export function getElementSlotName(element: Element): string | null {
-  const value = asLegacyFields(element)[LEGACY_SLOT_NAME_FIELD];
+  const value = asElementWithLegacyMirror(element)[LEGACY_SLOT_NAME_FIELD];
   return typeof value === "string" ? value : null;
 }
 
@@ -131,7 +145,7 @@ export function withLegacySlotName<T extends object>(
 }
 
 export function withoutLegacyInstanceFields(element: Element): Element {
-  const clone = { ...element } as Element & LegacyElementFields;
+  const clone = { ...element } as ElementWithLegacyMirror;
   delete clone[LEGACY_COMPONENT_ROLE_FIELD];
   delete clone[LEGACY_MASTER_ID_FIELD];
   delete clone[LEGACY_OVERRIDES_FIELD];

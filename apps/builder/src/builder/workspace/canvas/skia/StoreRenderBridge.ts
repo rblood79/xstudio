@@ -16,9 +16,9 @@
 
 import type { Element } from "../../../../types/core/store.types";
 import {
-  isInstanceElement,
-  getInstanceMasterRef,
-} from "../../../../types/builder/unified.types";
+  getComponentMasterReference as getInstanceMasterRef,
+  isComponentInstanceMirrorElement as isInstanceElement,
+} from "../../../../adapters/canonical/componentSemanticsMirror";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import { buildSkiaNodeData, type BuildContext } from "./buildSkiaNodeData";
 import { buildBoxNodeData } from "./buildBoxNodeData";
@@ -409,7 +409,7 @@ export class StoreRenderBridge {
   ): import("./nodeRendererTypes").SkiaNodeData | null {
     // ADR-903 P2 D-C: instance → resolved (master props 머지)
     // master/instance 시스템에서 instance.props 는 createInstance 시 빈 객체로
-    // 시작하므로, 본 진입부에서 master props 와 instance.overrides 를 머지하지
+    // 시작하므로, 본 진입부에서 origin props 와 instance override mirror 를 머지하지
     // 않으면 빈 element 가 그려진다.
     //
     // shared `ResolverCache` (Preview / Skia 공통) 를 통과하는 canonical 경로
@@ -422,8 +422,8 @@ export class StoreRenderBridge {
       element,
       elementsMap.values(),
     );
-    // ADR-916 G5-B P5-D: legacy `element.masterId` direct access →
-    // getInstanceMasterRef helper 호출 (canonical RefNode ref 자동 호환).
+    // ADR-916 G5-B P5-D: component master reference 는 mirror adapter 를
+    // 경유한다 (canonical RefNode ref 자동 호환).
     if (isInstanceElement(element)) {
       const masterRef = getInstanceMasterRef(element);
       if (masterRef) {

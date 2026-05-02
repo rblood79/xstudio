@@ -1,14 +1,36 @@
 import { describe, expect, it } from "vitest";
+import { withFrameElementMirrorId } from "@/adapters/canonical/frameMirror";
 import type { Element } from "../../../../types/core/store.types";
 import type { BoundingBox } from "../selection/types";
 import { resolveFrameBodyHoverTarget } from "./useElementHoverInteraction";
 
-function makeBody(overrides: Partial<Element>): Element {
+type BodyFixtureOptions = Partial<Element> & {
+  frameId?: string | null;
+};
+
+function makeBody({
+  frameId = "frame-1",
+  ...overrides
+}: BodyFixtureOptions): Element {
+  return withFrameElementMirrorId(
+    {
+      id: "frame-body",
+      type: "body",
+      page_id: null,
+      parent_id: null,
+      order_num: 0,
+      props: {},
+      ...overrides,
+    } as Element,
+    frameId,
+  );
+}
+
+function makePageBody(overrides: Partial<Element>): Element {
   return {
     id: "frame-body",
     type: "body",
     page_id: null,
-    layout_id: "frame-1",
     parent_id: null,
     order_num: 0,
     props: {},
@@ -46,14 +68,8 @@ describe("resolveFrameBodyHoverTarget", () => {
         ["frame-body-2", makeBounds({ x: 20, y: 20 })],
       ]),
       elementsMap: new Map([
-        [
-          "frame-body-1",
-          makeBody({ id: "frame-body-1", layout_id: "frame-1" }),
-        ],
-        [
-          "frame-body-2",
-          makeBody({ id: "frame-body-2", layout_id: "frame-2" }),
-        ],
+        ["frame-body-1", makeBody({ id: "frame-body-1", frameId: "frame-1" })],
+        ["frame-body-2", makeBody({ id: "frame-body-2", frameId: "frame-2" })],
       ]),
       frameAreas: [
         { frameId: "frame-1", x: 0, y: 0, width: 320, height: 200 },
@@ -70,10 +86,7 @@ describe("resolveFrameBodyHoverTarget", () => {
     const result = resolveFrameBodyHoverTarget({
       boundsMap: new Map([["deleted-body", makeBounds()]]),
       elementsMap: new Map([
-        [
-          "page-body",
-          makeBody({ id: "page-body", page_id: "page-1", layout_id: null }),
-        ],
+        ["page-body", makePageBody({ id: "page-body", page_id: "page-1" })],
         ["deleted-body", makeBody({ id: "deleted-body", deleted: true })],
         ["unrendered-body", makeBody({ id: "unrendered-body" })],
       ]),

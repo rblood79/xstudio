@@ -32,8 +32,10 @@ import type {
 } from "@composition/shared";
 
 import type { Element } from "@/types/builder/unified.types";
-import { isInstanceElement } from "@/types/builder/unified.types";
-import { getComponentOverridesMirror } from "@/adapters/canonical/componentSemanticsMirror";
+import {
+  getComponentOverridesMirror,
+  isComponentInstanceMirrorElement as isInstanceElement,
+} from "@/adapters/canonical/componentSemanticsMirror";
 import { resolveCanonicalDocument } from "./index";
 import { getSharedResolverCache } from "./cache";
 import {
@@ -112,8 +114,8 @@ function visit(node: ResolvedNode, index: Map<string, ResolvedNode>): void {
  * resolved tree 를 DFS 순회하여 child id → parent id Map 을 빌드한다.
  *
  * ADR-903 P3-D-2 (`elementCreation.ts` 히스토리 조건) / P3-D-5 (`BuilderCore`
- * 필터링 경로) 가 `el.layout_id === id` 패턴을 canonical parent context 기반으로
- * 교체할 때 사용한다.
+ * 필터링 경로) 가 legacy frame ownership predicate 를 canonical parent context
+ * 기반으로 교체할 때 사용한다.
  *
  * - root 노드는 부모가 없으므로 Map 에 등록되지 않는다 (`index.has(rootId) === false`)
  * - DFS pre-order 로 traverse — 동일 id 가 트리 내 여러 곳에 등장하면 마지막

@@ -69,15 +69,15 @@ function serializeCacheKey(key: ResolverCacheKey): string {
  * - `undefined` 또는 `{}` → `""` 반환 (빈 fingerprint — cache key 비교 최적화)
  * - key 정렬 후 deep-equal 기반 stable 직렬화
  *
- * @param overrides — `RefNode.descendants` 또는 undefined
+ * @param descendantOverrides — `RefNode.descendants` 또는 undefined
  */
 export function computeDescendantsFingerprint(
-  overrides: Record<string, unknown> | undefined,
+  descendantOverrides: Record<string, unknown> | undefined,
 ): string {
-  if (overrides === undefined) return "";
-  const keys = Object.keys(overrides);
+  if (descendantOverrides === undefined) return "";
+  const keys = Object.keys(descendantOverrides);
   if (keys.length === 0) return "";
-  return stableStringify(overrides);
+  return stableStringify(descendantOverrides);
 }
 
 /**

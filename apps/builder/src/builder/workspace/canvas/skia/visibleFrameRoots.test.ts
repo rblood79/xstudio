@@ -1,20 +1,30 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { withFrameElementMirrorId } from "@/adapters/canonical/frameMirror";
 import type { SkiaRendererInput } from "../renderers";
 import type { Element } from "../../../../types/core/store.types";
 import { collectVisibleFrameRoots } from "./visibleFrameRoots";
 
-const makeElement = (overrides: Partial<Element>): Element =>
-  ({
-    id: "el-1",
-    type: "div",
-    parent_id: null,
-    page_id: null,
-    layout_id: null,
-    order_num: 0,
-    props: {},
-    ...overrides,
-  }) as Element;
+type ElementFixtureOptions = Partial<Element> & {
+  frameId?: string | null;
+};
+
+const makeElement = ({
+  frameId = null,
+  ...overrides
+}: ElementFixtureOptions): Element =>
+  withFrameElementMirrorId(
+    {
+      id: "el-1",
+      type: "div",
+      parent_id: null,
+      page_id: null,
+      order_num: 0,
+      props: {},
+      ...overrides,
+    } as Element,
+    frameId,
+  );
 
 const makeInput = (partial: Partial<SkiaRendererInput>): SkiaRendererInput => {
   const elements = partial.elements ?? [];
@@ -44,7 +54,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const bodyEl = makeElement({
       id: "frame-body-1",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
 
     const result = collectVisibleFrameRoots(
@@ -78,7 +88,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const bodyEl = makeElement({
       id: "frame-body-1",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
 
     const result = collectVisibleFrameRoots(
@@ -109,13 +119,13 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
       id: "page-body",
       type: "body",
       page_id: "page-1",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const frameBody = makeElement({
       id: "frame-body",
       type: "body",
       page_id: null,
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
 
     const result = collectVisibleFrameRoots(
@@ -141,7 +151,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const bodyEl = makeElement({
       id: "frame-body-1",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
 
     const result = collectVisibleFrameRoots(
@@ -191,12 +201,12 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const body1 = makeElement({
       id: "fb-1",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const body2 = makeElement({
       id: "fb-2",
       type: "body",
-      layout_id: "frame-B",
+      frameId: "frame-B",
     });
 
     const result = collectVisibleFrameRoots(
@@ -240,18 +250,18 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
       id: "slot-1",
       type: "Slot",
       parent_id: "frame-body-1",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const slot2 = makeElement({
       id: "slot-2",
       type: "Slot",
       parent_id: "frame-body-1",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const frameBody = makeElement({
       id: "frame-body-1",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
 
     const result = collectVisibleFrameRoots(
@@ -283,12 +293,12 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const body1 = makeElement({
       id: "frame-body-A",
       type: "body",
-      layout_id: "frame-X",
+      frameId: "frame-X",
     });
     const body1Dup = makeElement({
       id: "frame-body-A-dup",
       type: "body",
-      layout_id: "frame-X",
+      frameId: "frame-X",
     });
 
     const result = collectVisibleFrameRoots(
@@ -317,7 +327,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const deletedBody = makeElement({
       id: "deleted-body",
       type: "body",
-      layout_id: "frame-X",
+      frameId: "frame-X",
       deleted: true,
     });
 

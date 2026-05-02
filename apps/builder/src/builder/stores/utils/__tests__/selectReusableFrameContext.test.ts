@@ -1,7 +1,7 @@
 /**
  * ADR-911 P3-γ — selectReusableFrame 의 frame editing indicator 갱신 통합 테스트
  *
- * 본 테스트는 `selectReusableFrame(frameId)` 호출이 실제 `useLayoutsStore` 의
+ * 본 테스트는 `selectReusableFrame(frameId)` 호출이 canonical frame selection store 의
  * `selectedReusableFrameId` 필드를 정확히 갱신하는지 (mock 없이) 검증한다.
  *
  * P3-γ 결정 (옵션 B): frame editing indicator 는 `selectedReusableFrameId` 가 SSOT.
@@ -13,12 +13,12 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { useLayoutsStore } from "@/builder/stores/layouts";
+import { useCanonicalFrameSelectionStore } from "@/builder/stores/canonical/canonicalFrameStore";
 import { selectReusableFrame } from "../frameActions";
 
 describe("ADR-911 P3-γ selectReusableFrame → selectedReusableFrameId 갱신", () => {
   beforeEach(() => {
-    useLayoutsStore.setState({
+    useCanonicalFrameSelectionStore.setState({
       selectedReusableFrameId: null,
     });
   });
@@ -26,17 +26,21 @@ describe("ADR-911 P3-γ selectReusableFrame → selectedReusableFrameId 갱신",
   it("frameId 전달 시 selectedReusableFrameId 가 frameId 로 갱신", () => {
     selectReusableFrame("frame-A");
 
-    expect(useLayoutsStore.getState().selectedReusableFrameId).toBe("frame-A");
+    expect(
+      useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+    ).toBe("frame-A");
   });
 
   it("null 전달 시 selectedReusableFrameId 가 해제", () => {
-    useLayoutsStore.setState({
+    useCanonicalFrameSelectionStore.setState({
       selectedReusableFrameId: "frame-existing",
     });
 
     selectReusableFrame(null);
 
-    expect(useLayoutsStore.getState().selectedReusableFrameId).toBeNull();
+    expect(
+      useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+    ).toBeNull();
   });
 
   it("연속 호출 시 마지막 frameId 가 유지 (toggle 시나리오)", () => {
@@ -44,12 +48,16 @@ describe("ADR-911 P3-γ selectReusableFrame → selectedReusableFrameId 갱신",
     selectReusableFrame("frame-B");
     selectReusableFrame("frame-C");
 
-    expect(useLayoutsStore.getState().selectedReusableFrameId).toBe("frame-C");
+    expect(
+      useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+    ).toBe("frame-C");
   });
 
   it("store 에 currentLayoutId backward-compat alias 를 다시 만들지 않는다", () => {
     selectReusableFrame("frame-X");
 
-    expect("currentLayoutId" in useLayoutsStore.getState()).toBe(false);
+    expect(
+      "currentLayoutId" in useCanonicalFrameSelectionStore.getState(),
+    ).toBe(false);
   });
 });

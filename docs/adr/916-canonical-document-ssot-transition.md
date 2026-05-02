@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 2 G3 / Phase 3 G4 / Phase 5 G6-1·G6-2·G6-4·G7 closure 는 유지하되, 개발 단계 전제에 맞춰 feature flag / backup / runtime DB migration / rollback marker 를 제거하고 canonical primary 를 즉시 기본 경로로 고정했다. 잔존 = ADR-911/913 의 legacy field quarantine 본격 cleanup (`layout_id`, `slot_name`, `componentRole`, `masterId`, `overrides`, legacy `descendants`) + G6-3 parity 확장.
+In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 2 G3 / Phase 3 G4 / Phase 5 G6-1·G6-2·G6-3·G6-4·G7 closure 는 유지하되, 개발 단계 전제에 맞춰 feature flag / backup / runtime DB migration / rollback marker 를 제거하고 canonical primary 를 즉시 기본 경로로 고정했다. `useLayoutsStore` / `layoutActions` legacy store 본체도 제거했다. component/frame/slot mirror type schema 와 targeted fixture cluster 는 adapter helper 경계로 이동했다. 잔존 = ADR-911/913 의 legacy field quarantine broader fixture/comment bucket 및 legacy `descendants` schema cleanup.
 
 ### 진행 로그
 
@@ -172,14 +172,24 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - Component semantics mirror read/write 를 `componentSemanticsMirror` adapter 로 분리했다. `ComponentSlotFillSection`, editing semantics fixture, store bridge, instance lifecycle action 의 direct component marker helper import 를 제거했다.
   - `editingSemanticsFixture` 는 canonical export round-trip 이 raw dev evidence marker 를 제거하는 경로를 피하고 dev fixture payload 를 그대로 보존하도록 `setElements()` 경로를 사용한다.
   - 검증: targeted vitest `componentSemanticsMirror.test.ts` + `instanceActions.test.ts` + `ComponentSlotFillSection.test.tsx` + `editingSemanticsFixture.test.ts` + `storeBridge.test.ts` + `g5LegacyFieldGrepGate.test.ts` 6 files / 57 tests PASS.
+- **2026-05-02 — ADR-913/916 G5 component mirror type schema / fixture cleanup**:
+  - `Element` / shared `Element` type schema 에서 `componentRole` / `masterId` / legacy `overrides` 선언을 제거하고, legacy component mirror payload 타입을 `legacyElementFields` adapter boundary 의 `ElementWithLegacyMirror` 로 격리했다.
+  - non-adapter component semantics fixture 는 `withComponentOriginMirror()` / `withComponentInstanceMirror()` 로 전환했다. raw `componentRole` / `masterId` fixture grep 은 0건이다.
+  - `g5LegacyFieldGrepGate.test.ts` 는 shared type schema 재도입과 non-adapter raw role/id fixture 재도입을 함께 차단한다.
+  - 검증: targeted vitest 7 files / 65 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — ADR-913/916 G5 frame/slot type schema / targeted fixture cleanup**:
+  - Builder/shared/preview Element/Page/Preview type schema 에서 `layout_id` / `slot_name` 선언을 제거하고, dead `ElementLayoutFields` / `PageLayoutFields` 를 삭제했다.
+  - frame body/render root 와 slot assignment regression fixture 는 `withFrameElementMirrorId()` / `withSlotMirrorName()` helper 로 전환했다. targeted raw `layout_id:` / `slot_name:` fixture grep 은 0건이다.
+  - `g5LegacyFieldGrepGate.test.ts` 가 frame/slot type schema 재도입과 targeted raw fixture key 재도입을 차단한다.
+  - 검증: targeted vitest 5 files / 30 tests PASS + type-schema grep 0건 + targeted fixture grep 0건.
 - **2026-05-02 — ADR-913/916 G5 fourteenth cleanup slice**:
   - `packages/shared` export schema/element utilities 의 내부 helper naming 을 mirror terminology 로 정리했다. `layout_id`/`slot_name` mirror field 는 현재 export schema boundary 에만 남긴다.
   - 검증: `pnpm run codex:preflight` PASS.
 - **2026-05-02 — ADR-916 projection removal fifteenth cleanup slice**:
   - Preview runtime 은 Builder 가 보낸 `UPDATE_CANONICAL_DOCUMENT` 를 저장하고 `App.tsx` 에서 수신된 `CompositionDocument` 를 직접 `resolveCanonicalDocument()` 한다. Preview 렌더 경로의 `legacyToCanonical()` 호출은 0건으로 제거했다.
   - Canvas drag/drop helper 와 BuilderCanvas layout/frame memo 는 `selectCanonicalDocument()` rebuild 대신 active canonical document 를 사용한다. active document 가 아직 없으면 drag/drop reorder target/update 는 no-op 으로 빠져 projection fallback 을 재도입하지 않는다.
-  - FramesTab/PageLayoutSelector/ComponentsPanel 의 visible panel read/add path 도 active canonical document 기준으로 전환했다. 초기 hydration 전 목록 UI 는 `layouts` fallback 을 유지하지만 per-render `selectCanonicalDocument()` rebuild 는 수행하지 않는다.
-  - 잔여 `selectCanonicalDocument()` / `legacyToCanonical()` 호출은 adapter, hydration/sync, element creation, layout cascade, store bridge, 테스트/문서 경계로 남아 있으며 다음 cleanup slice 의 대상이다.
+  - FramesTab/PageLayoutSelector/ComponentsPanel 의 visible panel read/add path 도 active canonical document 기준으로 전환했다. per-render `selectCanonicalDocument()` rebuild 는 수행하지 않는다.
+  - 잔여 `selectCanonicalDocument()` / `legacyToCanonical()` 호출은 adapter, hydration/sync, element creation, frame cascade, store bridge, 테스트/문서 경계로 남아 있으며 다음 cleanup slice 의 대상이다.
   - 검증: targeted vitest 8 files / 25 tests PASS.
 - **2026-05-02 — ADR-916 projection removal sixteenth cleanup slice**:
   - BuilderCore layout refresh/theme write-through/publish path 는 더 이상 caller level 에서 `selectCanonicalDocument()` 를 호출하지 않는다. refresh/publish 필터링은 `isFrameElementForFrame()` adapter 로 판정하고, theme write-through 는 active canonical document 가 있을 때만 적용한다.
@@ -218,6 +228,10 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - `PageLayoutSelector` / `FramesTab` 의 reusable frame option id 는 `getReusableFrameMirrorId()` 로 정규화한다. `metadata.layoutId` 가 없는 native canonical frame 은 frame id 그대로, `layout-<id>` prefix frame 은 mirror id 로 UI 선택값을 맞춘다.
   - `pageFrameBinding` 은 page ref 생성 시 active canonical document 의 reusable `FrameNode` 를 먼저 찾아 실제 `FrameNode.id` 를 `RefNode.ref` 로 사용한다. native frame 연결에서 `layout-${frameId}` broken ref 를 새로 만들지 않고, legacy-prefixed frame 은 mirror id → canonical id 로 매핑한다.
   - 검증: page frame binding / frame mirror / PageLayoutSelector / FramesTab targeted vitest 5 files / 22 tests PASS.
+- **2026-05-02 — ADR-916 G6-3 Slot/Ref/Descendants/Frame parity completion sweep**:
+  - G6-3 를 native slot descendants mutation, ref mirror export, resolver master-type parity, origin/instance navigation, frame binding id parity 까지 닫힌 runtime parity slice 로 고정했다.
+  - `g6ParityCompletion.static.test.ts` 를 추가해 mutation/export/resolver/navigation/frame binding wiring 이 동시에 유지되는지 검증한다. ADR-911/913 legacy field quarantine 은 G6-3 runtime parity 와 분리된 잔여 cleanup 으로 유지한다.
+  - 검증: G6-3 targeted vitest 9 files / 74 tests PASS.
 - **2026-05-02 — ADR-916 G6-4 Imports resolver parity first slice**:
   - `resolveCanonicalDocument()` 는 optional `ImportResolverContext` 를 받아 `CompositionDocument.imports` 의 `<importKey>:<nodeId>` ref 를 loaded import document 의 reusable node 로 resolve 할 수 있다. 외부 fetch/prefetch 는 아직 adapter/runtime 후속 경계로 남기고, resolver 는 동기 loaded document 만 소비한다.
   - resolver cache key 의 document version slot 에 imports fingerprint 를 포함한다. host `imports` map/source 와 loaded import document version 이 바뀌면 기존 resolved subtree cache hit 를 재사용하지 않는다.
@@ -252,6 +266,16 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - G6-4 를 resolver loaded-import consumption, imports fingerprint cache invalidation, async prefetch/cache registry, Preview runtime prefetch, same-origin URL policy, namespace guard, canonical/Pencil payload adapter, stale registry pruning까지 닫힌 runtime slice 로 고정했다.
   - `importRegistry.test.ts` 에 completion static contract 를 추가해 fetch payload normalize, URL policy, stale pruning token guard, resolver namespace parse, Preview prefetch/resolve context wiring 이 동시에 유지되는지 검증한다.
   - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 67 tests PASS.
+- **2026-05-02 — ADR-911/916 legacy layout store removal**:
+  - `apps/builder/src/builder/stores/layouts.ts` 와 `stores/utils/layoutActions.ts` 를 삭제했다. reusable frame CRUD/selection 의 in-memory SSOT 는 `canonicalFrameStore` + active `CompositionDocument` 이고, DB `layouts` row 는 persistence mirror 로만 남는다.
+  - `frameActions` 는 `createReusableFrame` / `deleteReusableFrame` / `updateReusableFrameName` / `selectReusableFrame` 을 canonical document mutation + DB mirror write 로 수행한다. FramesTab, PageLayoutSelector, PageParentSelector, LayoutSlugEditor, AddPageDialog, ComponentsPanel, BuilderCanvas, BuilderCore, useIframeMessenger, usePageManager 는 더 이상 `useLayoutsStore` 를 import 하지 않는다.
+  - 초기 hydrate 는 DB `layouts` mirror snapshot 을 `seedCanonicalReusableFrameLayouts()` 로 canonical reusable frame shell 에 먼저 seed 한 뒤 `setElementsCanonicalPrimary()` 로 elements 를 upsert 한다.
+  - 검증: targeted vitest 11 files / 51 tests PASS + `pnpm run codex:preflight` PASS.
+- **2026-05-02 — ADR-913/916 legacy field quarantine helper boundary cleanup**:
+  - component semantics read-through helper (`isMasterElement` / `isInstanceElement` / `getInstanceMasterRef`) 를 `unified.types.ts` 에서 제거하고 `componentSemanticsMirror` adapter 경계로 이동했다.
+  - `MasterChangeEvent` / `DetachResult.previousState` 의 legacy-style field 명칭은 `originId` / `overrideProps` / `descendantPatches` 로 전환했다.
+  - strict non-adapter field-access grep 은 0건이며, `g5LegacyFieldGrepGate.test.ts` 가 unified types helper 재도입을 차단한다.
+  - 검증: targeted vitest 5 files / 58 tests PASS + `pnpm run codex:typecheck` PASS.
 
 ## Context
 

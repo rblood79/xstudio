@@ -12,8 +12,8 @@
 import { memo, useState, useCallback } from "react";
 import { Link, AlertCircle, RefreshCw } from "lucide-react";
 import { PropertyInput, PropertySection } from "../../../components";
-import { useLayoutsStore } from "../../../stores/layouts";
-import { getDB } from "../../../../lib/db";
+import { useCanonicalReusableFrameLayouts } from "../../../stores/canonical/canonicalFrameStore";
+import { updateReusableFrame } from "../../../stores/utils/frameActions";
 import {
   validateSlug,
   generateSlugFromTitle,
@@ -28,11 +28,8 @@ interface LayoutSlugEditorProps {
 export const LayoutSlugEditor = memo(function LayoutSlugEditor({
   layoutId,
 }: LayoutSlugEditorProps) {
-  // Get current layout
-  const layout = useLayoutsStore((state) =>
-    state.layouts.find((l) => l.id === layoutId)
-  );
-  const updateLayout = useLayoutsStore((state) => state.updateLayout);
+  const layouts = useCanonicalReusableFrameLayouts();
+  const layout = layouts.find((l) => l.id === layoutId);
 
   // Slug validation state
   const [slugError, setSlugError] = useState<string | null>(null);
@@ -44,9 +41,7 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
   const handleSlugChange = useCallback(
     async (newSlug: string) => {
       // Normalize slug (add leading slash if not empty)
-      const normalizedSlug = newSlug
-        ? toAbsoluteSlug(newSlug)
-        : "";
+      const normalizedSlug = newSlug ? toAbsoluteSlug(newSlug) : "";
 
       // Validate slug (empty is allowed)
       if (normalizedSlug) {
@@ -58,27 +53,15 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
       }
       setSlugError(null);
 
-      console.log("📝 Layout Slug changed:", {
-        layoutId,
-        oldSlug: currentSlug,
-        newSlug: normalizedSlug || null,
-      });
-
       try {
-        const db = await getDB();
-
-        // Update in store (triggers useEffect in useIframeMessenger → sendLayoutsToIframe)
-        updateLayout(layoutId, { slug: normalizedSlug || undefined });
-
-        // Save to IndexedDB
-        await db.layouts.update(layoutId, { slug: normalizedSlug || undefined });
-
-        console.log("✅ Layout slug updated successfully");
+        await updateReusableFrame(layoutId, {
+          slug: normalizedSlug || undefined,
+        });
       } catch (error) {
         console.error("❌ Failed to update layout slug:", error);
       }
     },
-    [layoutId, currentSlug, updateLayout]
+    [layoutId],
   );
 
   // Generate slug from layout name
@@ -139,7 +122,9 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
 
         {currentSlug && (
           <div className="page-url-preview">
-            <span className="page-url-label">Pages with this layout will have URLs like:</span>
+            <span className="page-url-label">
+              Pages with this layout will have URLs like:
+            </span>
             <code className="page-url-value">{currentSlug}/page-slug</code>
           </div>
         )}

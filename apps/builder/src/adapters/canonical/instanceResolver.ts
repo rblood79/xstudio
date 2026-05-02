@@ -16,6 +16,7 @@ import type {
   DescendantOverride,
   RefNode,
 } from "@composition/shared";
+import { getLegacyOverrides } from "./legacyElementFields";
 
 // ─────────────────────────────────────────────
 // Pure helper — ADR-903 P1 Stage 2
@@ -161,7 +162,7 @@ export function resolveInstanceProps(
   master: Element,
 ): ResolvedInstanceProps {
   const masterProps = master.props || {};
-  const overrides = instance.overrides || {};
+  const overrides = getLegacyOverrides(instance) || {};
   const sources: Record<
     string,
     "master" | "override" | "descendant" | "default"

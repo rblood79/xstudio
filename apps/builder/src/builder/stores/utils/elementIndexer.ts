@@ -16,10 +16,10 @@
 
 import type { Element } from "../../../types/core/store.types";
 import {
-  isMasterElement,
-  isInstanceElement,
-  getInstanceMasterRef,
-} from "../../../types/builder/unified.types";
+  getComponentMasterReference as getInstanceMasterRef,
+  isComponentInstanceMirrorElement as isInstanceElement,
+  isComponentOriginMirrorElement as isMasterElement,
+} from "../../../adapters/canonical/componentSemanticsMirror";
 
 /**
  * 페이지별 요소 인덱스
@@ -252,8 +252,8 @@ export function rebuildComponentIndex(elements: Element[]): ComponentIndex {
     if (isMasterElement(el)) {
       index.masterComponents.set(el.id, el);
     }
-    // ADR-916 G5-B P5-D: legacy `el.masterId` direct access → getInstanceMasterRef
-    // helper 호출 단일화 (canonical RefNode 의 ref 자동 호환).
+    // ADR-916 G5-B P5-D: component master reference 는 mirror adapter 를
+    // 경유한다 (canonical RefNode 의 ref 자동 호환).
     if (isInstanceElement(el)) {
       const masterRef = getInstanceMasterRef(el);
       if (!masterRef) continue;

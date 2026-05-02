@@ -12,9 +12,8 @@
  *  4. Frame 항목 클릭 → `selectReusableFrame(frameId)` 호출 (id 기반 시그니처 검증)
  *  5. Delete 버튼 클릭 → `deleteReusableFrame(frameId)` 호출
  *
- * 외부 의존성은 모두 vi.mock 으로 격리. Zustand selector 패턴은
- * `useLayoutsStore((state) => state.layouts)` / `useStore((state) => ...)` 호출 시
- * mockState 에 selector 적용하는 방식으로 구현.
+ * 외부 의존성은 모두 vi.mock 으로 격리. canonical frame surface 와
+ * `useStore((state) => ...)` 호출 시 mockState 에 selector 적용하는 방식으로 구현.
  */
 
 import React from "react";
@@ -34,7 +33,6 @@ type LayoutLite = { id: string; name: string; project_id: string };
 
 const mockLayoutsState = {
   layouts: [] as LayoutLite[],
-  fetchLayouts: vi.fn(),
   selectedReusableFrameId: null as string | null,
 };
 
@@ -60,14 +58,28 @@ vi.mock("react-router-dom", () => ({
   useParams: () => ({ projectId: "test-project" }),
 }));
 
-vi.mock("@/builder/stores/layouts", () => ({
-  useLayoutsStore: Object.assign(
-    <T,>(selector?: (state: typeof mockLayoutsState) => T) =>
-      selector
-        ? selector(mockLayoutsState)
-        : (mockLayoutsState as unknown as T),
-    { getState: () => mockLayoutsState },
-  ),
+vi.mock("@/builder/stores/canonical/canonicalFrameStore", () => ({
+  useCanonicalReusableFrameLayouts: () => {
+    const doc = mockActiveCanonicalDocument();
+    return (doc?.children ?? [])
+      .filter(
+        (node: { type?: string; reusable?: boolean }) =>
+          node.type === "frame" && node.reusable === true,
+      )
+      .map(
+        (node: {
+          id: string;
+          name?: string;
+          metadata?: { layoutId?: string; project_id?: string };
+        }) => ({
+          id:
+            node.metadata?.layoutId ??
+            (node.id.startsWith("layout-") ? node.id.slice(7) : node.id),
+          name: node.name ?? "",
+          project_id: node.metadata?.project_id ?? "test-project",
+        }),
+      );
+  },
   useSelectedReusableFrameId: () => mockLayoutsState.selectedReusableFrameId,
 }));
 

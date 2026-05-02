@@ -32,7 +32,7 @@ export interface ResolvedInstanceProps {
 
 /** Master 변경 이벤트 (instance 전파에 사용) */
 export interface MasterChangeEvent {
-  masterId: string;
+  originId: string;
   changedKeys: string[];
   prevProps: Record<string, unknown>;
   newProps: Record<string, unknown>;
@@ -45,8 +45,8 @@ export interface DetachResult {
   /** detach 이전 상태 (undo 시 복원) */
   previousState: {
     instanceId: string;
-    masterId: string;
-    overrides?: Record<string, unknown>;
-    descendants?: Record<string, Record<string, unknown>>;
+    originId: string;
+    overrideProps?: Record<string, unknown>;
+    descendantPatches?: Record<string, Record<string, unknown>>;
   };
 }

@@ -1,4 +1,5 @@
-import { Element } from "../../types/core/store.types";
+import type { Element } from "../../types/core/store.types";
+import type { ElementWithLegacyMirror } from "./legacyElementFields";
 
 /**
  * Supabase 저장용 Element 타입 (snake_case 컬럼명)
@@ -35,7 +36,7 @@ export interface SupabaseElement {
   border?: unknown;
 }
 
-type ElementWithCanonicalFields = Element & {
+type ElementWithCanonicalFields = ElementWithLegacyMirror & {
   children?: unknown;
   descendants?: unknown;
   metadata?: Record<string, unknown>;
@@ -63,7 +64,7 @@ function withSerializableElementFields(element: Element): Element {
     props: cloneSerializable(element.props || {}),
     dataBinding: cloneSerializable(element.dataBinding),
     events: cloneSerializable(element.events),
-    overrides: cloneSerializable(element.overrides),
+    overrides: cloneSerializable(canonical.overrides),
     descendants: cloneSerializable(canonical.descendants),
     metadata: cloneSerializable(canonical.metadata),
     slot: cloneSerializable(canonical.slot),
@@ -115,11 +116,11 @@ export const sanitizeElement = (element: Element): Element => {
       order_num: element.order_num || 0,
       dataBinding: element.dataBinding,
       events: element.events,
-      componentRole: element.componentRole,
-      masterId: element.masterId,
-      overrides: element.overrides,
-      descendants: element.descendants,
-      componentName: element.componentName,
+      componentRole: (element as ElementWithCanonicalFields).componentRole,
+      masterId: (element as ElementWithCanonicalFields).masterId,
+      overrides: (element as ElementWithCanonicalFields).overrides,
+      descendants: (element as ElementWithCanonicalFields).descendants,
+      componentName: (element as ElementWithCanonicalFields).componentName,
       reusable: (element as ElementWithCanonicalFields).reusable,
       ref: (element as ElementWithCanonicalFields).ref,
       metadata: (element as ElementWithCanonicalFields).metadata,
@@ -127,7 +128,7 @@ export const sanitizeElement = (element: Element): Element => {
       variableBindings: element.variableBindings,
       fills: element.fills,
       border: element.border,
-    };
+    } as Element;
   }
 };
 
@@ -161,11 +162,11 @@ export const sanitizeElementForSupabase = (
       data_binding: sanitized.dataBinding,
       events: sanitized.events,
       deleted: sanitized.deleted,
-      component_role: sanitized.componentRole,
-      master_id: sanitized.masterId,
-      overrides: sanitized.overrides,
+      component_role: canonical.componentRole,
+      master_id: canonical.masterId,
+      overrides: canonical.overrides,
       descendants: canonical.descendants,
-      component_name: sanitized.componentName,
+      component_name: canonical.componentName,
       reusable: canonical.reusable,
       ref: canonical.ref,
       metadata: canonical.metadata,
@@ -175,6 +176,7 @@ export const sanitizeElementForSupabase = (
     };
   } catch (error) {
     console.error("Element sanitization for Supabase error:", error);
+    const legacy = element as ElementWithCanonicalFields;
     return {
       id: element.id || "",
       custom_id: element.customId,
@@ -188,14 +190,14 @@ export const sanitizeElementForSupabase = (
       data_binding: element.dataBinding,
       events: element.events,
       deleted: element.deleted,
-      component_role: element.componentRole,
-      master_id: element.masterId,
-      overrides: element.overrides,
-      descendants: element.descendants,
-      component_name: element.componentName,
-      reusable: (element as ElementWithCanonicalFields).reusable,
-      ref: (element as ElementWithCanonicalFields).ref,
-      metadata: (element as ElementWithCanonicalFields).metadata,
+      component_role: legacy.componentRole,
+      master_id: legacy.masterId,
+      overrides: legacy.overrides,
+      descendants: legacy.descendants,
+      component_name: legacy.componentName,
+      reusable: legacy.reusable,
+      ref: legacy.ref,
+      metadata: legacy.metadata,
       variable_bindings: element.variableBindings,
       fills: element.fills,
       border: element.border,

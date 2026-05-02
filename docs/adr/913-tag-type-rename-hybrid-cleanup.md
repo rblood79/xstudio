@@ -52,10 +52,29 @@ In Progress — 2026-05-02 (Phase 4 direct cutover 완료, 잔여는 Phase 5 hyb
 - **2026-05-02 — Phase 5 shared schema/helper naming cleanup**:
   - `packages/shared` 의 project export schema 와 element utility 내부 `LEGACY_*` / `getLegacy*` 명칭을 mirror terminology 로 전환했다. 현재 `layout_id` / `slot_name` field 는 export schema mirror boundary 로만 유지한다.
   - 검증: `pnpm run codex:preflight` PASS.
+- **2026-05-02 — ADR-911/916 legacy layout store removal sync**:
+  - `useLayoutsStore` / `layoutActions` 본체 삭제로 G5-F 의 store/path 해체 조건은 닫혔다. `layout_id` field 자체는 DB/export mirror boundary 와 ADR-911/916 legacy field quarantine 잔여로 추적한다.
+  - 검증: targeted vitest 11 files / 51 tests PASS + `pnpm run codex:preflight` PASS.
+- **2026-05-02 — Phase 5 helper boundary cleanup**:
+  - component semantics read-through helper 를 `unified.types.ts` 에서 제거하고 `componentSemanticsMirror` adapter 경계로 고정했다.
+  - `MasterChangeEvent` / `DetachResult.previousState` 의 legacy-style field 명칭을 `originId` / `overrideProps` / `descendantPatches` 로 바꿨다.
+  - strict non-adapter field-access grep 은 0건이며, `g5LegacyFieldGrepGate.test.ts` 가 unified types helper 재도입을 차단한다.
+  - 검증: targeted vitest 5 files / 58 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — Phase 5 component mirror type schema / fixture cleanup**:
+  - `apps/builder/src/types/builder/unified.types.ts` 와 `packages/shared/src/types/element.types.ts` 에서 `componentRole` / `masterId` / legacy `overrides` 선언을 제거했다.
+  - legacy component mirror payload 타입은 `ElementWithLegacyMirror` / `LegacyElementMirrorFields` 로 adapter boundary 에만 둔다.
+  - non-adapter component semantics fixture 는 `withComponentOriginMirror()` / `withComponentInstanceMirror()` helper 로 전환했다. raw `componentRole` / `masterId` fixture grep 은 0건이다.
+  - `g5LegacyFieldGrepGate.test.ts` 가 shared type schema 재도입과 non-adapter raw component role/id fixture 재도입을 차단한다.
+  - 검증: targeted vitest 7 files / 65 tests PASS + `pnpm run codex:typecheck` PASS.
+- **2026-05-02 — Phase 5 frame/slot type schema / targeted fixture cleanup**:
+  - Builder/shared/preview Element/Page/Preview type schema 에서 `layout_id` / `slot_name` 선언을 제거하고, dead `ElementLayoutFields` / `PageLayoutFields` 를 삭제했다.
+  - frame body/render root 와 slot assignment regression fixture 는 `withFrameElementMirrorId()` / `withSlotMirrorName()` helper 로 전환했다. targeted raw `layout_id:` / `slot_name:` fixture grep 은 0건이다.
+  - `g5LegacyFieldGrepGate.test.ts` 가 frame/slot type schema 재도입과 targeted raw fixture key 재도입을 차단한다.
+  - 검증: targeted vitest 5 files / 30 tests PASS + type-schema grep 0건 + targeted fixture grep 0건.
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - ~~Phase 4 (DB schema migration DB_VERSION 8→9)~~ — **direct cutover 로 종결 (2026-05-02)**. Step 4-4 write-through / 4-5 normalize helper / 4-6 validation 은 별도 migration 없이 제거 완료.
-  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — runtime access gate 는 5-A/C/D/E 기준으로 통과. 잔여는 type schema/comment/test fixture 정리와 필요 시 docs/inventory 갱신. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
+  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — runtime access gate 는 5-A/C/D/E 기준으로 통과. `componentRole` / `masterId` / legacy `overrides` type schema, frame/slot type schema, targeted component/frame/slot fixture cluster 는 정리 완료. 잔여는 broader test fixture raw mirror backlog, comment bucket, legacy `descendants` schema sweep, 필요 시 docs/inventory 갱신. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
 
 ## Context
 

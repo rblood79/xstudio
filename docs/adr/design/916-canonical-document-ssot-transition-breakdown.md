@@ -1529,8 +1529,8 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 **land 요약**:
 
 - Preview runtime: `UPDATE_CANONICAL_DOCUMENT` payload 를 직접 저장하고 `App.tsx` 에서 수신된 `CompositionDocument` 를 resolve. Preview 렌더 경로 `legacyToCanonical()` 0.
-- Canvas/Builder panels: drag/drop helper, BuilderCanvas layout/frame memo, FramesTab, PageLayoutSelector, ComponentsPanel visible path 는 active canonical document 사용.
-- Builder/store actions: BuilderCore refresh/theme/publish, `usePageManager.initializeProject`, `elementCreation`, `layoutActions.getLayoutSlots` caller-level `selectCanonicalDocument()` 제거.
+- Canvas/Builder panels: drag/drop helper, BuilderCanvas layout/frame memo, FramesTab, PageLayoutSelector, ComponentsPanel visible path 는 active canonical document / canonical frame surface 사용.
+- Builder/store actions: BuilderCore refresh/theme/publish, `usePageManager.initializeProject`, `elementCreation` caller-level `selectCanonicalDocument()` 제거. legacy `layoutActions` store action 본체는 후속 removal slice 에서 삭제.
 - Sync/store bridge: `canonicalDocumentSync` 는 project lifecycle marker 로 축소. `storeBridge.selectResolvedTree` 는 `CompositionDocument` 직접 resolve API 로 전환.
 - Adapter boundary: `pageFrameBinding`, `frameLayoutCascade` 는 active canonical document children 을 직접 upsert/remove 하고 legacy page/elements 는 mirror persistence/export 로만 생성.
 - Wrapper boundary: `canonicalMutations` 의 `mergeElementsCanonicalPrimary` / `setElementsCanonicalPrimary` 는 `legacyToCanonical()` rebuild 없이 native shell/upsert 로 canonical document 를 갱신한다. layout Slot 은 `legacy-slot-hoisted` frame 으로 변환하고 page ref slot fill 은 referenced layout frame 의 slot path 를 찾아 `descendants[slotPath].children` 에 삽입한다.
@@ -1543,6 +1543,7 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 
 - production `selectCanonicalDocument()` 호출/정의: source 0건. 테스트와 문서/comment 경계만 잔존.
 - runtime `legacyToCanonical()` 호출: source 0건. `apps/builder/src/adapters/canonical/index.ts` adapter 정의와 themes/variables/export 문서 comment 경계만 잔존. `canonicalMutations` wrapper 내부 호출 0.
+- production `useLayoutsStore` 호출/정의: legacy store removal 후 source 0건. 남은 grep hit 는 static negative assertion 테스트뿐이다.
 
 **검증**:
 
@@ -1555,6 +1556,7 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 - page frame binding / frame mirror / PageLayoutSelector / FramesTab targeted vitest 5 files / 22 tests PASS.
 - canonical resolver/cache/storeBridge targeted vitest 3 files / 65 tests PASS.
 - canonical import registry/resolver/cache/storeBridge targeted vitest 4 files / 72 tests PASS.
+- legacy layout store removal targeted vitest 11 files / 51 tests PASS + `pnpm run codex:preflight` PASS.
 
 ### 10.2.17 G6-3 Slot/Ref/Descendants parity first slice (2026-05-02)
 
@@ -1738,11 +1740,123 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 
 - `importRegistry.test.ts` 에 `keeps the ADR-916 G6-4 import runtime completion contract wired` 정적 테스트를 추가했다.
 - G6-4 completion 은 `imports` fetch/cache/resolver runtime parity 를 닫는 기준이다. DesignKit copy/import UX 는 ADR-915 로 무효화됐고, Pencil schema-equivalent export/import product flow 는 ADR-911 G5 로 분리한다.
-- README / ADR body / CHANGELOG 의 잔존 범위에서 G6-4 parity 확장 문구를 제거하고, 잔여를 G6-3 및 ADR-911/913 cleanup 으로 좁혔다.
+- README / ADR body / CHANGELOG 의 잔존 범위에서 G6-4 parity 확장 문구를 제거했다.
 
 **검증**:
 
 - `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 67 tests PASS.
+
+### 10.2.28 G6-3 Slot/Ref/Descendants/Frame parity completion sweep (2026-05-02)
+
+**framing**: G6-3 는 ADR-911/913 legacy field quarantine 자체가 아니라, canonical primary runtime 에서 slot/ref/descendants/frame parity 가 유지되는지를 닫는 gate 다. 본 sweep 은 추가 runtime behavior 를 만들지 않고, 이미 land 된 G6-3 three slices 를 completion contract 로 묶는다. `layout_id` / `slot_name` / `componentRole` / `masterId` / `overrides` / legacy `descendants` field quarantine 은 별도 잔여 cleanup 으로 유지한다.
+
+**completion 기준**:
+
+| 기준                              | evidence                                                                                                              |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| native slot descendants mutation  | `canonicalMutations` 가 page ref slot fill 을 `descendants[slotPath].children` 에 upsert 하고 remove 도 지원          |
+| ref mirror export                 | `exportLegacyDocument()` 가 `RefNode.descendants[].children` DFS 와 component mirror payload reverse 를 유지          |
+| resolver ref parity               | `resolveCanonicalDocument()` 가 resolved ref 의 top-level `type` 을 master type 으로 고정하고 `_resolvedFrom` 을 주입 |
+| origin/instance navigation parity | Component section 이 `resolveReference()` 와 `getEditingSemanticsImpactInstanceIds()` 로 alias 기반 탐색              |
+| frame binding id parity           | `pageFrameBinding` / `PageLayoutSelector` / `FramesTab` 이 `getReusableFrameMirrorId()` contract 를 공유              |
+| static completion gate            | `g6ParityCompletion.static.test.ts` 가 mutation/export/resolver/navigation/frame binding wiring 을 동시 확인          |
+
+**land 내용**:
+
+- `g6ParityCompletion.static.test.ts` 를 추가했다.
+- ADR body / README / CHANGELOG 의 잔존 범위에서 G6-3 parity 확장 문구를 제거하고, 잔여를 ADR-911/913 legacy field quarantine 으로 좁혔다.
+- 본 completion 은 G6-3 runtime parity closure 이며, ADR-911/913 의 field quarantine closure 를 대체하지 않는다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/g6ParityCompletion.static.test.ts src/adapters/canonical/__tests__/canonicalMutations.test.ts src/adapters/canonical/__tests__/pageFrameBinding.test.ts src/adapters/canonical/__tests__/frameMirror.test.ts src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/utils/editingSemantics.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts` — 9 files / 74 tests PASS.
+
+### 10.2.29 ADR-911/916 legacy layout store removal (2026-05-02)
+
+**framing**: projection 제거의 root cause 는 visible/caller path 전환만으로는 닫히지 않는다. `useLayoutsStore` / `layoutActions` 가 남아 있으면 frame CRUD/selection 의 SSOT 가 다시 legacy layouts store 로 돌아갈 수 있으므로, direct cutover 전제에 맞춰 dead store 본체를 제거한다.
+
+**land 내용**:
+
+- 신규 `canonicalFrameStore` 를 reusable frame list/selection surface 로 추가했다. list 는 active `CompositionDocument.children` 의 reusable `FrameNode` 에서 `Layout` compatible surface 를 derive 하고, selection 은 별도 canonical frame selection store 로만 보관한다.
+- `frameActions` 는 더 이상 legacy layout action 을 wrapper 하지 않는다. create/update/delete/select 는 canonical document 를 직접 upsert/remove/update 하고, current DB `layouts` row 는 persistence mirror 로만 insert/update/delete 한다.
+- 초기 hydrate 는 DB `layouts` mirror snapshot 을 `seedCanonicalReusableFrameLayouts()` 로 canonical reusable frame shell 에 먼저 seed 한 뒤 `setElementsCanonicalPrimary()` 로 elements 를 upsert 한다. 이 seed 는 legacy layout store 가 아니라 active `CompositionDocument` shell metadata 갱신이다.
+- `FramesTab`, `PageLayoutSelector`, `PageParentSelector`, `LayoutSlugEditor`, `AddPageDialog`, `ComponentsPanel`, `BuilderCanvas`, `BuilderCore`, `useIframeMessenger`, `usePageManager`, `stores/index` 는 `stores/layouts` import 를 제거했다.
+- `apps/builder/src/builder/stores/layouts.ts`, `apps/builder/src/builder/stores/utils/layoutActions.ts`, `layoutActions.test.ts` 를 삭제했다. `layout.types.ts` 의 dead Layout store types 도 제거했다.
+
+**grep 상태**:
+
+- `rg -n "useLayoutsStore|from ['\\\"].*stores/layouts|from ['\\\"].*/layouts['\\\"]|useLayouts\\(" apps/builder/src --glob "*.ts" --glob "*.tsx"` 결과는 static negative assertion 테스트 3건뿐이다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/canonical/__tests__/canonicalFrameStore.test.ts src/builder/hooks/__tests__/usePageManager.canonical.test.ts src/builder/stores/utils/__tests__/frameActions.test.ts src/builder/stores/utils/__tests__/selectReusableFrameContext.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/main/BuilderCore.static.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts src/builder/workspace/canvas/BuilderCanvas.projection.static.test.ts src/builder/workspace/canvas/hooks/useCanvasDragDropHelpers.static.test.ts` — 11 files / 51 tests PASS.
+- `pnpm run codex:preflight` — PASS.
+
+### 10.2.30 ADR-913/916 legacy field quarantine helper boundary cleanup (2026-05-02)
+
+**framing**: strict runtime field access 0만으로는 충분하지 않다. read-through helper 가 `unified.types.ts` 같은 shared type surface 에 남아 있으면 legacy component marker read 가 다시 non-adapter 경계로 새어 나갈 수 있으므로, helper 자체도 adapter boundary 로 이동한다.
+
+**land 내용**:
+
+- `isMasterElement` / `isInstanceElement` / `getInstanceMasterRef` 를 `unified.types.ts` 에서 제거했다.
+- 기존 소비자는 `componentSemanticsMirror` 의 `isComponentOriginMirrorElement` / `isComponentInstanceMirrorElement` / `getComponentMasterReference` 를 사용한다.
+- `MasterChangeEvent` / `DetachResult.previousState` 의 legacy-style field 명칭을 `originId` / `overrideProps` / `descendantPatches` 로 교체했다.
+- canonical resolver fingerprint parameter 명칭을 `descendantOverrides` 로 전환해 일반 변수명 `overrides` 가 legacy field grep bucket 에 섞이지 않게 했다.
+- `g5LegacyFieldGrepGate.test.ts` 는 strict non-adapter field-access 0과 unified types helper 재도입 금지를 함께 검증한다.
+
+**grep 상태**:
+
+- `rg -n "\\.(layout_id|slot_name|componentRole|masterId|overrides)\\b|\\b(layout_id|slot_name|componentRole|masterId|overrides)\\s*:" apps/builder/src apps/publish/src packages/shared/src -g "*.ts" -g "*.tsx" -g "!**/__tests__/**" -g "!*.test.ts" -g "!*.test.tsx" -g "!apps/builder/src/adapters/**" -g "!apps/builder/src/lib/db/migration*.ts"` 결과 0건.
+- `rg -n "from .*types/builder/unified.types.*isMasterElement|from .*types/builder/unified.types.*isInstanceElement|from .*types/builder/unified.types.*getInstanceMasterRef|export function isMasterElement|export function isInstanceElement|export function getInstanceMasterRef" apps/builder/src -g "*.ts" -g "*.tsx"` 결과는 adapter helper 정의와 gate assertion 뿐이다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts src/resolvers/canonical/__tests__/cache.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts src/builder/utils/multiElementCopy.test.ts src/builder/stores/utils/__tests__/elementUpdateOriginImpact.test.ts src/builder/workspace/canvas/sprites/useResolvedElement.test.ts src/builder/workspace/canvas/skia/StoreRenderBridge.test.ts` — 5 files / 58 tests PASS.
+- `pnpm run codex:typecheck` — PASS.
+
+### 10.2.31 ADR-913/916 component mirror type schema / fixture cleanup (2026-05-02)
+
+**framing**: strict runtime access 0 이후에도 `Element` / shared `Element` type schema 에 `componentRole` / `masterId` / legacy `overrides` 선언이 남으면 새 fixture 와 caller 가 legacy payload 를 정상 schema 로 오인한다. schema 표면은 canonical field 만 유지하고, legacy component mirror payload 는 adapter boundary 타입으로만 표현한다.
+
+**land 내용**:
+
+- `apps/builder/src/types/builder/unified.types.ts` 와 `packages/shared/src/types/element.types.ts` 에서 `componentRole` / `masterId` / legacy `overrides` field 선언을 제거했다.
+- `apps/builder/src/adapters/canonical/legacyElementFields.ts` 에 `LegacyElementMirrorFields` / `ElementWithLegacyMirror` 를 추가해 adapter boundary 가 legacy mirror payload 를 명시적으로 소유한다.
+- `componentSemanticsMirror` 에 `withComponentOriginMirror()` / `withComponentInstanceMirror()` fixture helper 를 추가했다.
+- `editingSemantics`, origin-impact, instance lifecycle, canvas context menu, properties Component semantics, LayerTree row context menu non-adapter tests 는 raw `componentRole` / `masterId` fixture literal 대신 helper 를 사용한다.
+- `g5LegacyFieldGrepGate.test.ts` 는 (1) unified/shared Element schema 의 component mirror field 재도입 금지, (2) non-adapter test fixture 의 raw `componentRole` / `masterId` literal 재도입 금지를 검증한다. legacy `overrides:` grep 은 일반 fixture parameter 명칭 noise 가 많으므로 helper 전환 파일 단위로 정리하고, field schema 재도입은 schema regex 로 차단한다.
+
+**grep 상태**:
+
+- `rg -n "\\b(componentRole|masterId|overrides)\\??:" apps/builder/src/types packages/shared/src/types -g "*.ts"` 결과 0건.
+- `rg -n "componentRole|masterId" apps/builder/src/builder apps/builder/src/preview packages/shared/src -g "*.test.ts" -g "*.test.tsx"` 결과 0건.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/editingSemantics.test.ts src/builder/stores/utils/__tests__/elementUpdateOriginImpact.test.ts src/builder/stores/utils/__tests__/instanceActions.test.ts src/builder/workspace/canvas/interaction/canvasContextMenu.test.ts src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts` — 7 files / 65 tests PASS.
+- `pnpm run codex:typecheck` — PASS.
+
+### 10.2.32 ADR-913/916 frame/slot type schema / targeted fixture cleanup (2026-05-02)
+
+**framing**: strict runtime access 0 이후에도 `layout_id` / `slot_name` 이 Element/Page/Preview type schema 에 남아 있으면 frame/slot mirror payload 가 정상 domain field 처럼 재확산된다. schema 표면은 canonical fields 만 유지하고, legacy frame/slot mirror payload 는 `frameMirror` / `slotMirror` adapter helper 가 소유한다.
+
+**land 내용**:
+
+- `apps/builder/src/types/builder/unified.types.ts`, `packages/shared/src/types/element.types.ts`, `packages/shared/src/types/renderer.types.ts`, `apps/builder/src/preview/store/types.ts`, `apps/builder/src/preview/types/index.ts` 에서 `layout_id` / `slot_name` 선언을 제거했다.
+- `apps/builder/src/types/builder/layout.types.ts` 의 dead `ElementLayoutFields` / `PageLayoutFields` 를 삭제했다.
+- `useElementHoverInteraction`, `buildFrameRendererInput`, `visibleFrameRoots` frame body/render root fixture 는 raw `layout_id:` 대신 `withFrameElementMirrorId()` helper 를 사용한다.
+- `editingSemanticsRegressionSweep` slot assignment fixture 는 raw `slot_name:` 대신 `SLOT_NAME_MIRROR_FIELD` / `withSlotMirrorName()` 을 사용한다.
+- `g5LegacyFieldGrepGate.test.ts` 는 frame/slot schema 파일의 `layout_id` / `slot_name` field 선언 재도입과 targeted fixture 파일의 raw payload key 재도입을 함께 차단한다.
+
+**grep 상태**:
+
+- `rg -n "\\b(layout_id|slot_name)\\??:" apps/builder/src/types packages/shared/src/types apps/builder/src/preview/store apps/builder/src/preview/types -g "*.ts" -g "*.tsx"` 결과 0건.
+- `rg -n "\\b(layout_id|slot_name)\\s*:" apps/builder/src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts apps/builder/src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts apps/builder/src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts apps/builder/src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts` 결과 0건.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts src/builder/workspace/canvas/hooks/useElementHoverInteraction.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts` — 5 files / 30 tests PASS.
+- `pnpm run codex:typecheck` — PASS.
 
 ## 11. ADR 의존 관계 정리
 

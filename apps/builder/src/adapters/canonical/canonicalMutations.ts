@@ -48,6 +48,7 @@ import { buildLegacyElementMetadata } from "./legacyMetadata";
 import { getCanonicalSlotDeclaration } from "./slotDeclaration";
 import { isLegacySlotTag, tagToType } from "./tagRename";
 import { getPageFrameBindingId } from "./frameMirror";
+import { asElementWithLegacyMirror } from "./legacyElementFields";
 
 // ─────────────────────────────────────────────
 // Callback registration (DI pattern)
@@ -93,7 +94,7 @@ let _registeredActions: CanonicalMutationStoreActions | null = null;
  *     getCurrentLegacySnapshot: () => ({
  *       elements: Array.from(useStore.getState().elementsMap.values()),
  *       pages: useStore.getState().pages,
- *       layouts: useLayoutsStore.getState().layouts,
+ *       layouts: getCanonicalReusableFrameLayouts(),
  *     }),
  *     getCurrentProjectId: () => projectId ?? null,
  *   });
@@ -440,6 +441,8 @@ function legacyElementToCanonicalNode(
   doc: CompositionDocument,
   previousNode: CanonicalNode | null,
 ): CanonicalNode {
+  const legacy = asElementWithLegacyMirror(element);
+
   if (isLegacySlotTag(element.type)) {
     const slotName =
       (element.props.name as string | undefined) ?? element.slot_name ?? null;
@@ -482,20 +485,20 @@ function legacyElementToCanonicalNode(
     ...buildCompositionExtensionField(element),
   };
 
-  if (element.componentRole === "master") {
+  if (legacy.componentRole === "master") {
     return {
       ...baseNode,
       reusable: true,
     };
   }
 
-  if (element.componentRole === "instance" && element.masterId) {
-    const masterNode = findNodeByLegacyId(doc.children, element.masterId);
+  if (legacy.componentRole === "instance" && legacy.masterId) {
+    const masterNode = findNodeByLegacyId(doc.children, legacy.masterId);
     const refNode: RefNode = {
       ...baseNode,
       type: "ref",
-      ref: masterNode?.id ?? element.masterId,
-      ...(element.overrides ? { props: element.overrides } : {}),
+      ref: masterNode?.id ?? legacy.masterId,
+      ...(legacy.overrides ? { props: legacy.overrides } : {}),
       ...(remapLegacyDescendants(element, doc)
         ? { descendants: remapLegacyDescendants(element, doc) }
         : {}),
@@ -608,6 +611,10 @@ function buildFrameShell(
       ...(existingFrame?.metadata ?? {}),
       type: "legacy-layout",
       layoutId: layout.id,
+      project_id: layout.project_id,
+      description: layout.description ?? null,
+      slug: layout.slug ?? null,
+      order_num: layout.order_num ?? 0,
     },
     slot: existingFrame?.slot,
     children: [],
@@ -761,6 +768,7 @@ function upsertElementIntoDocument(
   element: Element,
   snapshot: LegacySnapshot,
 ): CompositionDocument {
+  const legacy = asElementWithLegacyMirror(element);
   const previousNode = findNodeByLegacyId(doc.children, element.id);
   const removed = removeNodeByLegacyId(doc.children, element.id);
   const docWithoutExisting: CompositionDocument = {
@@ -773,7 +781,7 @@ function upsertElementIntoDocument(
     previousNode,
   );
 
-  if (element.componentRole === "master") {
+  if (legacy.componentRole === "master") {
     return {
       ...docWithoutExisting,
       children: upsertChild(docWithoutExisting.children, node),

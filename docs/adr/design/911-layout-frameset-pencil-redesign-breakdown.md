@@ -1,8 +1,10 @@
 # ADR-911 Layout/Slot Frameset 완전 재설계 — 구현 상세
 
-> **상위 ADR**: [ADR-911](../911-layout-frameset-pencil-redesign.md) (Status: In Progress — 2026-04-30)
-> **의존 ADR**: ADR-903 (Implemented 2026-04-26) + ADR-916 (Proposed 2026-04-30) — 잔여 P3/P4/P5 는 ADR-916 canonical store/API 및 adapter boundary 확정 후 재개
-> **총 예상 규모**: ~42h / 5 Phase (P1 8h → P2 12h → P3 8h → P4 8h → P5 6h)
+> **상위 ADR**: [ADR-911](../911-layout-frameset-pencil-redesign.md) (Status: In Progress — 2026-05-02 direct cutover)
+> **의존 ADR**: ADR-903 (Implemented 2026-04-26) + ADR-916 (In Progress direct cutover) — `useLayoutsStore` / `layoutActions` 본체는 2026-05-02 legacy layout store removal 로 삭제됨. 잔여는 ADR-916 G5 legacy field quarantine + 본 ADR G5 pencil import/export parity.
+> **총 예상 규모**: historical plan. 2026-05-02 이후 feature flag / migration / backup / adapter shim 유지 전제는 direct cutover 로 superseded.
+
+> **2026-05-02 current override**: 아래 Phase 1~4의 migration/dual-mode/shim 계획은 역사적 설계 기록이다. 현재 구현 기준은 canonical frame surface (`canonicalFrameStore`) + active `CompositionDocument` 가 in-memory SSOT이고, current DB `layouts` row 는 persistence mirror 로만 남는다. `apps/builder/src/builder/stores/layouts.ts` / `stores/utils/layoutActions.ts` 는 삭제 완료.
 
 ---
 

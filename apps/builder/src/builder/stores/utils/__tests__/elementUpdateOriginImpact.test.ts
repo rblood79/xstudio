@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { withComponentInstanceMirror } from "@/adapters/canonical/componentSemanticsMirror";
 import type { Element } from "../../../../types/core/store.types";
 import { useStore } from "../../elements";
 import { historyManager } from "../../history";
@@ -78,10 +79,10 @@ describe("origin impact preview", () => {
       type: "ref",
       ref: "origin",
     } as never);
-    const instanceB = makeElement("instance-b", {
-      componentRole: "instance",
-      masterId: "origin",
-    });
+    const instanceB = withComponentInstanceMirror(
+      makeElement("instance-b"),
+      "origin",
+    );
 
     useStore.setState({
       elements: [origin, instanceA, instanceB],

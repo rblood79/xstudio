@@ -7,6 +7,7 @@
 import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
 import type { RefNode } from "@composition/shared";
+import type { ElementWithLegacyMirror } from "./legacyElementFields";
 
 export interface LegacyAdapterInput {
   elements: Element[];
@@ -19,7 +20,7 @@ export interface LegacyAdapterInput {
  * 본 파일에는 type만 export, 실제 구현은 sibling 모듈이 담당.
  */
 export type ConvertComponentRoleFn = (
-  element: Element,
+  element: ElementWithLegacyMirror,
   options: { idPathMap: Map<string, string> },
 ) => {
   reusable?: boolean;

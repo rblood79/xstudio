@@ -27,8 +27,8 @@ describe("PageLayoutSelector frame binding persistence contract", () => {
       "utf-8",
     );
 
-    expect(source).toContain("useActiveCanonicalDocument");
-    expect(source).toContain("getReusableFrameMirrorId");
+    expect(source).toContain("useCanonicalReusableFrameLayouts");
     expect(source).not.toContain("selectCanonicalDocument");
+    expect(source).not.toContain("useLayoutsStore");
   });
 });

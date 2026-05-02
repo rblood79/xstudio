@@ -9,12 +9,12 @@ import {
   ComponentElementProps,
   ComputedLayout,
 } from "../../types/core/store.types";
+import { Page } from "../../types/builder/unified.types";
 import {
-  Page,
-  isMasterElement,
-  isInstanceElement,
-  getInstanceMasterRef,
-} from "../../types/builder/unified.types";
+  getComponentMasterReference as getInstanceMasterRef,
+  isComponentInstanceMirrorElement as isInstanceElement,
+  isComponentOriginMirrorElement as isMasterElement,
+} from "../../adapters/canonical/componentSemanticsMirror";
 import type { PageLayoutDirection } from "./canvasSettings";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";

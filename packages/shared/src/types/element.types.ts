@@ -101,16 +101,6 @@ export interface Element {
   parent_id?: string | null;
   order_num?: number;
   page_id?: string | null;
-  /**
-   * @deprecated ADR-903 P3: canonical 'ref' 필드로 전환. reusable layout shell의
-   * page root ref 참조로 대체. Phase 3에서 frameset/layout 시스템 흡수.
-   */
-  layout_id?: string | null;
-  /**
-   * @deprecated ADR-903 P3: canonical 'slot' 메타데이터 + descendants[slotPath].children
-   * 패턴으로 전환. 별도 Slot 특수 노드 제거.
-   */
-  slot_name?: string | null;
   created_at?: string;
   updated_at?: string;
   deleted?: boolean;
@@ -118,27 +108,6 @@ export interface Element {
   events?: unknown[];
 
   // --- G.1: Component-Instance System ---
-  /**
-   * 'master' = 재사용 가능 컴포넌트 원본, 'instance' = master 참조 인스턴스
-   *
-   * @deprecated ADR-903 P1: canonical 'reusable: true' (master) / 'type: "ref"' (instance)로
-   * rename. Phase 1 adapter에서 정규화.
-   */
-  componentRole?: "master" | "instance";
-  /**
-   * instance가 참조하는 master element ID
-   *
-   * @deprecated ADR-903 P1: canonical 'ref: <master-id>' 필드로 rename.
-   * 인스턴스의 원본 참조.
-   */
-  masterId?: string;
-  /**
-   * instance 직접 props 오버라이드 (master 기본값 위에 적용)
-   *
-   * @deprecated ADR-903 P1: canonical RefNode 루트 속성 override로 흡수.
-   * instance 자신의 props는 ref root에 직접 설정.
-   */
-  overrides?: Record<string, unknown>;
   /**
    * instance 하위 자손 노드별 오버라이드: { childId: { propKey: value } }
    *
@@ -174,7 +143,6 @@ export interface Page {
   slug: string;
   parent_id?: string | null;
   order_num?: number;
-  layout_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }

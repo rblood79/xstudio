@@ -16,7 +16,7 @@ import type { PanelProps } from "../core/types";
 import ComponentList from "./ComponentList";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
-import { useSelectedReusableFrameId } from "../../stores/layouts";
+import { useSelectedReusableFrameId } from "../../stores/canonical/canonicalFrameStore";
 import { useElementCreator } from "@/builder/hooks";
 import { belongsToLegacyLayout } from "../../../adapters/canonical";
 import { getActiveCanonicalDocument } from "../../stores/canonical/canonicalElementsBridge";
@@ -68,8 +68,8 @@ function ComponentsPanelContent() {
       // Layout 모드인 경우
       if (editMode === "layout" && selectedReusableFrameId) {
         // 현재 Layout의 요소만 필터링
-        // ADR-903 P3-E E-6 후속: write-through 활성화 후 element.layout_id 가 null
-        // 이라 canonical reusable frame descendants 매칭 필수. legacy fallback 보존.
+        // ADR-903 P3-E E-6 후속: write-through 활성화 후 frame ownership mirror 가
+        // 비어 canonical reusable frame descendants 매칭 필수. legacy fallback 보존.
         const layoutElements = elements.filter((el) =>
           belongsToLegacyLayout(el, selectedReusableFrameId, doc),
         );

@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import {
+  SLOT_NAME_MIRROR_FIELD,
+  withSlotMirrorName,
+} from "@/adapters/canonical/slotMirror";
 import type { Element } from "../../../../types/core/store.types";
 import { useStore } from "../../elements";
 import { historyManager } from "../../history";
@@ -62,16 +66,23 @@ describe("ADR-912 editing semantics regression sweep", () => {
     const remainingIds = instances.slice(2).map((instance) => instance.id);
     for (const [index, id] of remainingIds.entries()) {
       const slotName = index % 2 === 0 ? "content" : "footer";
-      await useStore.getState().updateElementProps(id, { slot_name: slotName });
-      await useStore.getState().updateElement(id, { slot_name: slotName });
+      await useStore
+        .getState()
+        .updateElementProps(id, { [SLOT_NAME_MIRROR_FIELD]: slotName });
+      await useStore
+        .getState()
+        .updateElement(
+          id,
+          withSlotMirrorName({} as Partial<Element>, slotName),
+        );
     }
 
     for (const [index, id] of remainingIds.entries()) {
       const slotName = index % 2 === 0 ? "content" : "footer";
       expect(useStore.getState().elementsMap.get(id)).toMatchObject({
         type: "ref",
-        props: { slot_name: slotName },
-        slot_name: slotName,
+        props: { [SLOT_NAME_MIRROR_FIELD]: slotName },
+        ...withSlotMirrorName({}, slotName),
       });
     }
   });

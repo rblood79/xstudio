@@ -42,7 +42,7 @@ interface GeneratePageUrlParams {
  * @example
  * // With Layout slug
  * generatePageUrl({
- *   page: { slug: 'nike', layout_id: 'layout-1' },
+ *   page: { slug: 'nike' },
  *   layout: { slug: '/products' }
  * })
  * // → '/products/nike'

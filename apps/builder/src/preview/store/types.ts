@@ -20,7 +20,6 @@ export interface RuntimeElement {
   };
   parent_id: string | null;
   page_id: string | null;
-  layout_id?: string | null;
   order_num: number;
   customId?: string;
   dataBinding?: Record<string, unknown>;
@@ -32,7 +31,6 @@ export interface RuntimePage {
   title: string;
   slug: string;
   order_num: number;
-  layout_id?: string | null;
   parent_id?: string | null; // Nested Routes 지원
 }
 

@@ -33,6 +33,10 @@ import type { Element } from "@/types/builder/unified.types";
 import type { FillItem } from "@/types/builder/fill.types";
 
 import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "./legacyMetadata";
+import type {
+  ElementWithLegacyMirror,
+  LegacyComponentRole,
+} from "./legacyElementFields";
 
 interface LegacyPropsShape {
   id?: string;
@@ -43,7 +47,7 @@ interface LegacyPropsShape {
   order_num?: number;
   fills?: FillItem[];
   type?: string;
-  componentRole?: Element["componentRole"];
+  componentRole?: LegacyComponentRole;
   masterId?: string;
   overrides?: Record<string, unknown>;
   descendants?: Element["descendants"];
@@ -147,7 +151,7 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
   const elementType =
     typeof type === "string" && type.length > 0 ? type : node.type;
 
-  const element: Element = {
+  const element: ElementWithLegacyMirror = {
     id,
     type: elementType,
     props: restProps as Record<string, unknown>,

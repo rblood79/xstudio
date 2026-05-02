@@ -25,7 +25,10 @@ import {
 import { useStore } from "../../stores";
 import type { PageLayoutDirection } from "../../stores/canvasSettings";
 import { useEditModeStore } from "../../stores/editMode";
-import { useLayoutsStore } from "../../stores/layouts";
+import {
+  useCanonicalReusableFrameLayouts,
+  useSelectedReusableFrameId,
+} from "../../stores/canonical/canonicalFrameStore";
 import { useActiveCanonicalDocument } from "../../stores/canonical/canonicalElementsBridge";
 import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
@@ -225,13 +228,11 @@ export function BuilderCanvas({
   );
   const childrenMap = useStore((state) => state.childrenMap);
   const dirtyElementIds = useStore((state) => state.dirtyElementIds);
-  const layouts = useLayoutsStore((state) => state.layouts);
+  const layouts = useCanonicalReusableFrameLayouts();
   const activeCanonicalDocument = useActiveCanonicalDocument();
   // Frames tab overview: canvas 는 reusable frame 전체를 표시하고, 이 값은
   // Node tree/properties 의 현재 frame 선택 동기화에 사용한다.
-  const selectedReusableFrameId = useLayoutsStore(
-    (state) => state.selectedReusableFrameId,
-  );
+  const selectedReusableFrameId = useSelectedReusableFrameId();
   // ADR-074 Phase 4: aiGeneratingNodes/aiFlashAnimations/cleanupExpiredFlashes
   // 구독은 SkiaCanvas 내부로 이전 — BuilderCanvas 루트 리렌더 fan-out 차단.
 

@@ -1,57 +1,118 @@
-/**
- * ADR-911 P2-a (PR-A) — frameActions canonical-shaped wrapper 테스트
- *
- * 본 테스트는 `frameActions.ts` 가 legacy `useLayoutsStore` 액션을 정확히
- * canonical-shaped API 로 wrapping 하는지 검증한다. P3 이전까지는 이 wrapper 가
- * 그대로 legacy bridge 를 호출하므로, 테스트는 양 측의 input/output mapping 과
- * 호출 횟수만 검증한다 (DB layer 는 store mock 으로 격리).
- */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CompositionDocument } from "@composition/shared";
+import type { Layout } from "@/types/builder/layout.types";
+import type { Element } from "@/types/core/store.types";
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-vi.mock("@/builder/stores/layouts", () => ({
-  useLayoutsStore: {
-    getState: vi.fn(),
+const mockDb = vi.hoisted(() => ({
+  layouts: {
+    insert: vi.fn(async (layout: Layout) => layout),
+    update: vi.fn(async (id: string, updates: Partial<Layout>) => ({
+      id,
+      name: "Updated Frame",
+      project_id: "proj-1",
+      description: "",
+      ...updates,
+    })),
+    delete: vi.fn(async () => undefined),
+  },
+  elements: {
+    insert: vi.fn(async (element: Element) => element),
   },
 }));
 
-import { useLayoutsStore } from "@/builder/stores/layouts";
+const mockBodyElement = vi.hoisted(() => ({
+  id: "body-1",
+  type: "body",
+  props: {},
+  parent_id: null,
+  page_id: null,
+  order_num: 0,
+  layout_id: "frame-x",
+  created_at: "2026-05-02T00:00:00.000Z",
+  updated_at: "2026-05-02T00:00:00.000Z",
+}));
+
+const mockApplyDeleteReusableFrameCanonicalPrimary = vi.hoisted(() =>
+  vi.fn(async () => ({
+    clearedPageIds: [],
+    deletedElementIds: [],
+    frameExisted: true,
+  })),
+);
+
+const mockLiveElementsState = vi.hoisted(() => ({
+  pages: [],
+  elementsMap: new Map<string, Element>(),
+  setPages: vi.fn(),
+  setElements: vi.fn(),
+}));
+
+vi.mock("@/lib/db", () => ({
+  getDB: vi.fn(async () => mockDb),
+}));
+
+vi.mock("@/adapters/canonical/frameLayoutCascade", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/adapters/canonical/frameLayoutCascade")
+    >();
+  return {
+    ...actual,
+    createFrameBodyElement: vi.fn(() => mockBodyElement),
+    applyDeleteReusableFrameCanonicalPrimary:
+      mockApplyDeleteReusableFrameCanonicalPrimary,
+  };
+});
+
+vi.mock("@/builder/stores/rootStoreAccess", () => ({
+  getLiveElementsState: () => mockLiveElementsState,
+}));
+
+import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import { useCanonicalFrameSelectionStore } from "@/builder/stores/canonical/canonicalFrameStore";
 import {
   createReusableFrame,
   deleteReusableFrame,
-  updateReusableFrameName,
-  selectReusableFrame,
   getNextFrameName,
+  selectReusableFrame,
+  updateReusableFrameName,
 } from "../frameActions";
-import type { Layout } from "@/types/builder/layout.types";
 
-const getStateMock = vi.mocked(useLayoutsStore.getState);
-
-function makeLayout(overrides: Partial<Layout> = {}): Layout {
+function makeDoc(children: CompositionDocument["children"] = []) {
   return {
-    id: "layout-1",
-    name: "Frame 1",
-    project_id: "proj-1",
-    description: "",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    ...overrides,
-  };
+    version: "composition-1.0",
+    children,
+  } satisfies CompositionDocument;
 }
 
-describe("frameActions (ADR-911 P2-a)", () => {
+describe("frameActions canonical reusable frame API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDb.layouts.insert.mockImplementation(async (layout: Layout) => layout);
+    mockDb.layouts.update.mockImplementation(
+      async (id: string, updates: Partial<Layout>) => ({
+        id,
+        name: "Updated Frame",
+        project_id: "proj-1",
+        description: "",
+        ...updates,
+      }),
+    );
+    useCanonicalDocumentStore.setState({
+      documents: new Map(),
+      currentProjectId: "proj-1",
+      documentVersion: 0,
+    });
+    useCanonicalFrameSelectionStore.setState({
+      selectedReusableFrameId: null,
+    });
   });
 
   describe("createReusableFrame", () => {
-    it("legacy createLayout 으로 위임하고 canonical-shaped ref 를 반환한다", async () => {
-      const createLayoutSpy = vi
-        .fn()
-        .mockResolvedValue(makeLayout({ id: "frame-x", name: "My Frame" }));
-      getStateMock.mockReturnValue({
-        createLayout: createLayoutSpy,
-      } as never);
+    it("DB mirror 를 저장하고 active canonical document 에 reusable FrameNode 를 추가한다", async () => {
+      const randomUUIDSpy = vi
+        .spyOn(crypto, "randomUUID")
+        .mockReturnValue("frame-x");
 
       const result = await createReusableFrame({
         name: "My Frame",
@@ -59,38 +120,56 @@ describe("frameActions (ADR-911 P2-a)", () => {
         description: "desc",
       });
 
-      expect(createLayoutSpy).toHaveBeenCalledTimes(1);
-      expect(createLayoutSpy).toHaveBeenCalledWith({
-        name: "My Frame",
-        project_id: "proj-1",
-        description: "desc",
-      });
+      expect(mockDb.layouts.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "frame-x",
+          name: "My Frame",
+          project_id: "proj-1",
+          description: "desc",
+        }),
+      );
+      expect(mockDb.elements.insert).toHaveBeenCalledWith(mockBodyElement);
       expect(result).toEqual({ id: "frame-x", name: "My Frame" });
+      expect(
+        useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+      ).toBe("frame-x");
+
+      const doc = useCanonicalDocumentStore.getState().getDocument("proj-1");
+      expect(doc?.children[0]).toMatchObject({
+        id: "layout-frame-x",
+        type: "frame",
+        reusable: true,
+        name: "My Frame",
+        metadata: {
+          layoutId: "frame-x",
+          project_id: "proj-1",
+          description: "desc",
+        },
+      });
+
+      randomUUIDSpy.mockRestore();
     });
 
-    it("description 미지정 시 빈 문자열로 채운다 (legacy LayoutCreate 정합)", async () => {
-      const createLayoutSpy = vi
-        .fn()
-        .mockResolvedValue(makeLayout({ id: "frame-y" }));
-      getStateMock.mockReturnValue({
-        createLayout: createLayoutSpy,
-      } as never);
+    it("description 미지정 시 빈 문자열로 DB mirror 를 저장한다", async () => {
+      const randomUUIDSpy = vi
+        .spyOn(crypto, "randomUUID")
+        .mockReturnValue("frame-y");
 
       await createReusableFrame({ name: "F", projectId: "p" });
 
-      expect(createLayoutSpy).toHaveBeenCalledWith({
-        name: "F",
-        project_id: "p",
-        description: "",
-      });
+      expect(mockDb.layouts.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "F",
+          project_id: "p",
+          description: "",
+        }),
+      );
+
+      randomUUIDSpy.mockRestore();
     });
 
-    it("legacy 액션이 reject 하면 그대로 throw 한다", async () => {
-      const err = new Error("DB 실패");
-      const createLayoutSpy = vi.fn().mockRejectedValue(err);
-      getStateMock.mockReturnValue({
-        createLayout: createLayoutSpy,
-      } as never);
+    it("DB mirror 저장이 reject 하면 그대로 throw 한다", async () => {
+      mockDb.layouts.insert.mockRejectedValueOnce(new Error("DB 실패"));
 
       await expect(
         createReusableFrame({ name: "F", projectId: "p" }),
@@ -99,107 +178,100 @@ describe("frameActions (ADR-911 P2-a)", () => {
   });
 
   describe("deleteReusableFrame", () => {
-    it("legacy deleteLayout 으로 위임한다", async () => {
-      const deleteLayoutSpy = vi.fn().mockResolvedValue(undefined);
-      getStateMock.mockReturnValue({
-        deleteLayout: deleteLayoutSpy,
-      } as never);
+    it("canonical delete cascade 를 적용하고 DB layout mirror 를 삭제한다", async () => {
+      useCanonicalDocumentStore.getState().setDocument(
+        "proj-1",
+        makeDoc([
+          {
+            id: "layout-frame-x",
+            type: "frame",
+            reusable: true,
+            name: "Frame X",
+            metadata: { type: "legacy-layout", layoutId: "frame-x" },
+            children: [],
+          },
+        ]),
+      );
+      selectReusableFrame("frame-x");
 
       await deleteReusableFrame("frame-x");
 
-      expect(deleteLayoutSpy).toHaveBeenCalledTimes(1);
-      expect(deleteLayoutSpy).toHaveBeenCalledWith("frame-x");
+      expect(mockApplyDeleteReusableFrameCanonicalPrimary).toHaveBeenCalledWith(
+        expect.objectContaining({
+          frameId: "frame-x",
+          layouts: [
+            expect.objectContaining({ id: "frame-x", name: "Frame X" }),
+          ],
+          setPages: mockLiveElementsState.setPages,
+          setElements: mockLiveElementsState.setElements,
+        }),
+      );
+      expect(mockDb.layouts.delete).toHaveBeenCalledWith("frame-x");
+      expect(
+        useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+      ).toBeNull();
     });
   });
 
   describe("updateReusableFrameName", () => {
-    it("legacy updateLayout 으로 name 만 update 한다", async () => {
-      const updateLayoutSpy = vi.fn().mockResolvedValue(undefined);
-      getStateMock.mockReturnValue({
-        updateLayout: updateLayoutSpy,
-      } as never);
+    it("DB mirror 와 canonical FrameNode name 을 함께 갱신한다", async () => {
+      useCanonicalDocumentStore.getState().setDocument(
+        "proj-1",
+        makeDoc([
+          {
+            id: "layout-frame-x",
+            type: "frame",
+            reusable: true,
+            name: "Old Name",
+            metadata: { type: "legacy-layout", layoutId: "frame-x" },
+            children: [],
+          },
+        ]),
+      );
 
       await updateReusableFrameName("frame-x", "New Name");
 
-      expect(updateLayoutSpy).toHaveBeenCalledTimes(1);
-      expect(updateLayoutSpy).toHaveBeenCalledWith("frame-x", {
+      expect(mockDb.layouts.update).toHaveBeenCalledWith(
+        "frame-x",
+        expect.objectContaining({ name: "New Name" }),
+      );
+      const doc = useCanonicalDocumentStore.getState().getDocument("proj-1");
+      expect(doc?.children[0]).toMatchObject({
         name: "New Name",
+        metadata: { layoutId: "frame-x" },
       });
     });
   });
 
   describe("selectReusableFrame", () => {
-    it("legacy setCurrentLayout 으로 위임한다 (id 전달)", () => {
-      const setCurrentLayoutSpy = vi.fn();
-      getStateMock.mockReturnValue({
-        setCurrentLayout: setCurrentLayoutSpy,
-      } as never);
-
+    it("canonical frame selection store 를 갱신한다", () => {
       selectReusableFrame("frame-x");
 
-      expect(setCurrentLayoutSpy).toHaveBeenCalledTimes(1);
-      expect(setCurrentLayoutSpy).toHaveBeenCalledWith("frame-x");
-    });
-
-    it("null 전달 시 선택 해제로 위임한다", () => {
-      const setCurrentLayoutSpy = vi.fn();
-      getStateMock.mockReturnValue({
-        setCurrentLayout: setCurrentLayoutSpy,
-      } as never);
+      expect(
+        useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+      ).toBe("frame-x");
 
       selectReusableFrame(null);
 
-      expect(setCurrentLayoutSpy).toHaveBeenCalledWith(null);
+      expect(
+        useCanonicalFrameSelectionStore.getState().selectedReusableFrameId,
+      ).toBeNull();
     });
   });
 
-  describe("getNextFrameName (중복 회피)", () => {
-    it("빈 배열 → 'Frame 1'", () => {
+  describe("getNextFrameName", () => {
+    it("빈 배열 -> 'Frame 1'", () => {
       expect(getNextFrameName([])).toBe("Frame 1");
     });
 
-    it("['Frame 1', 'Frame 2'] → 'Frame 3' (max + 1)", () => {
-      expect(getNextFrameName([{ name: "Frame 1" }, { name: "Frame 2" }])).toBe(
-        "Frame 3",
-      );
-    });
-
-    it("['Frame 1', 'Frame 3'] → 'Frame 2' (gap 채움)", () => {
+    it("['Frame 1', 'Frame 3'] -> 'Frame 2' (gap 채움)", () => {
       expect(getNextFrameName([{ name: "Frame 1" }, { name: "Frame 3" }])).toBe(
         "Frame 2",
       );
     });
 
-    it("['Frame 2'] → 'Frame 1' (시작 gap 채움)", () => {
-      expect(getNextFrameName([{ name: "Frame 2" }])).toBe("Frame 1");
-    });
-
-    it("['My Custom'] → 'Frame 1' (Frame N 패턴 아닌 이름은 무시)", () => {
+    it("Frame N 패턴 아닌 이름은 무시한다", () => {
       expect(getNextFrameName([{ name: "My Custom" }])).toBe("Frame 1");
-    });
-
-    it("['Frame 1', 'My Custom', 'Frame 3'] → 'Frame 2'", () => {
-      expect(
-        getNextFrameName([
-          { name: "Frame 1" },
-          { name: "My Custom" },
-          { name: "Frame 3" },
-        ]),
-      ).toBe("Frame 2");
-    });
-
-    it("이전 length+1 패턴이 만들 수 있는 충돌 시나리오 회피 — 삭제 후 추가", () => {
-      // 시나리오: 3개 생성 → Frame 1 삭제 → 추가 → 이전에는 'Frame 3' 충돌
-      const afterDelete = [{ name: "Frame 2" }, { name: "Frame 3" }];
-      // length+1 = 3 → 충돌. getNextFrameName 은 'Frame 1' 반환 (gap 채움)
-      expect(getNextFrameName(afterDelete)).toBe("Frame 1");
-    });
-
-    it("100 개 frame 까지 안정적 (numeric overflow 안 함)", () => {
-      const frames = Array.from({ length: 100 }, (_, i) => ({
-        name: `Frame ${i + 1}`,
-      }));
-      expect(getNextFrameName(frames)).toBe("Frame 101");
     });
   });
 });

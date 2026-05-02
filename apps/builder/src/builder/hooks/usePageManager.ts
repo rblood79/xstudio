@@ -15,7 +15,10 @@ import {
   getNullablePageFrameBindingId,
   withPageFrameBinding,
 } from "../../adapters/canonical/frameMirror";
-import { useLayoutsStore } from "../stores/layouts";
+import {
+  getCanonicalReusableFrameLayouts,
+  seedCanonicalReusableFrameLayouts,
+} from "../stores/canonical/canonicalFrameStore";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
@@ -31,8 +34,7 @@ async function getProjectLayoutsForCanonical(
   db: unknown,
   projectId: string,
 ): Promise<Layout[]> {
-  const layoutsState = useLayoutsStore.getState();
-  const projectLayouts = layoutsState.layouts.filter(
+  const projectLayouts = getCanonicalReusableFrameLayouts().filter(
     (layout) => layout.project_id === projectId,
   );
   if (projectLayouts.length > 0) {
@@ -561,6 +563,7 @@ export const usePageManager = ({
           db,
           projectId,
         );
+        seedCanonicalReusableFrameLayouts(canonicalLayouts, projectId);
         const layoutIdSet = new Set(
           canonicalLayouts.map((layout) => layout.id),
         );

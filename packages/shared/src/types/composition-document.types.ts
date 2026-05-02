@@ -23,8 +23,8 @@
  *    `editor` (`CompositionExtension` 타입). canonical core 가 아닌 namespaced
  *    extension. function callback / React runtime object serialize 금지.
  * 3. adapter-only legacy — `metadata.legacyProps` (transition only) 및 legacy
- *    `Element.layout_id` / `slot_name` / `componentRole` / `masterId` / `overrides`.
- *    `apps/builder/src/adapters/canonical/**` 디렉터리 외 read/write 0건이 G5 목표.
+ *    frame/slot/component mirror metadata. `apps/builder/src/adapters/canonical/**`
+ *    디렉터리 외 read/write 0건이 G5 목표.
  * 4. Pencil primitive schema — 본 파일은 Pencil 호환 필드명 (frame/ref/
  *    descendants/slot/clip/placeholder) 만 채택. Pencil primitive schema 자체는
  *    채택 대상 아님 (대안 B 기각).
@@ -325,7 +325,7 @@ export interface FrameNode extends CanonicalNode {
  * `RefNode` — `type: "ref"` 인스턴스 노드.
  *
  * `reusable: true` 원본을 참조하고, `descendants` 로 자식 노드를 오버라이드.
- * composition 기존 `componentRole: "instance"` + `masterId` 를 대체.
+ * composition 기존 component-instance mirror metadata 를 대체.
  */
 export interface RefNode extends CanonicalNode {
   type: "ref";

@@ -4,27 +4,19 @@
  * ADR-903 P3-C: page 의 layout 연결 → page 노드의 reusable frame ref 선택 UI.
  * ADR-911 direct cutover: canonical reusable FrameNode read path.
  *
- * - active canonical document 의 reusable FrameNode 추출
- *
- * id 정규화: canonical FrameNode.id 는 `"layout-<legacyId>"` 접두사 → `metadata.layoutId`
- * 우선 사용. legacy page layout binding 과 정합 유지.
- *
- * @deprecated-path `useLayoutsStore` direct access → canonical reusableFrames
+ * - active canonical document 의 reusable FrameNode 기반 layout surface 사용
  */
 
-import { memo, useMemo, useCallback, useEffect } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { Layout, X } from "lucide-react";
 import { PropertySelect, PropertySection } from "../../../components";
-import { useLayouts, useLayoutsStore } from "../../../stores/layouts";
 import { useStore } from "../../../stores";
-import { useActiveCanonicalDocument } from "../../../stores/canonical/canonicalElementsBridge";
+import { useCanonicalReusableFrameLayouts } from "../../../stores/canonical/canonicalFrameStore";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 import {
   applyPageFrameBindingCanonicalPrimary,
   getPageFrameBindingId,
 } from "../../../../adapters/canonical/pageFrameBinding";
-import { getReusableFrameMirrorId } from "../../../../adapters/canonical/frameMirror";
-import type { FrameNode } from "@composition/shared";
 
 interface PageLayoutSelectorProps {
   pageId: string;
@@ -34,47 +26,18 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
   pageId,
 }: PageLayoutSelectorProps) {
   const page = useStore((state) => state.pages.find((p) => p.id === pageId));
-  const activeCanonicalDocument = useActiveCanonicalDocument();
-
-  // P3-C: useLayouts() hook (P3-B canonical surface)
-  const layouts = useLayouts();
-
-  // fetchLayouts: layouts.length === 0 일 때 자동 로드
-  const fetchLayouts = useLayoutsStore((state) => state.fetchLayouts);
-
-  useEffect(() => {
-    if (layouts.length === 0 && page?.project_id) {
-      fetchLayouts(page.project_id);
-    }
-  }, [layouts.length, fetchLayouts, page?.project_id]);
+  const layouts = useCanonicalReusableFrameLayouts();
 
   // ADR-916 projection 제거: FramesTab 과 동일하게 active canonical document 를 사용.
   const reusableFrames = useMemo<
     ReadonlyArray<{ id: string; name: string; description?: string }>
   >(() => {
-    if (!activeCanonicalDocument) {
-      return layouts.map((layout) => ({
-        id: layout.id,
-        name: layout.name,
-        description: layout.description,
-      }));
-    }
-    return activeCanonicalDocument.children
-      .filter(
-        (n): n is FrameNode =>
-          n.type === "frame" && (n as FrameNode).reusable === true,
-      )
-      .map((f) => {
-        const meta = f.metadata as
-          | { layoutId?: string; description?: string }
-          | undefined;
-        return {
-          id: getReusableFrameMirrorId(f),
-          name: f.name ?? "",
-          description: meta?.description,
-        };
-      });
-  }, [activeCanonicalDocument, layouts]);
+    return layouts.map((layout) => ({
+      id: layout.id,
+      name: layout.name,
+      description: layout.description,
+    }));
+  }, [layouts]);
 
   const selectedFrameId = getPageFrameBindingId(page);
   const currentLayout = useMemo(

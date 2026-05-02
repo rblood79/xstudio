@@ -26,7 +26,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useStore } from "../../stores";
-import { useLayoutsStore } from "../../stores/layouts";
+import { useCanonicalReusableFrameLayouts } from "../../stores/canonical/canonicalFrameStore";
 import {
   generateSlugFromTitle,
   validateSlug,
@@ -84,7 +84,7 @@ export function AddPageDialog({
 
   // Store data
   const pages = useStore((state) => state.pages);
-  const layouts = useLayoutsStore((state) => state.layouts);
+  const layouts = useCanonicalReusableFrameLayouts();
 
   // Default values
   const defaultTitle = `Page ${existingPagesCount + 1}`;

@@ -7,6 +7,13 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  COMPONENT_MASTER_ID_MIRROR_FIELD,
+  COMPONENT_OVERRIDES_MIRROR_FIELD,
+  COMPONENT_ROLE_MIRROR_FIELD,
+  withComponentInstanceMirror,
+  withComponentOriginMirror,
+} from "@/adapters/canonical/componentSemanticsMirror";
 import type { Element } from "../../../types/core/store.types";
 import { historyManager } from "../../stores/history";
 import { useStore } from "../../stores";
@@ -158,10 +165,10 @@ describe("ComponentSemanticsSection", () => {
 
   it("instance action selects its origin", () => {
     const origin = makeElement("origin", { page_id: "page-1", reusable: true });
-    const instance = makeElement("instance", {
-      masterId: "origin",
-      page_id: "page-1",
-    });
+    const instance = withComponentInstanceMirror(
+      makeElement("instance", { page_id: "page-1" }),
+      "origin",
+    );
 
     useStore.setState({
       currentPageId: "page-1",
@@ -240,14 +247,14 @@ describe("ComponentSemanticsSection", () => {
 
   it("origin action multi-selects all matching instances", () => {
     const origin = makeElement("origin", { page_id: "page-1", reusable: true });
-    const instanceA = makeElement("instance-a", {
-      masterId: "origin",
-      page_id: "page-1",
-    });
-    const instanceB = makeElement("instance-b", {
-      masterId: "origin",
-      page_id: "page-1",
-    });
+    const instanceA = withComponentInstanceMirror(
+      makeElement("instance-a", { page_id: "page-1" }),
+      "origin",
+    );
+    const instanceB = withComponentInstanceMirror(
+      makeElement("instance-b", { page_id: "page-1" }),
+      "origin",
+    );
 
     useStore.setState({
       currentPageId: "page-1",
@@ -324,17 +331,19 @@ describe("ComponentSemanticsSection", () => {
 
   it("legacy instance detach action asks before detaching", async () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
-    const origin = makeElement("origin", {
-      componentRole: "master",
-      page_id: "page-1",
-      props: { label: "Origin" },
-    });
-    const instance = makeElement("instance", {
-      componentRole: "instance",
-      masterId: "origin",
-      page_id: "page-1",
-      overrides: { label: "Detached" },
-    });
+    const origin = withComponentOriginMirror(
+      makeElement("origin", {
+        page_id: "page-1",
+        props: { label: "Origin" },
+      }),
+    );
+    const instance = withComponentInstanceMirror(
+      makeElement("instance", {
+        page_id: "page-1",
+      }),
+      "origin",
+      { overrideProps: { label: "Detached" } },
+    );
 
     useStore.setState({
       currentPageId: "page-1",
@@ -353,26 +362,30 @@ describe("ComponentSemanticsSection", () => {
     expect(confirmSpy).toHaveBeenCalled();
     await waitFor(() => {
       expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-        componentRole: undefined,
-        masterId: undefined,
-        overrides: undefined,
+        [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+        [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+        [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
         props: { label: "Detached" },
       });
     });
   });
 
   it("renders root override fields and resets one override", () => {
-    const origin = makeElement("origin", {
-      componentRole: "master",
-      page_id: "page-1",
-      props: { label: "Origin" },
-    });
-    const instance = makeElement("instance", {
-      componentRole: "instance",
-      masterId: "origin",
-      page_id: "page-1",
-      overrides: { label: "Detached", style: { color: "blue" } },
-    });
+    const origin = withComponentOriginMirror(
+      makeElement("origin", {
+        page_id: "page-1",
+        props: { label: "Origin" },
+      }),
+    );
+    const instance = withComponentInstanceMirror(
+      makeElement("instance", {
+        page_id: "page-1",
+      }),
+      "origin",
+      {
+        overrideProps: { label: "Detached", style: { color: "blue" } },
+      },
+    );
 
     useStore.setState({
       currentPageId: "page-1",
@@ -392,7 +405,7 @@ describe("ComponentSemanticsSection", () => {
     );
 
     expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-      overrides: { style: { color: "blue" } },
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: { style: { color: "blue" } },
     });
     expect(
       screen.queryByRole("button", { name: "Reset label override" }),
@@ -453,12 +466,12 @@ describe("ComponentSemanticsSection", () => {
 
   it("legacy instance detach action preserves the instance when cancelled", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
-    const origin = makeElement("origin", { componentRole: "master" });
-    const instance = makeElement("instance", {
-      componentRole: "instance",
-      masterId: "origin",
-      overrides: { label: "Detached" },
-    });
+    const origin = withComponentOriginMirror(makeElement("origin"));
+    const instance = withComponentInstanceMirror(
+      makeElement("instance"),
+      "origin",
+      { overrideProps: { label: "Detached" } },
+    );
 
     useStore.setState({
       currentPageId: "page-1",

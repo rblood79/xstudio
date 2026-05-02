@@ -4,25 +4,41 @@
  * ADR-911 P2-a (PR-A): canonical-native FramesTab 재설계의 첫 단계.
  *
  * 본 모듈은 canonical FrameNode (`type: "frame"` + `reusable: true`) 의미를
- * 가진 wrapper API를 제공한다. 현재 내부 구현은 legacy `useLayoutsStore`
- * (createLayout / deleteLayout / updateLayout) 를 호출하되, delete cascade 는
- * active canonical document 를 직접 갱신한다.
- *
- * 정책 (ADR-911 design breakdown line 467-474):
- * - P2 scope: `stores/layouts.ts` 본체 미수정. adapter shim 그대로 유지.
- * - P3 이후: legacy bridge 제거 + 직접 canonical document mutation 으로 전환.
+ * 가진 reusable frame CRUD API를 제공한다. DB `layouts` row 는 persistence mirror
+ * 로만 유지하고, in-memory SSOT 는 active canonical document 이다.
  *
  * @see docs/adr/911-layout-frameset-pencil-redesign.md
  * @see docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md
  */
 
-import { useLayoutsStore } from "@/builder/stores/layouts";
-import type { Layout } from "@/types/builder/layout.types";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+  FrameNode,
+} from "@composition/shared";
+import { getDB } from "@/lib/db";
+import {
+  applyDeleteReusableFrameCanonicalPrimary,
+  createFrameBodyElement,
+} from "@/adapters/canonical/frameLayoutCascade";
+import { getReusableFrameMirrorId } from "@/adapters/canonical/frameMirror";
+import { legacyLayoutToCanonicalFrame } from "@/adapters/canonical/slotAndLayoutAdapter";
+import {
+  selectActiveCanonicalDocument,
+  useCanonicalDocumentStore,
+} from "@/builder/stores/canonical/canonicalDocumentStore";
+import {
+  getCanonicalReusableFrameLayouts,
+  getSelectedReusableFrameId,
+  setSelectedReusableFrameId,
+} from "@/builder/stores/canonical/canonicalFrameStore";
+import { getLiveElementsState } from "@/builder/stores/rootStoreAccess";
+import type { Layout, LayoutUpdate } from "@/types/builder/layout.types";
 
 /**
  * Reusable frame 생성 입력 — canonical-shaped 명명.
  *
- * `LayoutCreate` 에 비해 `project_id` (snake) → `projectId` (canonical) rename.
+ * DB mirror 의 `project_id` 대신 canonical-facing `projectId` 를 받는다.
  */
 export interface CreateReusableFrameInput {
   /** Frame 이름 — 사용자 노출 라벨 */
@@ -48,11 +64,60 @@ export interface ReusableFrameRef {
   name: string;
 }
 
+function createEmptyDocument(): CompositionDocument {
+  return { version: "composition-1.0", children: [] };
+}
+
+function isReusableFrameNode(node: CanonicalNode): node is FrameNode {
+  return node.type === "frame" && (node as FrameNode).reusable === true;
+}
+
+function withLayoutMetadata(frame: FrameNode, layout: Layout): FrameNode {
+  return {
+    ...frame,
+    name: layout.name,
+    metadata: {
+      ...(frame.metadata ?? { type: "legacy-layout" }),
+      type: frame.metadata?.type ?? "legacy-layout",
+      layoutId: layout.id,
+      project_id: layout.project_id,
+      description: layout.description ?? null,
+      slug: layout.slug ?? null,
+      order_num: layout.order_num ?? 0,
+    },
+  };
+}
+
+function upsertReusableFrame(frame: FrameNode, projectId: string): void {
+  const canonical = useCanonicalDocumentStore.getState();
+  const activeProjectId = projectId || canonical.currentProjectId;
+  if (!activeProjectId) return;
+  const currentDoc =
+    canonical.getDocument(activeProjectId) ?? createEmptyDocument();
+  const frameId = getReusableFrameMirrorId(frame);
+  const nextChildren = [...currentDoc.children];
+  const existingIndex = nextChildren.findIndex(
+    (node) =>
+      isReusableFrameNode(node) && getReusableFrameMirrorId(node) === frameId,
+  );
+
+  if (existingIndex >= 0) {
+    nextChildren[existingIndex] = frame;
+  } else {
+    nextChildren.push(frame);
+  }
+
+  if (canonical.currentProjectId !== activeProjectId) {
+    canonical.setCurrentProject(activeProjectId);
+  }
+  canonical.setDocument(activeProjectId, {
+    ...currentDoc,
+    children: nextChildren,
+  });
+}
+
 /**
- * Reusable frame 생성 — canonical-shaped wrapper.
- *
- * 내부 구현: legacy `createLayout` 호출. canonical mirror 갱신은 layout action
- * 경계에서 처리한다.
+ * Reusable frame 생성 — canonical document 에 reusable FrameNode 를 직접 추가한다.
  *
  * @param input - frame 메타데이터
  * @returns 생성된 frame 참조 (P3 이후 `FrameNode` 로 전환)
@@ -61,11 +126,30 @@ export interface ReusableFrameRef {
 export async function createReusableFrame(
   input: CreateReusableFrameInput,
 ): Promise<ReusableFrameRef> {
-  const layout: Layout = await useLayoutsStore.getState().createLayout({
+  const now = new Date().toISOString();
+  const existingLayouts = getCanonicalReusableFrameLayouts();
+  const layout: Layout = {
+    id: crypto.randomUUID(),
     name: input.name,
     project_id: input.projectId,
     description: input.description ?? "",
-  });
+    order_num: existingLayouts.length,
+    created_at: now,
+    updated_at: now,
+  };
+  const bodyElement = createFrameBodyElement(layout.id);
+
+  const db = await getDB();
+  await db.layouts.insert(layout);
+  await db.elements.insert(bodyElement);
+
+  const frame = withLayoutMetadata(
+    legacyLayoutToCanonicalFrame(layout, [bodyElement]),
+    layout,
+  );
+  upsertReusableFrame(frame, input.projectId);
+  setSelectedReusableFrameId(layout.id);
+
   return { id: layout.id, name: layout.name };
 }
 
@@ -74,12 +158,27 @@ export async function createReusableFrame(
  *
  * 내부 구현: legacy `deleteLayout` 호출. canonical frame 제거와 page binding clear 는
  * layoutAction 의 canonical cascade adapter 에서 처리한다.
- * cascade (page.layout_id null 화 + element 삭제) 도 layoutAction 내부에서 처리.
+ * cascade (page frame binding clear + element 삭제) 도 frame action 내부에서 처리.
  *
  * @param frameId - canonical FrameNode id (현재는 layout id 와 동일)
  */
 export async function deleteReusableFrame(frameId: string): Promise<void> {
-  await useLayoutsStore.getState().deleteLayout(frameId);
+  const db = await getDB();
+  const { setPages, setElements } = getLiveElementsState();
+  const layouts = getCanonicalReusableFrameLayouts();
+
+  await applyDeleteReusableFrameCanonicalPrimary({
+    frameId,
+    layouts,
+    getElementsState: getLiveElementsState,
+    setPages,
+    setElements,
+  });
+  await db.layouts.delete(frameId);
+
+  if (getSelectedReusableFrameId() === frameId) {
+    setSelectedReusableFrameId(null);
+  }
 }
 
 /**
@@ -94,7 +193,38 @@ export async function updateReusableFrameName(
   frameId: string,
   name: string,
 ): Promise<void> {
-  await useLayoutsStore.getState().updateLayout(frameId, { name });
+  await updateReusableFrame(frameId, { name });
+}
+
+export async function updateReusableFrame(
+  frameId: string,
+  updates: LayoutUpdate,
+): Promise<void> {
+  const db = await getDB();
+  const updatedLayout = await db.layouts.update(frameId, {
+    ...updates,
+    updated_at: new Date().toISOString(),
+  });
+  const currentLayouts = getCanonicalReusableFrameLayouts();
+  const sourceLayout =
+    currentLayouts.find((layout) => layout.id === frameId) ?? updatedLayout;
+  const nextLayout: Layout = {
+    ...sourceLayout,
+    ...updatedLayout,
+    ...updates,
+    updated_at: updatedLayout.updated_at ?? new Date().toISOString(),
+  };
+  const currentDoc = selectActiveCanonicalDocument();
+  const existingFrame = currentDoc?.children.find(
+    (node): node is FrameNode =>
+      isReusableFrameNode(node) && getReusableFrameMirrorId(node) === frameId,
+  );
+  const nextFrame = withLayoutMetadata(
+    existingFrame ?? legacyLayoutToCanonicalFrame(nextLayout, []),
+    nextLayout,
+  );
+
+  upsertReusableFrame(nextFrame, nextLayout.project_id);
 }
 
 /**
@@ -105,7 +235,7 @@ export async function updateReusableFrameName(
  * @param frameId - 선택할 frame id, 또는 `null` (선택 해제)
  */
 export function selectReusableFrame(frameId: string | null): void {
-  useLayoutsStore.getState().setCurrentLayout(frameId);
+  setSelectedReusableFrameId(frameId);
 }
 
 /**

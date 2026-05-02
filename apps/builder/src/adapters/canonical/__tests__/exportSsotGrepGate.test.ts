@@ -50,10 +50,10 @@ const VIOLATION_PATTERN =
  * - 18: 3-C 초기 baseline (3-B/C/D 단축 직후)
  * - 16: mutation reverse pilot land (2 caller — factories/utils/elementCreation
  *   + dev/editingSemanticsFixture)
- * - 0: mutation reverse 광역 완료 (16 caller 추가 변환 — BuilderCore +
- *   stores/elements + 2 useIframeMessenger + usePageManager + 2 dbPersistence
- *   + 2 layoutActions + 3 FramesTab + PageLayoutSelector + 2 TableEditor +
- *   useMessageCoalescing JSDoc) → **G4 grep gate PASS**.
+ * - 0: mutation reverse 광역 완료 (BuilderCore, stores/elements,
+ *   useIframeMessenger, usePageManager, dbPersistence, FramesTab,
+ *   PageLayoutSelector, TableEditor, useMessageCoalescing JSDoc)
+ *   → **G4 grep gate PASS**.
  */
 const BASELINE_VIOLATION_COUNT = 0;
 

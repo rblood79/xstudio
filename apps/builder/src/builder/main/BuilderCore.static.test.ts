@@ -12,11 +12,14 @@ describe("BuilderCore frame refresh hydration contract", () => {
     expect(source).toContain('from "@/adapters/canonical/frameElementLoader";');
     expect(source).toContain("isFrameElementForFrame");
     expect(source).toMatch(/if \(editMode === "layout"\) \{/);
-    expect(source).toMatch(/await fetchLayouts\(projectId\);/);
-    expect(source).toMatch(/const activeFrameId = selectedReusableFrameId;/);
+    expect(source).toContain("getCanonicalReusableFrameLayouts");
+    expect(source).toMatch(
+      /const activeFrameId = getSelectedReusableFrameId\(\);/,
+    );
     expect(source).toMatch(/const frameIds = Array\.from\(/);
     expect(source).toMatch(/layouts\.map\(\(layout\) => layout\.id\)/);
     expect(source).toMatch(/elements: await loadFrameElements\(db, frameId\)/);
+    expect(source).not.toContain("fetchLayouts");
     expect(source).not.toContain("currentLayoutId");
     expect(source).not.toContain("getDescendants(currentLayoutId)");
     expect(source).not.toContain("selectCanonicalDocument");

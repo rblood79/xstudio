@@ -1,6 +1,7 @@
 import type { Element } from "../../types/core/store.types";
 import { mergePropsWithStyleDeep } from "./instanceResolver";
 import { resolveReference } from "../../utils/component/referenceResolution";
+import type { LegacyElementMirrorFields } from "./legacyElementFields";
 
 type CanonicalRefFields = {
   descendants?: unknown;
@@ -64,7 +65,7 @@ export function resolveCanonicalRefElement(
     reusable: _reusable,
     type: _type,
     ...refFieldOverrides
-  } = element as Element & CanonicalRefFields;
+  } = element as Element & CanonicalRefFields & LegacyElementMirrorFields;
 
   return {
     ...master,

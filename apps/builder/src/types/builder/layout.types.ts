@@ -11,12 +11,12 @@
  * 산물이다. Skia canonical 전환(ADR-903) 이후에는 다음과 같이 흡수된다:
  *
  * - `Layout` → canonical `FrameNode` + `reusable: true` 로 흡수 (ADR-903 Phase 3)
- * - `SlotProps` / `type="Slot"` + `slot_name` → 컨테이너의 `slot?: false | string[]`
+ * - `SlotProps` / `type="Slot"` + legacy slot ownership → 컨테이너의 `slot?: false | string[]`
  *   schema 속성으로 전환 (ADR-903 Phase 3)
- * - `ElementLayoutFields.layout_id` → page root `type:"ref"` to reusable layout shell
- * - `PageLayoutFields.layout_id` → page root ref 참조로 대체
- * - `useLayoutsStore` (`layouts[]` 별도 저장) → canonical document tree 내부
- *   `reusable: true` 노드 조회 selector로 해체 (ADR-903 Phase 3/Phase 5 G5)
+ * - Element frame ownership mirror → page root `type:"ref"` to reusable layout shell
+ * - Page frame binding mirror → page root ref 참조로 대체
+ * - 별도 layouts store → canonical document tree 내부 `reusable: true` 노드
+ *   조회 selector로 해체 (ADR-903 Phase 3/Phase 5 G5)
  *
  * Phase 1~3 기간에는 adapter 입력 타입으로만 사용된다.
  * 신규 기능은 canonical format(`composition-document.types.ts`)에만 추가할 것.
@@ -57,19 +57,6 @@ export interface Layout {
 }
 
 /**
- * Layout 생성 시 필요한 필드
- *
- * @deprecated ADR-903 P3: `createLayout` → `createReusableFrame` 전환 예정.
- * canonical `{ type: "frame", reusable: true, children, slot }` 노드 생성 API로 대체.
- * Phase 1~3 기간 adapter 입력 타입으로만 사용.
- */
-export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
-  description?: string;
-  order_num?: number; // 정렬 순서
-  slug?: string; // URL base path (e.g., "/products")
-};
-
-/**
  * Layout 업데이트 시 필요한 필드
  *
  * @deprecated ADR-903 P3: canonical reusable frame 노드의 속성 직접 업데이트로 대체.
@@ -108,47 +95,6 @@ export interface SlotProps extends Record<string, unknown> {
 
   /** Slot 설명 (UI 표시용) */
   description?: string;
-}
-
-// ============================================
-// Element Extensions
-// ============================================
-
-/**
- * Element 타입 확장 (기존 Element에 추가되는 필드)
- *
- * 제약조건:
- * - page_id와 layout_id 중 하나만 설정 가능
- * - slot_name은 Page element에만 설정 가능
- *
- * @deprecated ADR-903 P3: 두 필드 모두 canonical format으로 흡수 예정.
- * - `layout_id` → page root `type:"ref"` to reusable layout shell
- * - `slot_name` → canonical `descendants[slotPath].children` (mode C)
- * Phase 1~3 기간 adapter 입력 타입으로만 사용.
- */
-export interface ElementLayoutFields {
-  /** Layout에 속한 요소면 Layout ID (page_id와 상호 배타적) */
-  layout_id?: string | null;
-
-  /** Page 요소가 어떤 Slot에 들어갈지 (Page element에만 설정) */
-  slot_name?: string | null;
-}
-
-// ============================================
-// Page Extensions
-// ============================================
-
-/**
- * Page 타입 확장 (기존 Page에 추가되는 필드)
- *
- * @deprecated ADR-903 P3: `layout_id` 외래키 방식 폐기 예정. canonical format에서
- * page는 reusable layout shell의 `type:"ref"` 인스턴스로 표현됨. 외부 `layout_id`
- * 참조 대신 page root 노드 자체에 `ref: "<layoutId>"` 선언. Phase 1~3 기간
- * adapter 입력 타입으로만 사용.
- */
-export interface PageLayoutFields {
-  /** 적용할 Layout ID (optional - 없으면 Layout 없이 렌더링) */
-  layout_id?: string | null;
 }
 
 // ============================================
@@ -249,69 +195,6 @@ export interface EditContext {
   pageId: string | null;
   layoutId: string | null;
 }
-
-// ============================================
-// Store Types
-// ============================================
-
-/**
- * Layout Store State
- *
- * @deprecated ADR-903 P3: `selectCanonicalReusableFrames(CompositionDocument)` 으로 대체.
- * `layouts[]` 별도 store 는 canonical document tree 내부 `reusable: true` 노드 조회
- * selector 로 해체 예정 (ADR-903 Phase 3/Phase 5 G5). Phase 1~3 기간
- * adapter 입력 타입으로만 사용.
- */
-export interface LayoutsStoreState {
-  /** 현재 프로젝트의 모든 Layout */
-  layouts: Layout[];
-
-  /**
-   * 현재 선택된 reusable frame id (canonical semantics).
-   */
-  selectedReusableFrameId: string | null;
-
-  /** 로딩 상태 */
-  isLoading: boolean;
-
-  /** 에러 상태 */
-  error: Error | null;
-}
-
-/**
- * Layout Store Actions
- *
- * @deprecated ADR-903 P3: `selectCanonicalReusableFrames(CompositionDocument)` 으로 대체.
- * CRUD actions 는 canonical document tree 내부 reusable frame 노드 직접 조작으로
- * 해체 예정 (ADR-903 Phase 3/Phase 5 G5). Phase 1~3 기간 adapter 입력 타입으로만 사용.
- */
-export interface LayoutsStoreActions {
-  // CRUD
-  fetchLayouts: (projectId: string) => Promise<void>;
-  createLayout: (data: LayoutCreate) => Promise<Layout>;
-  updateLayout: (id: string, updates: LayoutUpdate) => Promise<void>;
-  deleteLayout: (id: string) => Promise<void>;
-  duplicateLayout: (id: string) => Promise<Layout>;
-
-  // Selection
-  setCurrentLayout: (layoutId: string | null) => void;
-
-  // Utilities
-  getLayoutById: (id: string) => Layout | undefined;
-  getLayoutSlots: (layoutId: string) => SlotInfo[];
-  validateLayoutDelete: (
-    id: string,
-  ) => Promise<{ canDelete: boolean; usedByPages: string[] }>;
-}
-
-/**
- * 완전한 Layout Store 타입
- *
- * @deprecated ADR-903 P3: `selectCanonicalReusableFrames()` 기반 selector 로 대체.
- * `useLayoutsStore` 사용처는 Phase 3-B Stores 해체 시 canonical document API 로 전환.
- * Phase 1~3 기간 adapter 입력 타입으로만 사용.
- */
-export type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
 
 // ============================================
 // Edit Mode Store Types

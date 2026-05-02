@@ -92,11 +92,11 @@ interface BuildFrameRendererInputOptions {
  * shape 빌드. page-centric 함수와 분리 (rendererInput.ts 의 page 함수와 frame
  * 함수 분리 명확).
  *
- * Body element 식별: `el.type === "body"` && `el.layout_id === frameId`.
- * pageElements: composition-pre-1.0 legacy layout_id propagation 으로 모든
- * descendant 가 frameId 를 layout_id 로 보유 → `el.layout_id === frameId`
- * 필터로 subtree 전체 수집. ADR-911 P3-δ fix #1 의 type 체크 패턴과 동일 원칙
- * (Slot 가 layout_id propagation 을 받지만 type='body' 가 아님 → frame body
+ * Body element 식별: `el.type === "body"` && frame ownership mirror match.
+ * pageElements: composition-pre-1.0 legacy frame ownership propagation 으로 모든
+ * descendant 가 frameId ownership 을 보유 → frame mirror predicate 로 subtree
+ * 전체 수집. ADR-911 P3-δ fix #1 의 type 체크 패턴과 동일 원칙
+ * (Slot 가 frame ownership propagation 을 받지만 type='body' 가 아님 → frame body
  * 후보에서 자동 제외, descendant 로는 정상 포함).
  *
  * **pageElements 에서 bodyElement 자신은 제외** — page 경로 (`buildSceneIndex`

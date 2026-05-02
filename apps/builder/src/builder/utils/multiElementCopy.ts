@@ -6,7 +6,7 @@
  */
 
 import type { Element } from "../../types/core/store.types";
-import { isMasterElement } from "../../types/builder/unified.types";
+import { isComponentOriginMirrorElement as isMasterElement } from "../../adapters/canonical/componentSemanticsMirror";
 import { normalizeExternalFillIngress } from "../panels/styles/utils/fillExternalIngress";
 import { ElementUtils } from "../../utils/element/elementUtils";
 import {

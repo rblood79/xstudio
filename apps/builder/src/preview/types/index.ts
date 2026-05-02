@@ -18,9 +18,6 @@ export interface PreviewElement {
   order_num?: number;
   dataBinding?: DataBinding;
   deleted?: boolean;
-  // Layout/Slot System 필드
-  layout_id?: string | null; // Layout에 속한 요소면 Layout ID
-  slot_name?: string | null; // Page 요소가 들어갈 Slot 이름
 }
 
 /**

@@ -1,20 +1,30 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { withFrameElementMirrorId } from "@/adapters/canonical/frameMirror";
 import type { Element } from "../../../../../types/core/store.types";
 import type { SceneStructureSnapshot } from "../../scene";
 import { buildFrameRendererInput } from "../rendererInput";
 
-const makeElement = (overrides: Partial<Element>): Element =>
-  ({
-    id: "el-1",
-    type: "div",
-    parent_id: null,
-    page_id: null,
-    layout_id: null,
-    order_num: 0,
-    props: {},
-    ...overrides,
-  }) as Element;
+type ElementFixtureOptions = Partial<Element> & {
+  frameId?: string | null;
+};
+
+const makeElement = ({
+  frameId = null,
+  ...overrides
+}: ElementFixtureOptions): Element =>
+  withFrameElementMirrorId(
+    {
+      id: "el-1",
+      type: "div",
+      parent_id: null,
+      page_id: null,
+      order_num: 0,
+      props: {},
+      ...overrides,
+    } as Element,
+    frameId,
+  );
 
 const makeSceneSnapshot = (
   overrides: Partial<SceneStructureSnapshot> = {},
@@ -66,24 +76,24 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     const body = makeElement({
       id: "frame-body-A",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const slot1 = makeElement({
       id: "slot-1",
       type: "Slot",
       parent_id: "frame-body-A",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const slot2 = makeElement({
       id: "slot-2",
       type: "Slot",
       parent_id: "frame-body-A",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const otherFrameBody = makeElement({
       id: "other-body",
       type: "body",
-      layout_id: "frame-B",
+      frameId: "frame-B",
     });
 
     const elementById = new Map<string, Element>([
@@ -125,7 +135,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     const body = makeElement({
       id: "frame-body",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const elementById = new Map([[body.id, body]]);
 
@@ -159,7 +169,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     const slot = makeElement({
       id: "slot-orphan",
       type: "Slot",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const elementById = new Map([[slot.id, slot]]);
 
@@ -182,13 +192,13 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       id: "frame-body",
       type: "body",
       page_id: null,
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const pageElement = makeElement({
       id: "page-card",
       type: "Card",
       page_id: "page-1",
-      layout_id: "frame-A",
+      frameId: "frame-A",
       parent_id: "frame-body",
     });
     const elementById = new Map([
@@ -217,13 +227,13 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       id: "frame-body",
       type: "body",
       page_id: null,
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const deletedSlot = makeElement({
       id: "deleted-slot",
       type: "Slot",
       parent_id: "frame-body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
       deleted: true,
     });
     const elementById = new Map([
@@ -250,12 +260,12 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     const body1 = makeElement({
       id: "body-1",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const body2 = makeElement({
       id: "body-2",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const elementById = new Map([
       [body1.id, body1],
@@ -282,7 +292,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     const body = makeElement({
       id: "frame-body",
       type: "body",
-      layout_id: "frame-A",
+      frameId: "frame-A",
     });
     const elementById = new Map([[body.id, body]]);
 

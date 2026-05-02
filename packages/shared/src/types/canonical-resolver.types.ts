@@ -29,13 +29,13 @@ import type {
  * key 정렬 후 deep-equal 기반. resolver 캐시 키의 4번째 요소인
  * `descendantsFingerprint` 생성에 사용.
  *
- * @param overrides — `RefNode.descendants` 또는 undefined
+ * @param descendantOverrides — `RefNode.descendants` 또는 undefined
  * @returns stable hash string (key 정렬 + deep-equal 기반)
  *
  * @stub 실제 구현은 Phase 2+
  */
 export function computeDescendantsFingerprint(
-  _overrides: Record<string, unknown> | undefined,
+  _descendantOverrides: Record<string, unknown> | undefined,
 ): string {
   throw new Error(
     "P0 stub — computeDescendantsFingerprint: Phase 2+ 구현 대상",

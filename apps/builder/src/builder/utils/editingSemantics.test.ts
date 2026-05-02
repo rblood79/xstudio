@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  withComponentInstanceMirror,
+  withComponentOriginMirror,
+} from "../../adapters/canonical/componentSemanticsMirror";
+import {
   canDetachInstance,
   canDetachLegacyInstance,
   getEditingSemanticsLabel,
@@ -27,12 +31,11 @@ describe("editingSemantics", () => {
   });
 
   it("legacy component roles stay visible during migration", () => {
-    expect(getEditingSemanticsRole({ componentRole: "master" })).toBe("origin");
+    expect(getEditingSemanticsRole(withComponentOriginMirror({}))).toBe(
+      "origin",
+    );
     expect(
-      getEditingSemanticsRole({
-        componentRole: "instance",
-        masterId: "master-1",
-      }),
+      getEditingSemanticsRole(withComponentInstanceMirror({}, "master-1")),
     ).toBe("instance");
   });
 
@@ -111,9 +114,11 @@ describe("editingSemantics", () => {
     expect(getEditingSemanticsOriginId({ type: "ref", ref: "origin" })).toBe(
       "origin",
     );
-    expect(getEditingSemanticsOriginId({ masterId: "legacy-origin" })).toBe(
-      "legacy-origin",
-    );
+    expect(
+      getEditingSemanticsOriginId(
+        withComponentInstanceMirror({}, "legacy-origin"),
+      ),
+    ).toBe("legacy-origin");
     expect(getEditingSemanticsOriginId({ reusable: true })).toBeNull();
   });
 
@@ -121,7 +126,7 @@ describe("editingSemantics", () => {
     expect(
       getEditingSemanticsInstanceIds("origin", [
         { id: "i1", type: "ref", ref: "origin" },
-        { id: "i2", componentRole: "instance", masterId: "origin" },
+        withComponentInstanceMirror({ id: "i2" }, "origin"),
         { id: "i3", type: "ref", ref: "other-origin" },
         { id: "plain", type: "Button" },
       ]),
@@ -192,28 +197,28 @@ describe("editingSemantics", () => {
 
   it("allows detach only for legacy instances", () => {
     expect(
-      canDetachLegacyInstance({
-        componentRole: "instance",
-        masterId: "origin",
-      }),
+      canDetachLegacyInstance(withComponentInstanceMirror({}, "origin")),
     ).toBe(true);
     expect(canDetachLegacyInstance({ type: "ref", ref: "origin" })).toBe(false);
-    expect(canDetachLegacyInstance({ componentRole: "master" })).toBe(false);
+    expect(canDetachLegacyInstance(withComponentOriginMirror({}))).toBe(false);
   });
 
   it("allows detach for canonical refs with an origin ref", () => {
     expect(canDetachInstance({ type: "ref", ref: "origin" })).toBe(true);
-    expect(canDetachInstance({ componentRole: "instance" })).toBe(true);
+    expect(canDetachInstance(withComponentInstanceMirror({}, "origin"))).toBe(
+      true,
+    );
     expect(canDetachInstance({ type: "ref" })).toBe(false);
     expect(canDetachInstance({ reusable: true })).toBe(false);
   });
 
   it("collects legacy instance override fields", () => {
     expect(
-      getEditingSemanticsOverrideFields({
-        componentRole: "instance",
-        overrides: { label: "Override", style: { color: "blue" } },
-      }),
+      getEditingSemanticsOverrideFields(
+        withComponentInstanceMirror({}, "origin", {
+          overrideProps: { label: "Override", style: { color: "blue" } },
+        }),
+      ),
     ).toEqual(["label", "style"]);
   });
 

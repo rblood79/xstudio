@@ -47,9 +47,6 @@ export interface PreviewElement {
   order_num?: number;
   dataBinding?: DataBinding;
   deleted?: boolean;
-  // Layout/Slot System
-  layout_id?: string | null;
-  slot_name?: string | null;
 }
 
 // ============================================

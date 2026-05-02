@@ -54,7 +54,10 @@ import { useThemeConfigStore } from "../../stores/themeConfigStore";
 import { useUiStore } from "../../stores/uiStore";
 import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
-import { useLayoutsStore } from "../stores/layouts";
+import {
+  getCanonicalReusableFrameLayouts,
+  getSelectedReusableFrameId,
+} from "../stores/canonical/canonicalFrameStore";
 import { useDataTableStore } from "../stores/datatable";
 import { useDataStore } from "../stores/data";
 import {
@@ -118,7 +121,7 @@ export const BuilderCore: React.FC = () => {
         return {
           elements: Array.from(state.elementsMap.values()),
           pages: state.pages,
-          layouts: useLayoutsStore.getState().layouts,
+          layouts: getCanonicalReusableFrameLayouts(),
         };
       },
       getCurrentProjectId: () => projectId ?? null,
@@ -330,15 +333,14 @@ export const BuilderCore: React.FC = () => {
         try {
           const db = await getDB();
 
-          // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
-          // refresh 직후 persisted selectedReusableFrameId 가
-          // 실제 frame 목록과 동기화된 뒤 active frame elements 를 복원한다.
-          const { fetchLayouts } = useLayoutsStore.getState();
-          await fetchLayouts(projectId);
-
-          const { selectedReusableFrameId, layouts } =
-            useLayoutsStore.getState();
-          const activeFrameId = selectedReusableFrameId;
+          // canonical frame 목록을 우선 사용하고, 초기 hydrate 직후 비어 있으면
+          // DB mirror 로 frame elements 복원 범위를 보강한다.
+          const canonicalLayouts = getCanonicalReusableFrameLayouts();
+          const layouts =
+            canonicalLayouts.length > 0
+              ? canonicalLayouts
+              : await db.layouts.getByProject(projectId);
+          const activeFrameId = getSelectedReusableFrameId();
           const frameIds = Array.from(
             new Set([
               ...(activeFrameId ? [activeFrameId] : []),
@@ -559,8 +561,7 @@ export const BuilderCore: React.FC = () => {
     // 단일 helper 로 추출. legacy/canonical 양쪽 mode 가 동일 logic 으로 publish.
     const publishElements = (sourceElements: Element[]): void => {
       const editMode = useEditModeStore.getState().mode;
-      const selectedReusableFrameId =
-        useLayoutsStore.getState().selectedReusableFrameId;
+      const selectedReusableFrameId = getSelectedReusableFrameId();
 
       // editMode에 따라 필터링
       // ADR-916 projection 제거: publish path 에서 projection rebuild 없이

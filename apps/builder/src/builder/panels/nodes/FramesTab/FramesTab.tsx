@@ -5,9 +5,9 @@
  * Canonical reusable frame 목록 표시 + Element 트리.
  *
  * P3-C 변경 사항:
- * - frame 목록: `useLayoutsStore.layouts` (legacy bridge — P3-D에서 canonical store로 교체)
+ * - frame 목록: canonical reusable frame surface
  * - frame selection: `selectedReusableFrameId` (canonical selector)
- * - frame 생성: `createLayout` bridge (P3-D에서 canonical document mutation으로 전환 예정)
+ * - frame 생성: canonical document mutation + DB persistence mirror
  * - UI 레이블: "Layouts" → "Frames"
  *
  * @deprecated-path legacy layout selection direct access 제거됨. `selectedReusableFrameId` 사용.
@@ -18,9 +18,9 @@ import { useParams } from "react-router-dom";
 import { FrameList } from "./FrameList";
 import { FrameElementTree } from "./FrameElementTree";
 import {
-  useLayoutsStore,
+  useCanonicalReusableFrameLayouts,
   useSelectedReusableFrameId,
-} from "../../../stores/layouts";
+} from "../../../stores/canonical/canonicalFrameStore";
 import {
   createReusableFrame,
   deleteReusableFrame,
@@ -29,7 +29,6 @@ import {
 } from "../../../stores/utils/frameActions";
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
-import { useActiveCanonicalDocument } from "../../../stores/canonical/canonicalElementsBridge";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import {
@@ -37,7 +36,6 @@ import {
   hasHydratedFrameElements,
   loadFrameElements,
 } from "../../../../adapters/canonical/frameElementLoader";
-import { getReusableFrameMirrorId } from "../../../../adapters/canonical/frameMirror";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
@@ -48,7 +46,6 @@ import {
   isWebGLCanvas,
   isCanvasCompareMode,
 } from "../../../../utils/featureFlags";
-import type { FrameNode } from "@composition/shared";
 
 interface FramesTabProps {
   selectedElementId: string | null;
@@ -71,9 +68,7 @@ export function FramesTab({
   // canonical selector: selectedReusableFrameId
   const selectedReusableFrameId = useSelectedReusableFrameId();
 
-  // CRUD 는 ADR-911 P2-a frameActions wrapper (PR-A) 로 위임.
-  const layouts = useLayoutsStore((state) => state.layouts);
-  const fetchLayouts = useLayoutsStore((state) => state.fetchLayouts);
+  const layouts = useCanonicalReusableFrameLayouts();
 
   // Edit Mode store
   const setEditModeLayoutId = useEditModeStore(
@@ -83,28 +78,14 @@ export function FramesTab({
   // ADR-040: elementsMap O(1) 조회
   const elementsMap = useStore((state) => state.elementsMap);
   const removeElement = useStore((state) => state.removeElement);
-  const activeCanonicalDocument = useActiveCanonicalDocument();
 
   // ADR-916 projection 제거: active canonical document 의 reusable FrameNode 를
   // 단일 read path 로 사용한다.
-  // id 정규화: canonical FrameNode.id 는 "layout-<legacyId>" 접두사 → metadata.layoutId
-  // 우선 사용. legacy CRUD 와 id 정합 유지.
   const reusableFrames = useMemo<
     ReadonlyArray<{ id: string; name: string }>
   >(() => {
-    if (!activeCanonicalDocument) {
-      return layouts.map((layout) => ({ id: layout.id, name: layout.name }));
-    }
-    return activeCanonicalDocument.children
-      .filter(
-        (n): n is FrameNode =>
-          n.type === "frame" && (n as FrameNode).reusable === true,
-      )
-      .map((f) => ({
-        id: getReusableFrameMirrorId(f),
-        name: f.name ?? "",
-      }));
-  }, [activeCanonicalDocument, layouts]);
+    return layouts.map((layout) => ({ id: layout.id, name: layout.name }));
+  }, [layouts]);
 
   // selectedReusableFrameId 기반 현재 프레임 조회
   const currentFrame = useMemo(() => {
@@ -118,13 +99,6 @@ export function FramesTab({
   }, [reusableFrames, selectedReusableFrameId]);
 
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
-
-  // 컴포넌트 마운트 시 frames 로드 (legacy bridge: fetchLayouts)
-  useEffect(() => {
-    if (projectId) {
-      fetchLayouts(projectId);
-    }
-  }, [projectId, fetchLayouts]);
 
   // 이미 로드된 frame ID 추적 (중복 로드 방지)
   const loadedFrameIdsRef = React.useRef<Set<string>>(new Set());
@@ -205,9 +179,7 @@ export function FramesTab({
             elements: await loadFrameElements(db, frameId),
           })),
         );
-        const liveFrameIds = new Set(
-          useLayoutsStore.getState().layouts.map((layout) => layout.id),
-        );
+        const liveFrameIds = new Set(reusableFrames.map((frame) => frame.id));
         const liveFrameElementGroups = frameElementGroups.filter((group) =>
           liveFrameIds.has(group.frameId),
         );

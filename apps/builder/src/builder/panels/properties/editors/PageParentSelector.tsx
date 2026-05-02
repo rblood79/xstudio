@@ -1,13 +1,7 @@
 /**
  * Page Parent Selector
  *
- * ADR-903 P3-C: useLayoutsStore 직접 구독 → useLayouts() hook으로 전환.
- *
- * P3-C 변경:
- * - `useLayoutsStore((state) => state.layouts)` → `useLayouts()` hook
- * - page legacy layout binding 참조는 URL 생성 유틸 전달용
- *
- * @deprecated-path `useLayoutsStore` direct access → `useLayouts`
+ * ADR-911/916: reusable frame 목록은 canonical document surface 에서 읽는다.
  */
 
 import { memo, useMemo, useCallback, useState } from "react";
@@ -28,7 +22,7 @@ import {
   validateSlug,
   generateSlugFromTitle,
 } from "../../../../utils/slugValidator";
-import { useLayouts } from "../../../stores/layouts";
+import { useCanonicalReusableFrameLayouts } from "../../../stores/canonical/canonicalFrameStore";
 import { iconSmall } from "../../../../utils/ui/uiConstants";
 import {
   getNullablePageFrameBindingId,
@@ -62,8 +56,7 @@ export const PageParentSelector = memo(function PageParentSelector({
   const page = useStore((state) => state.pages.find((p) => p.id === pageId));
   const pages = useStore((state) => state.pages);
 
-  // P3-C: useLayouts() hook (P3-B canonical surface)
-  const layouts = useLayouts();
+  const layouts = useCanonicalReusableFrameLayouts();
 
   const [slugError, setSlugError] = useState<string | null>(null);
 

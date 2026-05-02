@@ -1,4 +1,5 @@
 import type { Element } from "../../types/core/store.types";
+import { asElementWithLegacyMirror } from "./legacyElementFields";
 
 /**
  * canonical CanonicalNode.metadata 의 type discriminator.
@@ -35,6 +36,8 @@ export function buildLegacyElementMetadata(element: Element): {
   type: typeof LEGACY_ELEMENT_PROPS_METADATA_TYPE;
   legacyProps: Record<string, unknown>;
 } {
+  const legacy = asElementWithLegacyMirror(element);
+
   return {
     type: LEGACY_ELEMENT_PROPS_METADATA_TYPE,
     legacyProps: {
@@ -42,16 +45,16 @@ export function buildLegacyElementMetadata(element: Element): {
       id: element.id,
       parent_id: element.parent_id,
       page_id: element.page_id,
-      layout_id: element.layout_id,
+      layout_id: legacy.layout_id,
       order_num: element.order_num,
       fills: element.fills,
       type: element.type,
-      slot_name: element.slot_name,
-      componentRole: element.componentRole,
-      masterId: element.masterId,
-      overrides: element.overrides,
-      descendants: element.descendants,
-      componentName: element.componentName,
+      slot_name: legacy.slot_name,
+      componentRole: legacy.componentRole,
+      masterId: legacy.masterId,
+      overrides: legacy.overrides,
+      descendants: legacy.descendants,
+      componentName: legacy.componentName,
     },
   };
 }

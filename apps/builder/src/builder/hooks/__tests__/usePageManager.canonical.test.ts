@@ -145,6 +145,23 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnSource).not.toMatch(/selectCanonicalDocument\(/);
     });
 
+    it("project layout snapshot 을 setElements 전에 canonical reusable frame shell 로 seed 한다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../usePageManager.ts");
+      const rawSource = await fs.readFile(filePath, "utf-8");
+      const source = rawSource.replace(/\/\/.*$/gm, "");
+      const initFnMatch = source.match(
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
+      );
+      expect(initFnMatch).not.toBeNull();
+      const initFnSource = initFnMatch![0];
+      expect(initFnSource).toContain("seedCanonicalReusableFrameLayouts");
+      expect(
+        initFnSource.indexOf("seedCanonicalReusableFrameLayouts"),
+      ).toBeLessThan(initFnSource.indexOf("setElementsCanonicalPrimary"));
+    });
+
     // layoutElements 가 allElements.filter 로 frame mirror binding 매칭 추출됨을 확증.
     // Spec A-3: minimal stub 의 'const layoutElements: Element[] = []' 패턴 부활 차단.
     // 동시에 db.elements.getByLayout 추가 호출 0 (이미 로드된 allElements 재사용) 보장.

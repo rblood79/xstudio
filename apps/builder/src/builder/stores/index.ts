@@ -417,12 +417,13 @@ export const useStoreDebug = () => {
 // Layout/Slot System Stores
 // ============================================
 export {
-  useLayoutsStore,
-  useCurrentLayout,
-  useLayouts,
-  useLayoutsLoading,
-  useLayoutsError,
-} from "./layouts";
+  useCanonicalFrameSelectionStore,
+  useCanonicalReusableFrameLayouts,
+  useSelectedReusableFrameId,
+  getCanonicalReusableFrameLayouts,
+  getSelectedReusableFrameId,
+  setSelectedReusableFrameId,
+} from "./canonical/canonicalFrameStore";
 
 export {
   useEditModeStore,
