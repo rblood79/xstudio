@@ -296,18 +296,27 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
       });
     });
 
-    it("선택 id가 frame 목록 projection보다 먼저 도착해도 body tree를 렌더한다", () => {
+    it("선택 frame 의 canonical scope 로 body tree를 렌더한다", () => {
       mockLayoutsState.layouts = [];
       mockLayoutsState.selectedReusableFrameId = "new-frame";
-      const body: Element = makeFrameElement("new-frame", {
-        id: "body-new-frame",
-        type: "body",
-        props: {},
-        parent_id: null,
-        page_id: null,
-        order_num: 0,
+      mockActiveCanonicalDocument.mockReturnValue({
+        children: [
+          {
+            id: "layout-new-frame",
+            type: "frame",
+            reusable: true,
+            name: "New Frame",
+            metadata: { type: "legacy-layout", layoutId: "new-frame" },
+            children: [
+              {
+                id: "body-new-frame",
+                type: "body",
+                props: {},
+              },
+            ],
+          },
+        ],
       });
-      mockStoreState.elementsMap = new Map([[body.id, body]]);
       mockBuildTreeFromElements.mockImplementation(
         (elements: Element[]): ElementTreeItem[] =>
           elements.map((element) => ({

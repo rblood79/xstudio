@@ -10,7 +10,7 @@ describe("BuilderCore canonical document direct cutover contract", () => {
     );
 
     expect(source).toContain('from "@/adapters/canonical/frameElementLoader";');
-    expect(source).toContain("isFrameElementForFrame");
+    expect(source).toContain("isLegacyFrameElementForFrame");
     expect(source).toMatch(/if \(editMode === "layout"\) \{/);
     expect(source).not.toContain("loadFrameElements");
     expect(source).not.toMatch(/elements: await loadFrameElements/);

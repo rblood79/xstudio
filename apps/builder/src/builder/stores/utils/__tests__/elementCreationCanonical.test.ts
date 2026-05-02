@@ -26,6 +26,11 @@ import {
 import type { Element } from "../../../../types/core/store.types";
 import type { Page } from "../../../../types/builder/unified.types";
 import type { CompositionDocument, FrameNode } from "@composition/shared";
+import { useCanonicalDocumentStore } from "../../canonical/canonicalDocumentStore";
+import {
+  registerCanonicalMutationStoreActions,
+  resetCanonicalMutationStoreActions,
+} from "../../../../adapters/canonical/canonicalMutations";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -95,6 +100,9 @@ vi.mock("../../../../lib/db", () => {
       insertMany: vi.fn(async () => {}),
       delete: vi.fn(async () => {}),
       getAll: vi.fn(async () => [] as Element[]),
+    },
+    documents: {
+      put: vi.fn(async (_projectId: string, doc: CompositionDocument) => doc),
     },
   };
   return { getDB: vi.fn(async () => mockDb) };
@@ -174,6 +182,12 @@ function setupStateMocks(opts: MockStateOpts = {}) {
 describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetCanonicalMutationStoreActions();
+    useCanonicalDocumentStore.setState({
+      currentProjectId: null,
+      documents: new Map(),
+      documentVersion: 0,
+    });
   });
 
   describe("createAddElementAction — 히스토리 조건", () => {
@@ -473,6 +487,111 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
 
       expect(sanitizerModule.sanitizeElement).toHaveBeenCalled();
       expect(db.elements.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe("ADR-916 direct cutover — canonical primary persistence", () => {
+    function registerCanonicalActionsForState(
+      state: ReturnType<typeof setupStateMocks>["state"],
+    ) {
+      registerCanonicalMutationStoreActions({
+        mergeElements: vi.fn(),
+        setElements: vi.fn(),
+        getCurrentLegacySnapshot: () => ({
+          elements: state.elements,
+          pages: [
+            {
+              id: "page-1",
+              project_id: "project-1",
+              title: "Home",
+              slug: "/",
+              parent_id: null,
+              order_num: 0,
+            } as Page,
+          ],
+          layouts: [
+            {
+              id: "frame-1",
+              name: "Frame 1",
+              project_id: "project-1",
+              order_num: 0,
+            },
+          ],
+        }),
+        getCurrentProjectId: () => "project-1",
+      });
+    }
+
+    it("page element 추가 시 canonical document 에 즉시 upsert 하고 document store 를 저장한다", async () => {
+      const doc = makeDoc([
+        {
+          id: "page-1",
+          type: "frame",
+          name: "Home",
+          metadata: { type: "legacy-page", pageId: "page-1" },
+          children: [{ id: "body-page-1", type: "body", props: {} }],
+        } as FrameNode,
+      ]);
+      const element = makeElement("button-1", "Button", {
+        page_id: "page-1",
+        parent_id: "body-page-1",
+      });
+      const { state, setMock, getMock } = setupStateMocks({
+        currentPageId: "page-1",
+        doc,
+      });
+      useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+      useCanonicalDocumentStore.getState().setDocument("project-1", doc);
+      registerCanonicalActionsForState(state);
+
+      await createAddElementAction(setMock, getMock)(element);
+
+      const persistedDoc = useCanonicalDocumentStore
+        .getState()
+        .getDocument("project-1");
+      const pageBody = (persistedDoc?.children[0] as FrameNode).children?.[0];
+      expect(pageBody?.children?.map((node) => node.id)).toContain("button-1");
+
+      const dbModule = await import("../../../../lib/db");
+      const db = await (dbModule.getDB as ReturnType<typeof vi.fn>)();
+      expect(db.documents.put).toHaveBeenCalledWith(
+        "project-1",
+        expect.objectContaining({ version: "composition-1.0" }),
+      );
+    });
+
+    it("frame Slot 추가 시 canonical frame scope 에 즉시 포함된다", async () => {
+      const doc = makeDoc([
+        {
+          id: "layout-frame-1",
+          type: "frame",
+          reusable: true,
+          name: "Frame 1",
+          metadata: { type: "legacy-layout", layoutId: "frame-1" },
+          children: [{ id: "body-frame-1", type: "body", props: {} }],
+        } as FrameNode,
+      ]);
+      const slot = makeElement("slot-1", "Slot", {
+        layout_id: "frame-1",
+        page_id: null,
+        parent_id: "body-frame-1",
+        props: { name: "content" },
+      });
+      const { state, setMock, getMock } = setupStateMocks({
+        currentPageId: null,
+        doc,
+      });
+      useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+      useCanonicalDocumentStore.getState().setDocument("project-1", doc);
+      registerCanonicalActionsForState(state);
+
+      await createAddElementAction(setMock, getMock)(slot);
+
+      const persistedDoc = useCanonicalDocumentStore
+        .getState()
+        .getDocument("project-1");
+      const frameBody = (persistedDoc?.children[0] as FrameNode).children?.[0];
+      expect(frameBody?.children?.map((node) => node.id)).toContain("slot-1");
     });
   });
 });

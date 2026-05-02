@@ -2,10 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Element, Page } from "../../../../../types/core/store.types";
-import type {
-  ScenePageSnapshot,
-  SceneStructureSnapshot,
-} from "../../scene";
+import type { ScenePageSnapshot, SceneStructureSnapshot } from "../../scene";
 import { toPageFrameElementId } from "../../scene/resolvePageWithFrame";
 import { createSkiaRendererInput } from "../rendererInput";
 
@@ -150,6 +147,7 @@ describe("createSkiaRendererInput", () => {
       frameAreas: [],
       framePositions: {},
       framePositionsVersion: 1,
+      frameElementScopes: new Map(),
       pageIndex: { elementsByPage: new Map(), rootsByPage: new Map() },
       pagePositions: {},
       pagePositionsVersion: 1,
@@ -157,12 +155,8 @@ describe("createSkiaRendererInput", () => {
       sceneSnapshot,
     });
 
-    expect(input.elementsMap.get("page-1-fill")?.parent_id).toBe(
-      page1Slot.id,
-    );
-    expect(input.elementsMap.get("page-2-fill")?.parent_id).toBe(
-      page2Slot.id,
-    );
+    expect(input.elementsMap.get("page-1-fill")?.parent_id).toBe(page1Slot.id);
+    expect(input.elementsMap.get("page-2-fill")?.parent_id).toBe(page2Slot.id);
     expect(input.childrenMap.get(page1Slot.id)?.map((el) => el.id)).toEqual([
       "page-1-fill",
     ]);

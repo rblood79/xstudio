@@ -4,9 +4,11 @@ import {
   collectHydratedFrameElements,
   hasHydratedFrameElements,
   isFrameElementForFrame,
+  isLegacyFrameElementForFrame,
   loadFrameElements,
   type FrameElementLoaderDb,
 } from "../frameElementLoader";
+import type { CanonicalFrameElementScope } from "../frameElementScope";
 
 function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
@@ -19,6 +21,17 @@ function makeElement(id: string, overrides: Partial<Element> = {}): Element {
     props: {},
     ...overrides,
   } as Element;
+}
+
+function makeScope(
+  frameId: string,
+  elementIds: string[],
+): CanonicalFrameElementScope {
+  return {
+    bodyElementId: null,
+    elementIds: new Set(elementIds),
+    frameId,
+  };
 }
 
 function makeDb(
@@ -84,24 +97,37 @@ describe("frameElementLoader canonical adapter", () => {
     await expect(loadFrameElements(db, "frame-1")).resolves.toEqual([slot]);
   });
 
-  it("reports hydrated frame elements without exposing legacy field matching to callers", () => {
+  it("reports hydrated frame elements from canonical frame scope", () => {
     const elementsMap = new Map<string, Element>([
       ["page-button", makeElement("page-button", { page_id: "page-1" })],
       ["deleted", makeElement("deleted", { deleted: true })],
       ["frame-slot", makeElement("frame-slot")],
     ]);
+    const scope = makeScope("frame-1", ["frame-slot"]);
 
-    expect(hasHydratedFrameElements(elementsMap, "frame-1")).toBe(true);
-    expect(hasHydratedFrameElements(elementsMap, "frame-2")).toBe(false);
-    expect(collectHydratedFrameElements(elementsMap, "frame-1")).toEqual([
+    expect(hasHydratedFrameElements(elementsMap, scope)).toBe(true);
+    expect(
+      hasHydratedFrameElements(elementsMap, makeScope("frame-2", ["missing"])),
+    ).toBe(false);
+    expect(collectHydratedFrameElements(elementsMap, scope)).toEqual([
       expect.objectContaining({ id: "frame-slot" }),
     ]);
-    expect(isFrameElementForFrame(makeElement("frame-slot"), "frame-1")).toBe(
-      true,
-    );
     expect(
       isFrameElementForFrame(
-        makeElement("page-button", { page_id: "page-1" }),
+        makeElement("deleted", { deleted: true }),
+        makeScope("frame-1", ["deleted"]),
+      ),
+    ).toBe(false);
+    expect(isFrameElementForFrame(makeElement("frame-slot"), scope)).toBe(true);
+  });
+
+  it("keeps legacy layout_id matching behind explicit fallback naming", () => {
+    expect(
+      isLegacyFrameElementForFrame(makeElement("frame-slot"), "frame-1"),
+    ).toBe(true);
+    expect(
+      isLegacyFrameElementForFrame(
+        makeElement("page-button", { layout_id: null, page_id: "page-1" }),
         "frame-1",
       ),
     ).toBe(false);

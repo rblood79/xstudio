@@ -12,9 +12,15 @@ import { normalizeElementTagInElement } from "./elementTagNormalizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
 import type { CompositionDocument, FrameNode } from "@composition/shared";
 import { getActiveCanonicalDocument } from "@/builder/stores/canonical/canonicalElementsBridge";
+import { useCanonicalDocumentStore } from "../canonical/canonicalDocumentStore";
+import {
+  areCanonicalMutationStoreActionsRegistered,
+  mergeElementsCanonicalPrimary,
+} from "../../../adapters/canonical/canonicalMutations";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
+type BuilderDb = Awaited<ReturnType<typeof getDB>>;
 
 // ─── ADR-903 P3-D-2: canonical parent context helpers ──────────────────────
 
@@ -40,6 +46,20 @@ function isPageContextFrame(frame: FrameNode | undefined): boolean {
 /** parent frame 이 reusable frame (reusable === true) 인지 */
 function isReusableContextFrame(frame: FrameNode | undefined): boolean {
   return frame?.reusable === true;
+}
+
+function mergeCreatedElementsIntoCanonicalDocument(elements: Element[]): void {
+  if (!areCanonicalMutationStoreActionsRegistered()) return;
+  mergeElementsCanonicalPrimary(elements);
+}
+
+async function persistActiveCanonicalDocument(db: BuilderDb): Promise<void> {
+  const canonical = useCanonicalDocumentStore.getState();
+  const projectId = canonical.currentProjectId;
+  if (!projectId) return;
+  const doc = canonical.documents.get(projectId);
+  if (!doc) return;
+  await db.documents.put(projectId, doc);
 }
 
 /**
@@ -115,16 +135,29 @@ export const createAddElementAction =
     // 🔧 CRITICAL: elementsMap 재구축 (요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
 
+    mergeCreatedElementsIntoCanonicalDocument([elementToAdd]);
+
     // 3. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
     // 4. IndexedDB에 저장 (빠름! 1-5ms)
+    let db: BuilderDb | null = null;
     try {
-      const db = await getDB();
+      db = await getDB();
       const sanitized = sanitizeElement(elementToAdd);
       await db.elements.insert(sanitized);
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
+    }
+    if (db) {
+      try {
+        await persistActiveCanonicalDocument(db);
+      } catch (error) {
+        console.warn(
+          "⚠️ [IndexedDB] canonical document 저장 중 오류 (메모리는 정상):",
+          error,
+        );
+      }
     }
 
     // 🔧 order_num 중복 방지로 인해 재정렬 필요성 감소
@@ -228,12 +261,15 @@ export const createAddComplexElementAction =
     // 🔧 CRITICAL: elementsMap 재구축 (복합 요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
 
+    mergeCreatedElementsIntoCanonicalDocument(allElements);
+
     // 3. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
     // 4. IndexedDB에 배치 저장 (빠름! 1-5ms × N)
+    let db: BuilderDb | null = null;
     try {
-      const db = await getDB();
+      db = await getDB();
       await db.elements.insertMany(
         allElements.map((el) => sanitizeElement(el)),
       );
@@ -242,5 +278,15 @@ export const createAddComplexElementAction =
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
+    }
+    if (db) {
+      try {
+        await persistActiveCanonicalDocument(db);
+      } catch (error) {
+        console.warn(
+          "⚠️ [IndexedDB] canonical document 저장 중 오류 (메모리는 정상):",
+          error,
+        );
+      }
     }
   };

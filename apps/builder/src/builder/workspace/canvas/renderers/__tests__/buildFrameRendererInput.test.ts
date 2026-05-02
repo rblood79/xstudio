@@ -4,6 +4,7 @@ import { withFrameElementMirrorId } from "@/adapters/canonical/frameMirror";
 import type { Element } from "../../../../../types/core/store.types";
 import type { SceneStructureSnapshot } from "../../scene";
 import { buildFrameRendererInput } from "../rendererInput";
+import type { CanonicalFrameElementScope } from "../../../../../adapters/canonical/frameElementScope";
 
 type ElementFixtureOptions = Partial<Element> & {
   frameId?: string | null;
@@ -56,6 +57,19 @@ const baseOptions = {
   zoom: 1,
 };
 
+function makeFrameScope(
+  partial: Partial<CanonicalFrameElementScope> & {
+    elementIds?: string[];
+    frameId: string;
+  },
+): CanonicalFrameElementScope {
+  return {
+    bodyElementId: null,
+    ...partial,
+    elementIds: new Set(partial.elementIds ?? []),
+  };
+}
+
 describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
   it("frame body element 부재 시 null 반환", () => {
     const elementById = new Map<string, Element>();
@@ -64,6 +78,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 200,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({ frameId: "frame-A" }),
       frameWidth: 320,
       frameX: 0,
       frameY: 0,
@@ -72,7 +87,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     expect(result).toBeNull();
   });
 
-  it("type='body' + layout_id 매칭 frame body 식별 + pageElements 에 subtree 포함", () => {
+  it("canonical frame scope 의 body + subtree 로 pageElements 를 구성한다", () => {
     const body = makeElement({
       id: "frame-body-A",
       type: "body",
@@ -108,6 +123,11 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 844,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: body.id,
+        elementIds: [body.id, slot1.id, slot2.id],
+      }),
       frameWidth: 390,
       frameX: 470,
       frameY: 0,
@@ -144,6 +164,11 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 600,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: body.id,
+        elementIds: [body.id],
+      }),
       frameWidth: 400,
       frameX: 100,
       frameY: 50,
@@ -163,9 +188,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     );
   });
 
-  it("Slot 만 layout_id 매칭 (body 부재) 시 null — fix #1 동일 원칙", () => {
-    // composition-pre-1.0 legacy layout_id propagation: Slot 이 layout_id 보유
-    // 하지만 frame body 가 아직 미생성 상태 → null 반환 (정상 graceful skip)
+  it("scope 에 Slot 만 있고 bodyElementId 가 없으면 null — fix #1 동일 원칙", () => {
     const slot = makeElement({
       id: "slot-orphan",
       type: "Slot",
@@ -178,6 +201,10 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 200,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        elementIds: [slot.id],
+      }),
       frameWidth: 320,
       frameX: 0,
       frameY: 0,
@@ -187,7 +214,34 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     expect(result).toBeNull();
   });
 
-  it("page-bound element 가 같은 layout_id 를 가져도 frame authoring input 에 포함하지 않는다", () => {
+  it("bodyElementId 가 body type 이 아니면 null 반환", () => {
+    const slot = makeElement({
+      id: "slot-as-body",
+      type: "Slot",
+      frameId: "frame-A",
+    });
+    const elementById = new Map([[slot.id, slot]]);
+
+    const result = buildFrameRendererInput({
+      ...baseOptions,
+      elementById,
+      frameHeight: 200,
+      frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: slot.id,
+        elementIds: [slot.id],
+      }),
+      frameWidth: 320,
+      frameX: 0,
+      frameY: 0,
+      sceneSnapshot: makeSceneSnapshot(),
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("canonical frame scope 밖의 element 는 frame authoring input 에 포함하지 않는다", () => {
     const body = makeElement({
       id: "frame-body",
       type: "body",
@@ -211,6 +265,11 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 200,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: body.id,
+        elementIds: [body.id],
+      }),
       frameWidth: 320,
       frameX: 0,
       frameY: 0,
@@ -246,6 +305,11 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 200,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: body.id,
+        elementIds: [body.id, deletedSlot.id],
+      }),
       frameWidth: 320,
       frameX: 0,
       frameY: 0,
@@ -256,7 +320,7 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     expect(result!.pageElements.map((el) => el.id)).toEqual([]);
   });
 
-  it("동일 frameId 의 type='body' element 중복 시 첫 매칭만 등록 + body 들은 pageElements 에서 모두 제외", () => {
+  it("scope bodyElementId 가 지정한 body 를 등록하고 body type 들은 pageElements 에서 제외", () => {
     const body1 = makeElement({
       id: "body-1",
       type: "body",
@@ -277,13 +341,18 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 200,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: body1.id,
+        elementIds: [body1.id, body2.id],
+      }),
       frameWidth: 320,
       frameX: 0,
       frameY: 0,
       sceneSnapshot: makeSceneSnapshot(),
     });
 
-    expect(result!.bodyElement).toBe(body1); // 첫 매칭
+    expect(result!.bodyElement).toBe(body1);
     // body type 은 모두 pageElements 에서 제외 (self-child 회귀 방지)
     expect(result!.pageElements).toHaveLength(0);
   });
@@ -307,6 +376,11 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
       elementById,
       frameHeight: 200,
       frameId: "frame-A",
+      frameElementScope: makeFrameScope({
+        frameId: "frame-A",
+        bodyElementId: body.id,
+        elementIds: [body.id],
+      }),
       frameWidth: 320,
       frameX: 0,
       frameY: 0,

@@ -21,9 +21,9 @@ describe("FramesTab frame selection race guard", () => {
   it("does not replace live frame elements with an empty descendant load", async () => {
     const source = await readFile(resolve(__dirname, "FramesTab.tsx"), "utf-8");
 
-    expect(source).toContain(
-      'loadFrameElements,\n} from "../../../../adapters/canonical/frameElementLoader";',
-    );
+    expect(source).toContain("loadFrameElements");
+    expect(source).toContain("useCanonicalFrameElementScopes");
+    expect(source).toContain("frameScope.elementIds.has(element.id)");
     expect(source).toMatch(/const frameElements = await loadFrameElements\(/);
     expect(source).toMatch(/mergeElementsCanonicalPrimary\(frameElements\);/);
     expect(source).not.toContain(

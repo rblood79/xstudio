@@ -20,7 +20,7 @@
  */
 
 import type { Element, Page } from "../../../../types/core/store.types";
-import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
+import { isLegacyFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
 import { getNullablePageFrameBindingId } from "../../../../adapters/canonical/frameMirror";
 import { getSlotMirrorName } from "../../../../adapters/canonical/slotMirror";
 
@@ -228,7 +228,7 @@ export function resolvePageWithFrame(
 
   const frameElements: Element[] = [];
   for (const el of elementsMap.values()) {
-    if (!isFrameElementForFrame(el, layoutId)) continue;
+    if (!isLegacyFrameElementForFrame(el, layoutId)) continue;
     frameElements.push(el);
   }
 

@@ -114,6 +114,10 @@ export function resetCanonicalMutationStoreActions(): void {
   _registeredActions = null;
 }
 
+export function areCanonicalMutationStoreActionsRegistered(): boolean {
+  return _registeredActions !== null;
+}
+
 function getActions(): CanonicalMutationStoreActions {
   if (!_registeredActions) {
     throw new Error(
@@ -420,11 +424,15 @@ function legacyElementToCanonicalNode(
       (element.props.name as string | undefined) ?? element.slot_name ?? null;
     if (element.layout_id) {
       return {
-        id: previousNode?.id ?? slotName ?? element.id,
+        id: previousNode?.id ?? element.id,
         type: "frame",
         placeholder: true,
         slot: [],
         name: slotName ?? "content",
+        props: {
+          ...((element.props as Record<string, unknown> | undefined) ?? {}),
+          name: slotName ?? "content",
+        },
         metadata: {
           type: "legacy-slot-hoisted",
           slotName: slotName ?? "content",

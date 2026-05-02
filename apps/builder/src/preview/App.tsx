@@ -37,7 +37,7 @@ import type { Element } from "../types/builder/unified.types";
 // ?canonical=1 URL param 으로 opt-in. 기본 false → legacy 경로 보존 (회귀 0 보장).
 import { CanonicalNodeRenderer } from "./components/CanonicalNodeRenderer";
 import { resolveCanonicalRefTree } from "../builder/utils/canonicalRefResolution";
-import { isFrameElementForFrame } from "../adapters/canonical/frameElementLoader";
+import { isLegacyFrameElementForFrame } from "../adapters/canonical/frameElementLoader";
 import { hasFrameElementMirrorId } from "../adapters/canonical/frameMirror";
 import { getSlotMirrorName } from "../adapters/canonical/slotMirror";
 
@@ -243,7 +243,7 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          isFrameElementForFrame(el, currentLayoutId) &&
+          isLegacyFrameElementForFrame(el, currentLayoutId) &&
           !el.parent_id,
       );
     } else if (currentLayoutId && !currentPageId) {
@@ -251,7 +251,7 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          isFrameElementForFrame(el, currentLayoutId) &&
+          isLegacyFrameElementForFrame(el, currentLayoutId) &&
           !el.parent_id,
       );
     } else {
@@ -908,7 +908,7 @@ function CanvasContent() {
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
     if (currentLayoutId && currentPageId) {
       const layoutElements = resolvedElements.filter((el) =>
-        isFrameElementForFrame(el, currentLayoutId),
+        isLegacyFrameElementForFrame(el, currentLayoutId),
       );
       const pageElements = resolvedElements.filter(
         (el) => el.page_id === currentPageId && !hasFrameElementMirrorId(el),
@@ -939,7 +939,7 @@ function CanvasContent() {
     // ⭐ Layout 편집 모드 (currentLayoutId만 있고 currentPageId 없음)
     if (currentLayoutId && !currentPageId) {
       const layoutElements = resolvedElements.filter((el) =>
-        isFrameElementForFrame(el, currentLayoutId),
+        isLegacyFrameElementForFrame(el, currentLayoutId),
       );
       const layoutBody = layoutElements.find(
         (el) => el.type === "body" && !el.parent_id,

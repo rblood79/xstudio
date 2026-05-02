@@ -301,7 +301,7 @@ describe("canonical mutation wrappers", () => {
             id: "frame-body",
             children: [
               expect.objectContaining({
-                id: "content",
+                id: "slot-content",
                 metadata: expect.objectContaining({
                   type: "legacy-slot-hoisted",
                   slotName: "content",
@@ -316,7 +316,7 @@ describe("canonical mutation wrappers", () => {
         type: "ref",
         ref: "layout-frame-1",
         descendants: {
-          "frame-body/content": {
+          "frame-body/slot-content": {
             children: [expect.objectContaining({ id: "page-box" })],
           },
         },
@@ -324,6 +324,7 @@ describe("canonical mutation wrappers", () => {
     ]);
     expect(setElements).toHaveBeenCalledWith([
       expect.objectContaining({ id: "frame-body", page_id: null }),
+      expect.objectContaining({ id: "slot-content", page_id: null }),
       expect.objectContaining({ id: "page-box", page_id: "page-1" }),
     ]);
   });

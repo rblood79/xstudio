@@ -11,14 +11,13 @@
  *   bodyPagePositions (body element id → {x,y}) — `visiblePageRoots` 출력과
  *   동일 shape 라 caller (skiaFramePipeline) 가 단일 맵으로 병합 가능 (D3=A)
  *
- * frame body 식별 (D1=A): frame ownership mirror 매칭. ADR-903 P3-E E-6 의
- * composition-pre-1.0 legacy fallback 패턴과 동일. canonical adapter 가 mirror
- * ownership 을 보존하므로 cutover 후에도 유효. Phase 4 legacy 0 진입 시
- * canonical doc 의 reusable FrameNode 직접 매칭으로 마이그레이션 (별도 작업).
+ * frame body 식별 (ADR-916 cleanup): canonical reusable FrameNode 에서 파생한
+ * `frameElementScopes[frameId].bodyElementId` 를 직접 사용한다. legacy
+ * `layout_id` mirror predicate 는 이 Skia root collection 경로에서 사용하지
+ * 않는다.
  */
 
 import type { SkiaRendererInput } from "../renderers";
-import { getFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 
 export interface VisibleFrameRootBuildResult {
   /** frame body element id → { x, y } — `visiblePageRoots` 와 동일 shape */
@@ -41,26 +40,14 @@ export function collectVisibleFrameRoots(
     return { rootElementIds, bodyPagePositions };
   }
 
-  // 각 frame area 의 frameId (legacy layoutId) 로 frame body element 탐색.
-  // ADR-911 P3-δ fix #1 (Chrome MCP evidence 2026-04-28):
-  // type === "body" 만 frame body 후보로 등록. 동일 frame ownership 의 자식
-  // (Slot 등) 도 mirror field 를 보유 (composition-pre-1.0 propagation) — element 순서
-  // 의존 시 Slot 이 첫 매칭이 되어 잘못 등록될 위험. type 체크가 가장 단순하고 안전.
-  const bodyByLayoutId = new Map<string, string>();
-  for (const el of rendererInput.elements) {
-    if (el.type !== "body") continue;
-    if (el.page_id != null) continue;
-    if (el.deleted) continue;
-    const layoutId = getFrameElementMirrorId(el);
-    if (!layoutId) continue;
-    if (!bodyByLayoutId.has(layoutId)) {
-      bodyByLayoutId.set(layoutId, el.id);
-    }
-  }
-
   for (const area of rendererInput.frameAreas) {
-    const bodyId = bodyByLayoutId.get(area.frameId);
+    const frameScope = rendererInput.frameElementScopes.get(area.frameId);
+    const bodyId = frameScope?.bodyElementId ?? null;
     if (!bodyId) continue;
+    const bodyElement = rendererInput.elementsMap.get(bodyId);
+    if (!bodyElement || bodyElement.deleted || bodyElement.type !== "body") {
+      continue;
+    }
 
     rootElementIds.push(bodyId);
     bodyPagePositions[bodyId] = { x: area.x, y: area.y };

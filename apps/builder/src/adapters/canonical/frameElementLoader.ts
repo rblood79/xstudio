@@ -1,5 +1,9 @@
 import type { Element } from "@/types/builder/unified.types";
 import { matchesLegacyLayoutId } from "./legacyElementFields";
+import {
+  isElementInCanonicalFrameScope,
+  type CanonicalFrameElementScope,
+} from "./frameElementScope";
 
 export interface FrameElementLoaderDb {
   elements: {
@@ -13,6 +17,13 @@ function isBodyElement(element: Element): boolean {
 }
 
 export function isFrameElementForFrame(
+  element: Element,
+  frameScope: CanonicalFrameElementScope,
+): boolean {
+  return isElementInCanonicalFrameScope(element, frameScope);
+}
+
+export function isLegacyFrameElementForFrame(
   element: Element,
   frameId: string,
 ): boolean {
@@ -35,10 +46,10 @@ function hasFrameBody(elements: Element[], frameId: string): boolean {
 
 export function hasHydratedFrameElements(
   elementsMap: ReadonlyMap<string, Element>,
-  frameId: string,
+  frameScope: CanonicalFrameElementScope,
 ): boolean {
   for (const element of elementsMap.values()) {
-    if (isFrameElementForFrame(element, frameId)) {
+    if (isFrameElementForFrame(element, frameScope)) {
       return true;
     }
   }
@@ -47,11 +58,11 @@ export function hasHydratedFrameElements(
 
 export function collectHydratedFrameElements(
   elementsMap: ReadonlyMap<string, Element>,
-  frameId: string,
+  frameScope: CanonicalFrameElementScope,
 ): Element[] {
   const frameElements: Element[] = [];
   for (const element of elementsMap.values()) {
-    if (isFrameElementForFrame(element, frameId)) {
+    if (isFrameElementForFrame(element, frameScope)) {
       frameElements.push(element);
     }
   }
@@ -69,7 +80,7 @@ export async function loadFrameElements(
 
   const allElements = await db.elements.getAll();
   const layoutElements = allElements.filter((element) =>
-    isFrameElementForFrame(element, frameId),
+    isLegacyFrameElementForFrame(element, frameId),
   );
 
   return layoutElements.length > 0

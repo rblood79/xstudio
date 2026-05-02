@@ -25,6 +25,10 @@ import {
   getFrameElementMirrorId,
   withFrameElementMirrorId,
 } from "../../../adapters/canonical/frameMirror";
+import {
+  canonicalDocumentToFrameElementScopes,
+  type CanonicalFrameElementScopeMap,
+} from "../../../adapters/canonical/frameElementScope";
 import { useActiveCanonicalDocument } from "./canonicalElementsBridge";
 
 type ElementScopeContext = {
@@ -36,6 +40,7 @@ type CanonicalScopeMetadata = {
   type?: unknown;
   pageId?: unknown;
   layoutId?: unknown;
+  slotName?: unknown;
 };
 
 const ROOT_SCOPE: ElementScopeContext = {
@@ -88,14 +93,20 @@ export function canonicalNodeToElement(
   // ADR-916 Phase 5 G7 본격 cutover — `x-composition` extension 에서
   // events/dataBinding 복원.
   const extFields = extractExtensionFields(node);
-  if (!node.props) return null;
-  const frameMirrorId = getFrameElementMirrorId(node.props) ?? scope.layoutId;
+  const metadata = node.metadata as CanonicalScopeMetadata | undefined;
+  const isLegacySlotHoisted = metadata?.type === "legacy-slot-hoisted";
+  if (!node.props && !isLegacySlotHoisted) return null;
+  const props = { ...(node.props ?? {}) };
+  if (isLegacySlotHoisted && typeof metadata?.slotName === "string") {
+    props.name ??= metadata.slotName;
+  }
+  const frameMirrorId = getFrameElementMirrorId(props) ?? scope.layoutId;
 
   return withFrameElementMirrorId(
     {
       id: node.id,
-      type: node.type,
-      props: { ...node.props },
+      type: isLegacySlotHoisted ? "Slot" : node.type,
+      props,
       parent_id: parentId,
       order_num: orderNum,
       page_id: scope.pageId,
@@ -156,6 +167,10 @@ function getNodeScope(
   const metadata = node.metadata as CanonicalScopeMetadata | undefined;
   const metadataType = metadata?.type;
 
+  if (metadataType === "legacy-slot-hoisted") {
+    return scope;
+  }
+
   if (metadataType === "page" || metadataType === "legacy-page") {
     return {
       pageId: typeof metadata?.pageId === "string" ? metadata.pageId : node.id,
@@ -212,6 +227,14 @@ export function useCanonicalElements(): Element[] | null {
   return useMemo(() => {
     if (!doc) return null;
     return canonicalDocumentToElements(doc);
+  }, [doc]);
+}
+
+export function useCanonicalFrameElementScopes(): CanonicalFrameElementScopeMap | null {
+  const doc = useActiveCanonicalDocument();
+  return useMemo(() => {
+    if (!doc) return null;
+    return canonicalDocumentToFrameElementScopes(doc);
   }, [doc]);
 }
 

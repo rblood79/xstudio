@@ -29,15 +29,18 @@ import {
 } from "../../../stores/utils/frameActions";
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
-import { useCanonicalElements } from "../../../stores/canonical/canonicalElementsView";
+import {
+  useCanonicalElements,
+  useCanonicalFrameElementScopes,
+} from "../../../stores/canonical/canonicalElementsView";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import {
   collectHydratedFrameElements,
   hasHydratedFrameElements,
-  isFrameElementForFrame,
   loadFrameElements,
 } from "../../../../adapters/canonical/frameElementLoader";
+import type { CanonicalFrameElementScope } from "../../../../adapters/canonical/frameElementScope";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
@@ -51,19 +54,21 @@ import {
 
 function collectCanonicalFrameElements(
   canonicalElements: Element[] | null,
-  frameId: string,
+  frameScope: CanonicalFrameElementScope | null,
 ): Element[] {
-  if (!canonicalElements) return [];
+  if (!canonicalElements || !frameScope) return [];
   return canonicalElements.filter((element) =>
-    isFrameElementForFrame(element, frameId),
+    frameScope.elementIds.has(element.id),
   );
 }
 
 function hasCanonicalFrameElements(
   canonicalElements: Element[] | null,
-  frameId: string,
+  frameScope: CanonicalFrameElementScope | null,
 ): boolean {
-  return collectCanonicalFrameElements(canonicalElements, frameId).length > 0;
+  return (
+    collectCanonicalFrameElements(canonicalElements, frameScope).length > 0
+  );
 }
 
 interface FramesTabProps {
@@ -98,6 +103,7 @@ export function FramesTab({
   const elementsMap = useStore((state) => state.elementsMap);
   const removeElement = useStore((state) => state.removeElement);
   const canonicalElements = useCanonicalElements();
+  const frameElementScopes = useCanonicalFrameElementScopes();
 
   // ADR-916 projection 제거: active canonical document 의 reusable FrameNode 를
   // 단일 read path 로 사용한다.
@@ -136,9 +142,12 @@ export function FramesTab({
       return;
     }
 
+    const selectedFrameScope =
+      frameElementScopes?.get(selectedReusableFrameId) ?? null;
     if (
-      hasCanonicalFrameElements(canonicalElements, selectedReusableFrameId) ||
-      hasHydratedFrameElements(elementsMap, selectedReusableFrameId)
+      hasCanonicalFrameElements(canonicalElements, selectedFrameScope) ||
+      (selectedFrameScope &&
+        hasHydratedFrameElements(elementsMap, selectedFrameScope))
     ) {
       loadedFrameIdsRef.current.add(selectedReusableFrameId);
       return;
@@ -164,7 +173,12 @@ export function FramesTab({
     };
 
     loadSelectedFrameElements();
-  }, [selectedReusableFrameId, elementsMap, canonicalElements]);
+  }, [
+    selectedReusableFrameId,
+    elementsMap,
+    canonicalElements,
+    frameElementScopes,
+  ]);
 
   // 새로고침 직후 전역 hydrate race 로 selected frame 이외의 body/slot 이
   // 메모리에 없을 수 있다. Frames 탭 목록이 로드되면 등록된 frame 전체 중
@@ -174,18 +188,21 @@ export function FramesTab({
 
     const missingFrameIds = reusableFrames
       .map((frame) => frame.id)
-      .filter(
-        (frameId) =>
+      .filter((frameId) => {
+        const frameScope = frameElementScopes?.get(frameId) ?? null;
+        return (
           !loadedFrameIdsRef.current.has(frameId) &&
           !loadingFrameIdsRef.current.has(frameId) &&
-          !hasCanonicalFrameElements(canonicalElements, frameId) &&
-          !hasHydratedFrameElements(elementsMap, frameId),
-      );
+          !hasCanonicalFrameElements(canonicalElements, frameScope) &&
+          (!frameScope || !hasHydratedFrameElements(elementsMap, frameScope))
+        );
+      });
 
     for (const frame of reusableFrames) {
+      const frameScope = frameElementScopes?.get(frame.id) ?? null;
       if (
-        hasCanonicalFrameElements(canonicalElements, frame.id) ||
-        hasHydratedFrameElements(elementsMap, frame.id)
+        hasCanonicalFrameElements(canonicalElements, frameScope) ||
+        (frameScope && hasHydratedFrameElements(elementsMap, frameScope))
       ) {
         loadedFrameIdsRef.current.add(frame.id);
       }
@@ -233,20 +250,23 @@ export function FramesTab({
     };
 
     loadMissingFrameElements();
-  }, [reusableFrames, elementsMap, canonicalElements]);
+  }, [reusableFrames, elementsMap, canonicalElements, frameElementScopes]);
 
   // ADR-916: Frames tree read path 는 active canonical document 를 우선 사용한다.
   // canonical hydration race 동안에만 legacy store mirror 로 fallback 한다.
   const frameElements = useMemo(() => {
     if (!currentFrame) return [];
+    const frameScope = frameElementScopes?.get(currentFrame.id) ?? null;
     const canonicalFrameElements = collectCanonicalFrameElements(
       canonicalElements,
-      currentFrame.id,
+      frameScope,
     );
     return canonicalFrameElements.length > 0
       ? canonicalFrameElements
-      : collectHydratedFrameElements(elementsMap, currentFrame.id);
-  }, [canonicalElements, elementsMap, currentFrame]);
+      : frameScope
+        ? collectHydratedFrameElements(elementsMap, frameScope)
+        : [];
+  }, [canonicalElements, elementsMap, currentFrame, frameElementScopes]);
 
   // Frame 요소 트리 빌드
   const frameElementTree = useMemo(() => {
@@ -310,9 +330,10 @@ export function FramesTab({
       selectReusableFrame(frameId);
       setEditModeLayoutId(frameId);
 
+      const frameScope = frameElementScopes?.get(frameId) ?? null;
       if (
-        hasCanonicalFrameElements(canonicalElements, frameId) ||
-        hasHydratedFrameElements(elementsMap, frameId)
+        hasCanonicalFrameElements(canonicalElements, frameScope) ||
+        (frameScope && hasHydratedFrameElements(elementsMap, frameScope))
       ) {
         loadedFrameIdsRef.current.add(frameId);
         return;
@@ -342,7 +363,7 @@ export function FramesTab({
         loadingFrameIdsRef.current.delete(frameId);
       }
     },
-    [setEditModeLayoutId, elementsMap, canonicalElements],
+    [setEditModeLayoutId, elementsMap, canonicalElements, frameElementScopes],
   );
 
   // Frame 삭제 핸들러 — frameActions.deleteReusableFrame 위임

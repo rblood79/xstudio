@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { withFrameElementMirrorId } from "@/adapters/canonical/frameMirror";
 import type { SkiaRendererInput } from "../renderers";
 import type { Element } from "../../../../types/core/store.types";
+import type { CanonicalFrameElementScope } from "../../../../adapters/canonical/frameElementScope";
 import { collectVisibleFrameRoots } from "./visibleFrameRoots";
 
 type ElementFixtureOptions = Partial<Element> & {
@@ -45,9 +46,20 @@ const makeInput = (partial: Partial<SkiaRendererInput>): SkiaRendererInput => {
     framePositions: {},
     framePositionsVersion: 0,
     frameAreas: [],
+    frameElementScopes: new Map(),
     ...partial,
   };
 };
+
+const makeFrameScope = (
+  frameId: string,
+  bodyElementId: string | null,
+  elementIds: string[] = bodyElementId ? [bodyElementId] : [],
+): CanonicalFrameElementScope => ({
+  bodyElementId,
+  elementIds: new Set(elementIds),
+  frameId,
+});
 
 describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
   it("page mode 에서는 selectedReusableFrameId/frameAreas 가 남아 있어도 frame roots 를 렌더하지 않는다", () => {
@@ -84,7 +96,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     expect(result.bodyPagePositions).toEqual({});
   });
 
-  it("type='body' + layout_id 매칭 frame body 가 root + frameAreas 좌표 반영", () => {
+  it("canonical frame scope 의 bodyElementId 가 root + frameAreas 좌표를 결정한다", () => {
     const bodyEl = makeElement({
       id: "frame-body-1",
       type: "body",
@@ -97,6 +109,9 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
         framePositions: {
           "frame-A": { x: 999, y: 888, width: 320, height: 200 },
         },
+        frameElementScopes: new Map([
+          ["frame-A", makeFrameScope("frame-A", bodyEl.id)],
+        ]),
         frameAreas: [
           {
             frameId: "frame-A",
@@ -114,7 +129,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     expect(result.bodyPagePositions["frame-body-1"]).toEqual({ x: 100, y: 50 });
   });
 
-  it("page-bound body 가 같은 layout_id 를 가져도 frame mode root 로 등록하지 않는다", () => {
+  it("canonical frame scope 밖의 body 는 frame mode root 로 등록하지 않는다", () => {
     const pageBody = makeElement({
       id: "page-body",
       type: "body",
@@ -131,6 +146,9 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const result = collectVisibleFrameRoots(
       makeInput({
         elements: [pageBody, frameBody],
+        frameElementScopes: new Map([
+          ["frame-A", makeFrameScope("frame-A", frameBody.id)],
+        ]),
         frameAreas: [
           {
             frameId: "frame-A",
@@ -160,6 +178,9 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
         framePositions: {
           "frame-A": { x: 900, y: 900, width: 320, height: 200 },
         },
+        frameElementScopes: new Map([
+          ["frame-A", makeFrameScope("frame-A", bodyEl.id)],
+        ]),
         frameAreas: [
           {
             frameId: "frame-A",
@@ -212,6 +233,10 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const result = collectVisibleFrameRoots(
       makeInput({
         elements: [body1, body2],
+        frameElementScopes: new Map([
+          ["frame-A", makeFrameScope("frame-A", body1.id)],
+          ["frame-B", makeFrameScope("frame-B", body2.id)],
+        ]),
         framePositions: {
           "frame-A": { x: 0, y: 0, width: 320, height: 200 },
           "frame-B": { x: 400, y: 0, width: 480, height: 300 },
@@ -242,10 +267,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     expect(result.bodyPagePositions["fb-2"]).toEqual({ x: 400, y: 0 });
   });
 
-  it("Slot 등 type !== 'body' 가 layout_id 매칭 첫 element 여도 frame body 로 등록 안 됨 (P3-δ fix #1)", () => {
-    // 실 회귀 시나리오 (Chrome MCP 2026-04-28): elements 배열 순서가
-    // [Slot, Slot, body] 처럼 Slot 이 먼저 와도 frame body 가 정확히 등록되어야 함.
-    // composition-pre-1.0 legacy 의 layout_id propagation 로 자식 Slot 도 layout_id 동일.
+  it("Slot 이 scope 에 있어도 bodyElementId 만 frame body 로 등록함 (P3-δ fix #1)", () => {
     const slot1 = makeElement({
       id: "slot-1",
       type: "Slot",
@@ -267,6 +289,16 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const result = collectVisibleFrameRoots(
       makeInput({
         elements: [slot1, slot2, frameBody], // Slot 먼저, body 마지막
+        frameElementScopes: new Map([
+          [
+            "frame-A",
+            makeFrameScope("frame-A", frameBody.id, [
+              slot1.id,
+              slot2.id,
+              frameBody.id,
+            ]),
+          ],
+        ]),
         framePositions: {
           "frame-A": { x: 100, y: 50, width: 320, height: 200 },
         },
@@ -289,7 +321,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     expect(result.bodyPagePositions["slot-2"]).toBeUndefined();
   });
 
-  it("같은 layout_id 의 type='body' element 가 여러 개여도 첫 매칭만 등록 (중복 방어)", () => {
+  it("body 가 여러 개 있어도 scope bodyElementId 만 root 로 등록", () => {
     const body1 = makeElement({
       id: "frame-body-A",
       type: "body",
@@ -304,6 +336,12 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const result = collectVisibleFrameRoots(
       makeInput({
         elements: [body1, body1Dup],
+        frameElementScopes: new Map([
+          [
+            "frame-X",
+            makeFrameScope("frame-X", body1.id, [body1.id, body1Dup.id]),
+          ],
+        ]),
         framePositions: {
           "frame-X": { x: 0, y: 0, width: 100, height: 100 },
         },
@@ -334,6 +372,9 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const result = collectVisibleFrameRoots(
       makeInput({
         elements: [deletedBody],
+        frameElementScopes: new Map([
+          ["frame-X", makeFrameScope("frame-X", deletedBody.id)],
+        ]),
         frameAreas: [
           {
             frameId: "frame-X",

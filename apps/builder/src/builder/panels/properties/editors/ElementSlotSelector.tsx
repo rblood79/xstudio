@@ -10,7 +10,7 @@ import { Layers } from "lucide-react";
 import { PropertySelect, PropertySection } from "../../../components";
 import { useStore } from "../../../stores";
 import type { SlotInfo } from "../../../../types/builder/layout.types";
-import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
+import { isLegacyFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
 import { getNullablePageFrameBindingId } from "../../../../adapters/canonical/frameMirror";
 
 interface ElementSlotSelectorProps {
@@ -42,7 +42,10 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
 
     const slotElements: (typeof element)[] = [];
     elementsMap.forEach((el) => {
-      if (el.type === "Slot" && isFrameElementForFrame(el, pageLayoutId)) {
+      if (
+        el.type === "Slot" &&
+        isLegacyFrameElementForFrame(el, pageLayoutId)
+      ) {
         slotElements.push(el);
       }
     });

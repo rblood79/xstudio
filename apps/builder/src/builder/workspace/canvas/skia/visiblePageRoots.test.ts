@@ -39,6 +39,7 @@ const makeInput = (partial: Partial<SkiaRendererInput>): SkiaRendererInput => ({
   framePositions: {},
   framePositionsVersion: 0,
   frameAreas: [],
+  frameElementScopes: new Map(),
   ...partial,
 });
 

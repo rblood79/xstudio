@@ -13,7 +13,7 @@ import type {
   SlotValidationError,
   LayoutResolutionResult,
 } from "../../types/builder/layout.types";
-import { isFrameElementForFrame } from "../../adapters/canonical/frameElementLoader";
+import { isLegacyFrameElementForFrame } from "../../adapters/canonical/frameElementLoader";
 import {
   getNullablePageFrameBindingId,
   hasFrameElementMirrorId,
@@ -50,7 +50,7 @@ export function resolveLayoutForPage(
 
   // Layout elements 필터링
   const layoutElements = allElements.filter((el) =>
-    isFrameElementForFrame(el, layout.id),
+    isLegacyFrameElementForFrame(el, layout.id),
   );
 
   // Page elements 필터링 (Layout에 속하지 않은 것)
@@ -346,5 +346,5 @@ export function filterElementsByEditMode(
     return elements.filter((el) => el.page_id === targetId);
   }
 
-  return elements.filter((el) => isFrameElementForFrame(el, targetId));
+  return elements.filter((el) => isLegacyFrameElementForFrame(el, targetId));
 }

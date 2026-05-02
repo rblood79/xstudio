@@ -3,7 +3,10 @@ import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
 import type { ScenePageSnapshot, SceneStructureSnapshot } from "../scene";
 import type { FrameAreaGroup } from "../skia/workflowEdges";
 import { resolveCanonicalRefTree } from "../../../utils/canonicalRefResolution";
-import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
+import type {
+  CanonicalFrameElementScope,
+  CanonicalFrameElementScopeMap,
+} from "../../../../adapters/canonical/frameElementScope";
 
 export interface PixiPageRendererInput {
   bodyElement: Element | null;
@@ -75,8 +78,9 @@ interface BuildFrameRendererInputOptions {
   elementById: Map<string, Element>;
   /** ADR-911 P3-α framePositions[frameId] (또는 frameAreas fallback) */
   frameHeight: number;
-  /** legacy layoutId — canonical reusable frame.id 도 동일 (metadata.layoutId 보존) */
+  /** canonical reusable frame scope id */
   frameId: string;
+  frameElementScope: CanonicalFrameElementScope | null;
   frameWidth: number;
   frameX: number;
   frameY: number;
@@ -92,12 +96,10 @@ interface BuildFrameRendererInputOptions {
  * shape 빌드. page-centric 함수와 분리 (rendererInput.ts 의 page 함수와 frame
  * 함수 분리 명확).
  *
- * Body element 식별: `el.type === "body"` && frame ownership mirror match.
- * pageElements: composition-pre-1.0 legacy frame ownership propagation 으로 모든
- * descendant 가 frameId ownership 을 보유 → frame mirror predicate 로 subtree
- * 전체 수집. ADR-911 P3-δ fix #1 의 type 체크 패턴과 동일 원칙
- * (Slot 가 frame ownership propagation 을 받지만 type='body' 가 아님 → frame body
- * 후보에서 자동 제외, descendant 로는 정상 포함).
+ * Body element 식별: canonical reusable FrameNode scope 의 `bodyElementId`.
+ * pageElements: canonical frame scope 의 element id set 을 source 로 삼아
+ * frame subtree 전체를 수집한다. legacy `layout_id` mirror predicate 는 이
+ * renderer input 경로에서 더 이상 사용하지 않는다.
  *
  * **pageElements 에서 bodyElement 자신은 제외** — page 경로 (`buildSceneIndex`
  * 의 `nonBodyElements`) 와 일치. `buildPageChildrenMap` 의 `parent_id ?? bodyId`
@@ -113,6 +115,7 @@ export function buildFrameRendererInput({
   elementById,
   frameHeight,
   frameId,
+  frameElementScope,
   frameWidth,
   frameX,
   frameY,
@@ -122,21 +125,23 @@ export function buildFrameRendererInput({
   wasmLayoutReady,
   zoom,
 }: BuildFrameRendererInputOptions): PixiPageRendererInput | null {
-  let bodyElement: Element | null = null;
-  const pageElements: Element[] = [];
+  if (!frameElementScope) return null;
 
-  for (const el of elementById.values()) {
-    if (!isFrameElementForFrame(el, frameId)) continue;
-    if (el.type === "body") {
-      if (!bodyElement) bodyElement = el;
-      // body element 는 pageElements 에 포함하지 않음 — page 경로의 nonBodyElements
-      // 와 동일 정책. buildPageChildrenMap 의 self-child 회귀 방지.
-      continue;
-    }
-    pageElements.push(el);
+  const bodyElement = frameElementScope.bodyElementId
+    ? (elementById.get(frameElementScope.bodyElementId) ?? null)
+    : null;
+  if (!bodyElement || bodyElement.deleted || bodyElement.type !== "body") {
+    return null;
   }
 
-  if (!bodyElement) return null;
+  const pageElements: Element[] = [];
+
+  for (const elementId of frameElementScope.elementIds) {
+    if (elementId === bodyElement.id) continue;
+    const el = elementById.get(elementId);
+    if (!el || el.deleted || el.type === "body") continue;
+    pageElements.push(el);
+  }
 
   const frameSnapshot: ScenePageSnapshot = {
     bodyElement,
@@ -197,6 +202,7 @@ export interface SkiaRendererInput {
   framePositionsVersion: number;
   /** P3-β computeFrameAreas: canonical reusable frame 별 캔버스 영역 그룹 */
   frameAreas: FrameAreaGroup[];
+  frameElementScopes: CanonicalFrameElementScopeMap;
 }
 
 interface CreateSkiaRendererInputOptions {
@@ -216,6 +222,7 @@ interface CreateSkiaRendererInputOptions {
   >;
   framePositionsVersion: number;
   frameAreas: FrameAreaGroup[];
+  frameElementScopes: CanonicalFrameElementScopeMap;
 }
 
 function buildRendererChildrenMap(
@@ -290,5 +297,6 @@ export function createSkiaRendererInput(
     framePositions: input.framePositions,
     framePositionsVersion: input.framePositionsVersion,
     frameAreas: input.frameAreas,
+    frameElementScopes: input.frameElementScopes,
   };
 }

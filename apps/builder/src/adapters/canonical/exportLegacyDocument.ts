@@ -35,6 +35,7 @@ type LegacyScopeMetadata = {
   type?: unknown;
   pageId?: unknown;
   layoutId?: unknown;
+  slotName?: unknown;
 };
 
 /**
@@ -100,6 +101,10 @@ function getNodeScope(
   const metadata = node.metadata as LegacyScopeMetadata | undefined;
   const metadataType = metadata?.type;
 
+  if (metadataType === "legacy-slot-hoisted") {
+    return context;
+  }
+
   if (metadataType === "page" || metadataType === "legacy-page") {
     return {
       pageId: typeof metadata?.pageId === "string" ? metadata.pageId : node.id,
@@ -145,17 +150,26 @@ function extractElement(
   orderNum: number,
   context: LegacyExportContext,
 ): Element | null {
-  if (!node.props) return null;
+  const metadata = node.metadata as LegacyScopeMetadata | undefined;
+  const isLegacySlotHoisted = metadata?.type === "legacy-slot-hoisted";
+  if (!node.props && !isLegacySlotHoisted) return null;
+  const props = { ...(node.props ?? {}) };
+  if (isLegacySlotHoisted && typeof metadata?.slotName === "string") {
+    props.name ??= metadata.slotName;
+  }
 
   const element: ElementWithLegacyMirror = {
     id: node.id,
-    type: node.type,
-    props: { ...node.props },
+    type: isLegacySlotHoisted ? "Slot" : node.type,
+    props,
     parent_id: parentId,
     order_num: orderNum,
     page_id: context.pageId,
     layout_id: context.layoutId,
   };
+  if (isLegacySlotHoisted && typeof metadata?.slotName === "string") {
+    element.slot_name = metadata.slotName;
+  }
 
   if (node.name !== undefined) element.componentName = node.name;
   if (node.reusable === true) element.componentRole = "master";

@@ -20,7 +20,7 @@ import type {
   SlotDefinition,
 } from "./types";
 import type { Element } from "../../../../../types/builder/unified.types";
-import { isFrameElementForFrame } from "../../../../../adapters/canonical/frameElementLoader";
+import { isLegacyFrameElementForFrame } from "../../../../../adapters/canonical/frameElementLoader";
 import { withFrameElementMirrorId } from "../../../../../adapters/canonical/frameMirror";
 import { getSlotMirrorName } from "../../../../../adapters/canonical/slotMirror";
 
@@ -76,7 +76,7 @@ export function usePresetApply({
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
-      if (el.type === "Slot" && isFrameElementForFrame(el, layoutId)) {
+      if (el.type === "Slot" && isLegacyFrameElementForFrame(el, layoutId)) {
         const slotChildren = childrenMap.get(el.id) ?? [];
         const slotName =
           ((el.props as { name?: string })?.name as string) || "unnamed";

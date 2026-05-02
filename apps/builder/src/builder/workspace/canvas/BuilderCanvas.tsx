@@ -31,6 +31,7 @@ import {
 } from "../../stores/canonical/canonicalFrameStore";
 import { useActiveCanonicalDocument } from "../../stores/canonical/canonicalElementsBridge";
 import { canonicalDocumentToElements } from "../../stores/canonical/canonicalElementsView";
+import { canonicalDocumentToFrameElementScopes } from "../../../adapters/canonical/frameElementScope";
 import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
@@ -234,6 +235,10 @@ export function BuilderCanvas({
   const canonicalElements = useMemo(() => {
     if (!activeCanonicalDocument) return null;
     return canonicalDocumentToElements(activeCanonicalDocument);
+  }, [activeCanonicalDocument]);
+  const frameElementScopes = useMemo(() => {
+    if (!activeCanonicalDocument) return new Map();
+    return canonicalDocumentToFrameElementScopes(activeCanonicalDocument);
   }, [activeCanonicalDocument]);
   // Frames tab overview: canvas 는 reusable frame 전체를 표시하고, 이 값은
   // Node tree/properties 의 현재 frame 선택 동기화에 사용한다.
@@ -483,6 +488,7 @@ export function BuilderCanvas({
           elementById,
           frameHeight: area.height,
           frameId: area.frameId,
+          frameElementScope: frameElementScopes.get(area.frameId) ?? null,
           frameWidth: area.width,
           frameX: area.x,
           frameY: area.y,
@@ -500,6 +506,7 @@ export function BuilderCanvas({
     framePositionsVersion,
     dirtyElementIds,
     elementById,
+    frameElementScopes,
     panOffset,
     sceneSnapshot,
     wasmLayoutReady,
@@ -527,6 +534,7 @@ export function BuilderCanvas({
       framePositions,
       framePositionsVersion,
       frameAreas,
+      frameElementScopes,
     });
   }, [
     childrenMap,
@@ -542,6 +550,7 @@ export function BuilderCanvas({
     framePositions,
     framePositionsVersion,
     frameAreas,
+    frameElementScopes,
   ]);
 
   const interactiveElementsMapRef = useRef(skiaRendererInput.elementsMap);

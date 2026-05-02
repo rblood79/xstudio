@@ -60,7 +60,7 @@ import {
 } from "../stores/canonical/canonicalFrameStore";
 import { useDataTableStore } from "../stores/datatable";
 import { useDataStore } from "../stores/data";
-import { isFrameElementForFrame } from "@/adapters/canonical/frameElementLoader";
+import { isLegacyFrameElementForFrame } from "@/adapters/canonical/frameElementLoader";
 
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
@@ -570,7 +570,7 @@ export const BuilderCore: React.FC = () => {
       let filteredElements = sourceElements;
       if (editMode === "layout" && selectedReusableFrameId) {
         filteredElements = sourceElements.filter((el) =>
-          isFrameElementForFrame(el, selectedReusableFrameId),
+          isLegacyFrameElementForFrame(el, selectedReusableFrameId),
         );
       }
 
