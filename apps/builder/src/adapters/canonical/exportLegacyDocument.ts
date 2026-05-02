@@ -24,6 +24,7 @@ import type {
   RefNode,
 } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
+import type { ElementWithLegacyMirror } from "./legacyElementFields";
 
 type LegacyExportContext = {
   pageId: string | null;
@@ -146,7 +147,7 @@ function extractElement(
 ): Element | null {
   if (!node.props) return null;
 
-  const element: Element = {
+  const element: ElementWithLegacyMirror = {
     id: node.id,
     type: node.type,
     props: { ...node.props },
@@ -164,7 +165,8 @@ function extractElement(
     element.masterId = refNode.ref;
     element.overrides = { ...node.props };
     if (refNode.descendants) {
-      element.descendants = refNode.descendants as Element["descendants"];
+      element.descendants =
+        refNode.descendants as ElementWithLegacyMirror["descendants"];
     }
   }
 
