@@ -106,13 +106,45 @@ describe("exportLegacyDocument (3-A-impl)", () => {
     expect(afterIds.has("el-b")).toBe(true);
 
     const exportedA = after.find((e) => e.id === "el-a")!;
-    expect(exportedA.page_id).toBeNull();
+    expect(exportedA.page_id).toBe("page-1");
     expect(exportedA.props).toEqual({ label: "Hello" });
 
     const exportedB = after.find((e) => e.id === "el-b")!;
     expect(exportedB.parent_id).toBe("el-a");
+    expect(exportedB.page_id).toBe("page-1");
     expect(exportedB.order_num).toBe(0);
     expect(exportedB.props).toEqual({ value: 42 });
+  });
+
+  it("canonical page body exports with page scope for layer/skia consumers", () => {
+    const after = exportLegacyDocument({
+      version: "composition-1.0",
+      children: [
+        {
+          id: "page-1",
+          type: "frame",
+          name: "Home",
+          metadata: { type: "legacy-page", pageId: "page-1", slug: "/" },
+          children: [
+            {
+              id: "body-1",
+              type: "body",
+              props: { width: "100%" },
+            },
+          ],
+        },
+      ],
+    } as CompositionDocument);
+
+    expect(after).toEqual([
+      expect.objectContaining({
+        id: "body-1",
+        type: "body",
+        page_id: "page-1",
+        parent_id: null,
+        order_num: 0,
+      }),
+    ]);
   });
 
   it("synthetic 컨테이너 (page wrapper) 는 element 로 emit 안 함", () => {
@@ -301,7 +333,7 @@ describe("shadowWriteDiff (3-A-impl)", () => {
     expect(result.summary.destructive).toBe(1);
   });
 
-  it("evaluateShadowWriteFromCanonical — direct cutover reports lossy legacy fields", () => {
+  it("evaluateShadowWriteFromCanonical — reports canonical props mismatches", () => {
     const before: Element[] = [
       makeElement("el-a", {
         customId: "el-a",
@@ -309,7 +341,23 @@ describe("shadowWriteDiff (3-A-impl)", () => {
         props: { label: "X" },
       }),
     ];
-    const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
+    const doc = {
+      version: "composition-1.0",
+      children: [
+        {
+          id: "page-1",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "page-1" },
+          children: [
+            {
+              id: "el-a",
+              type: "Box",
+              props: { label: "Y" },
+            },
+          ],
+        },
+      ],
+    } as CompositionDocument;
     const result = evaluateShadowWriteFromCanonical(before, doc);
     expect(result.hasDestructive).toBe(true);
   });

@@ -30,6 +30,7 @@ import {
   useSelectedReusableFrameId,
 } from "../../stores/canonical/canonicalFrameStore";
 import { useActiveCanonicalDocument } from "../../stores/canonical/canonicalElementsBridge";
+import { canonicalDocumentToElements } from "../../stores/canonical/canonicalElementsView";
 import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
@@ -186,7 +187,7 @@ export function BuilderCanvas({
   // Canvas는 컨테이너 크기에 맞춰 자동 동기화 (CSS → 종료 시 renderer.resize)
 
   // Store state
-  const elements = useStore((state) => state.elements);
+  const storeElements = useStore((state) => state.elements);
   const pages = useStore((state) => state.pages);
   const currentEditMode = useEditModeStore((state) => state.mode);
   const isFrameEditMode = currentEditMode === "layout";
@@ -230,6 +231,10 @@ export function BuilderCanvas({
   const dirtyElementIds = useStore((state) => state.dirtyElementIds);
   const layouts = useCanonicalReusableFrameLayouts();
   const activeCanonicalDocument = useActiveCanonicalDocument();
+  const canonicalElements = useMemo(() => {
+    if (!activeCanonicalDocument) return null;
+    return canonicalDocumentToElements(activeCanonicalDocument);
+  }, [activeCanonicalDocument]);
   // Frames tab overview: canvas 는 reusable frame 전체를 표시하고, 이 값은
   // Node tree/properties 의 현재 frame 선택 동기화에 사용한다.
   const selectedReusableFrameId = useSelectedReusableFrameId();
@@ -258,8 +263,19 @@ export function BuilderCanvas({
   );
   const renderVersion = useCanvasLifecycleStore((state) => state.renderVersion);
 
-  // elementsMap을 직접 사용 (elements로부터 중복 Map 생성 제거)
-  const elementsMap = useStore((state) => state.elementsMap);
+  // Page mode 는 아직 pageIndex store 계약을 유지하고, frame mode 의 Skia 입력은
+  // ADR-916 canonical document 에서 직접 파생한다.
+  const storeElementsMap = useStore((state) => state.elementsMap);
+  const canonicalElementsMap = useMemo(() => {
+    if (!canonicalElements) return null;
+    return new Map(canonicalElements.map((element) => [element.id, element]));
+  }, [canonicalElements]);
+  const elements =
+    isFrameEditMode && canonicalElements ? canonicalElements : storeElements;
+  const elementsMap =
+    isFrameEditMode && canonicalElementsMap
+      ? canonicalElementsMap
+      : storeElementsMap;
   const elementById = elementsMap;
 
   // ADR-006 P3-1: dirtyElementIds 소비 후 초기화

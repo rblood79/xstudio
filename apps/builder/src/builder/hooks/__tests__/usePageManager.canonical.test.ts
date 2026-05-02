@@ -74,4 +74,17 @@ describe("usePageManager.initializeProject canonical-only hydrate", () => {
     expect(initFnSource).not.toMatch(/\bmeta\.get\(/);
     expect(initFnSource).not.toMatch(/schemaVersion/);
   });
+
+  it("hydrate 중 page shell bridge 가 빈 elements 로 canonical body 를 덮지 않는다", async () => {
+    const source = await readUsePageManagerSource();
+    const initFnSource = extractInitializeProject(source);
+    const setElementsIndex = initFnSource.indexOf(
+      "setElements(renderModel.elements as Element[])",
+    );
+    const setPagesIndex = initFnSource.indexOf("setPages(storePages)");
+
+    expect(setElementsIndex).toBeGreaterThanOrEqual(0);
+    expect(setPagesIndex).toBeGreaterThanOrEqual(0);
+    expect(setElementsIndex).toBeLessThan(setPagesIndex);
+  });
 });

@@ -17,14 +17,18 @@ import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
   const allElementsMap = useStore((state) => state.elementsMap);
+  const currentPageId = useStore((state) => state.currentPageId);
 
   // ADR-916 direct cutover — canonical store 의 active document 에서 derived
   // Element[] 를 source 로 사용. 초기 hydration 전에는 caller elements[] fallback.
   const canonicalElements = useCanonicalElements();
   const sourceElements = useMemo(() => {
     if (!canonicalElements) return elements;
-    return canonicalElements;
-  }, [elements, canonicalElements]);
+    if (!currentPageId) return canonicalElements;
+    return canonicalElements.filter(
+      (element) => element.page_id === currentPageId,
+    );
+  }, [elements, canonicalElements, currentPageId]);
 
   const projectedElements = useMemo(() => {
     if (sourceElements.length === 0) return sourceElements;

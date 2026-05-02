@@ -10,6 +10,8 @@ describe("BuilderCanvas canonical projection contract", () => {
     );
 
     expect(source).toContain("useActiveCanonicalDocument");
+    expect(source).toContain("canonicalDocumentToElements");
+    expect(source).toContain("isFrameEditMode && canonicalElements");
     expect(source).not.toContain("selectCanonicalDocument");
   });
 });

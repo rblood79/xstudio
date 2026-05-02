@@ -27,6 +27,22 @@ import {
 } from "../../../adapters/canonical/frameMirror";
 import { useActiveCanonicalDocument } from "./canonicalElementsBridge";
 
+type ElementScopeContext = {
+  pageId: string | null;
+  layoutId: string | null;
+};
+
+type CanonicalScopeMetadata = {
+  type?: unknown;
+  pageId?: unknown;
+  layoutId?: unknown;
+};
+
+const ROOT_SCOPE: ElementScopeContext = {
+  pageId: null,
+  layoutId: null,
+};
+
 /**
  * ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — `x-composition` extension 에서
  * events / dataBinding 추출하여 Element 에 spread 가능한 partial 객체 반환.
@@ -67,11 +83,13 @@ export function canonicalNodeToElement(
   node: CanonicalNode,
   parentId: string | null,
   orderNum: number,
+  scope: ElementScopeContext = ROOT_SCOPE,
 ): Element | null {
   // ADR-916 Phase 5 G7 본격 cutover — `x-composition` extension 에서
   // events/dataBinding 복원.
   const extFields = extractExtensionFields(node);
   if (!node.props) return null;
+  const frameMirrorId = getFrameElementMirrorId(node.props) ?? scope.layoutId;
 
   return withFrameElementMirrorId(
     {
@@ -80,12 +98,13 @@ export function canonicalNodeToElement(
       props: { ...node.props },
       parent_id: parentId,
       order_num: orderNum,
-      page_id: null,
+      page_id: scope.pageId,
+      layout_id: scope.layoutId,
       fills: undefined,
       componentName: node.name,
       ...extFields,
     },
-    getFrameElementMirrorId(node.props),
+    frameMirrorId,
   );
 }
 
@@ -105,22 +124,71 @@ export function canonicalDocumentToElements(
     node: CanonicalNode,
     parentLegacyId: string | null,
     siblingIndex: number,
+    scope: ElementScopeContext,
   ): void {
-    const element = canonicalNodeToElement(node, parentLegacyId, siblingIndex);
+    const nextScope = getNodeScope(node, scope);
+    const element = canonicalNodeToElement(
+      node,
+      parentLegacyId,
+      siblingIndex,
+      nextScope,
+    );
     const nextParentId = element?.id ?? parentLegacyId;
     if (element) result.push(element);
     if (node.children) {
       node.children.forEach((child, idx) => {
-        visit(child, nextParentId, idx);
+        visit(child, nextParentId, idx, nextScope);
       });
     }
   }
 
   doc.children.forEach((child, idx) => {
-    visit(child, null, idx);
+    visit(child, null, idx, ROOT_SCOPE);
   });
 
   return result;
+}
+
+function getNodeScope(
+  node: CanonicalNode,
+  scope: ElementScopeContext,
+): ElementScopeContext {
+  const metadata = node.metadata as CanonicalScopeMetadata | undefined;
+  const metadataType = metadata?.type;
+
+  if (metadataType === "page" || metadataType === "legacy-page") {
+    return {
+      pageId: typeof metadata?.pageId === "string" ? metadata.pageId : node.id,
+      layoutId: null,
+    };
+  }
+
+  if (
+    node.type === "frame" &&
+    node.reusable !== true &&
+    scope.pageId === null
+  ) {
+    return {
+      pageId: node.id,
+      layoutId: null,
+    };
+  }
+
+  if (node.type === "frame" && node.reusable === true) {
+    const metadataLayoutId = metadata?.layoutId;
+    const layoutId =
+      typeof metadataLayoutId === "string"
+        ? metadataLayoutId
+        : node.id.startsWith("layout-")
+          ? node.id.slice("layout-".length)
+          : node.id;
+    return {
+      pageId: null,
+      layoutId,
+    };
+  }
+
+  return scope;
 }
 
 // ─────────────────────────────────────────────

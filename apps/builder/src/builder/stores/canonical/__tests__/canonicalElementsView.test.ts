@@ -112,8 +112,91 @@ describe("canonicalDocumentToElements", () => {
     expect(elements[0]).toMatchObject({
       id: "button-1",
       parent_id: null,
+      page_id: "page-1",
       props: { children: "Real child" },
     });
+  });
+
+  it("preserves page scope for page body children", () => {
+    const doc = makeDoc([
+      {
+        id: "page-1",
+        type: "frame",
+        metadata: { type: "legacy-page", pageId: "page-1" },
+        children: [
+          {
+            id: "body-1",
+            type: "body",
+            props: { className: "react-aria-Body" },
+          },
+        ],
+      },
+      {
+        id: "page-2",
+        type: "frame",
+        metadata: { type: "legacy-page", pageId: "page-2" },
+        children: [
+          {
+            id: "body-2",
+            type: "body",
+            props: { className: "react-aria-Body" },
+          },
+        ],
+      },
+    ]);
+
+    const elements = canonicalDocumentToElements(doc);
+
+    expect(elements).toEqual([
+      expect.objectContaining({ id: "body-1", page_id: "page-1" }),
+      expect.objectContaining({ id: "body-2", page_id: "page-2" }),
+    ]);
+  });
+
+  it("preserves reusable frame scope for each frame body", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-frame-a",
+        type: "frame",
+        reusable: true,
+        metadata: { type: "legacy-layout", layoutId: "frame-a" },
+        children: [
+          {
+            id: "body-frame-a",
+            type: "body",
+            props: { className: "react-aria-Body" },
+          },
+        ],
+      },
+      {
+        id: "layout-frame-b",
+        type: "frame",
+        reusable: true,
+        metadata: { type: "legacy-layout", layoutId: "frame-b" },
+        children: [
+          {
+            id: "body-frame-b",
+            type: "body",
+            props: { className: "react-aria-Body" },
+          },
+        ],
+      },
+    ]);
+
+    const elements = canonicalDocumentToElements(doc);
+
+    expect(elements).toEqual([
+      expect.objectContaining({
+        id: "body-frame-a",
+        page_id: null,
+        layout_id: "frame-a",
+      }),
+      expect.objectContaining({
+        id: "body-frame-b",
+        page_id: null,
+        layout_id: "frame-b",
+      }),
+    ]);
   });
 
   it("restores composition extension fields", () => {

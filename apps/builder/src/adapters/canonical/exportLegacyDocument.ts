@@ -25,6 +25,17 @@ import type {
 } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
 
+type LegacyExportContext = {
+  pageId: string | null;
+  layoutId: string | null;
+};
+
+type LegacyScopeMetadata = {
+  type?: unknown;
+  pageId?: unknown;
+  layoutId?: unknown;
+};
+
 /**
  * canonical document → legacy `Element[]` payload 역변환.
  *
@@ -37,9 +48,10 @@ import type { Element } from "@/types/builder/unified.types";
  */
 export function exportLegacyDocument(doc: CompositionDocument): Element[] {
   const elements: Element[] = [];
+  const rootContext: LegacyExportContext = { pageId: null, layoutId: null };
 
   doc.children.forEach((root, index) => {
-    walkAndCollect(root, elements, null, index);
+    walkAndCollect(root, elements, null, index, rootContext);
   });
 
   return elements;
@@ -50,15 +62,17 @@ function walkAndCollect(
   out: Element[],
   parentId: string | null,
   orderNum: number,
+  context: LegacyExportContext,
 ): void {
-  const legacy = extractElement(node, parentId, orderNum);
+  const scopedContext = getNodeScope(node, context);
+  const legacy = extractElement(node, parentId, orderNum, scopedContext);
   if (legacy) {
     out.push(legacy);
   }
   const nextParentId = legacy?.id ?? parentId;
 
   node.children?.forEach((child, index) => {
-    walkAndCollect(child, out, nextParentId, index);
+    walkAndCollect(child, out, nextParentId, index, scopedContext);
   });
 
   if (node.type === "ref") {
@@ -71,11 +85,53 @@ function walkAndCollect(
         Array.isArray(override.children)
       ) {
         override.children.forEach((child, index) => {
-          walkAndCollect(child, out, nextParentId, index);
+          walkAndCollect(child, out, nextParentId, index, scopedContext);
         });
       }
     }
   }
+}
+
+function getNodeScope(
+  node: CanonicalNode,
+  context: LegacyExportContext,
+): LegacyExportContext {
+  const metadata = node.metadata as LegacyScopeMetadata | undefined;
+  const metadataType = metadata?.type;
+
+  if (metadataType === "page" || metadataType === "legacy-page") {
+    return {
+      pageId: typeof metadata?.pageId === "string" ? metadata.pageId : node.id,
+      layoutId: null,
+    };
+  }
+
+  if (
+    node.type === "frame" &&
+    node.reusable !== true &&
+    context.pageId === null
+  ) {
+    return {
+      pageId: node.id,
+      layoutId: null,
+    };
+  }
+
+  if (node.type === "frame" && node.reusable === true) {
+    const metadataLayoutId = metadata?.layoutId;
+    const layoutId =
+      typeof metadataLayoutId === "string"
+        ? metadataLayoutId
+        : node.id.startsWith("layout-")
+          ? node.id.slice("layout-".length)
+          : node.id;
+    return {
+      pageId: null,
+      layoutId,
+    };
+  }
+
+  return context;
 }
 
 /**
@@ -86,6 +142,7 @@ function extractElement(
   node: CanonicalNode,
   parentId: string | null,
   orderNum: number,
+  context: LegacyExportContext,
 ): Element | null {
   if (!node.props) return null;
 
@@ -95,7 +152,8 @@ function extractElement(
     props: { ...node.props },
     parent_id: parentId,
     order_num: orderNum,
-    page_id: null,
+    page_id: context.pageId,
+    layout_id: context.layoutId,
   };
 
   if (node.name !== undefined) element.componentName = node.name;

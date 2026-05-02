@@ -1,7 +1,9 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { CompositionDocument } from "@composition/shared";
 import type { Element } from "../../../../../types/core/store.types";
 import { useStore } from "../../../../stores";
+import { useCanonicalDocumentStore } from "../../../../stores/canonical/canonicalDocumentStore";
 import { getEditingSemanticsRole } from "../../../../utils/editingSemantics";
 import { useLayerTreeData } from "./useLayerTreeData";
 
@@ -23,7 +25,13 @@ describe("useLayerTreeData", () => {
       elements: [],
       elementsMap: new Map(),
       childrenMap: new Map(),
+      currentPageId: null,
     } as never);
+    useCanonicalDocumentStore.setState({
+      documents: new Map(),
+      currentProjectId: null,
+      documentVersion: 0,
+    });
   });
 
   it("projects canonical ref instances as origin type with synthetic children", () => {
@@ -94,5 +102,51 @@ describe("useLayerTreeData", () => {
     ]);
     expect(result.current.disabledKeys.has("instance/label")).toBe(false);
     expect(result.current.disabledKeys.has("instance/input")).toBe(false);
+  });
+
+  it("filters canonical layer source to the selected page", () => {
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      children: [
+        {
+          id: "page-1",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "page-1" },
+          children: [{ id: "body-1", type: "body", props: {} }],
+        },
+        {
+          id: "page-2",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "page-2" },
+          children: [{ id: "body-2", type: "body", props: {} }],
+        },
+        {
+          id: "page-3",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "page-3" },
+          children: [{ id: "body-3", type: "body", props: {} }],
+        },
+      ],
+    };
+    const pageTwoBody = makeElement("body-2", {
+      type: "body",
+      page_id: "page-2",
+    });
+
+    useStore.setState({
+      currentPageId: "page-2",
+      elements: [pageTwoBody],
+      elementsMap: new Map([["body-2", pageTwoBody]]),
+      pageElementsSnapshot: { "page-2": [pageTwoBody] },
+    } as never);
+    act(() => {
+      const canonical = useCanonicalDocumentStore.getState();
+      canonical.setDocument("project-1", doc);
+      canonical.setCurrentProject("project-1");
+    });
+
+    const { result } = renderHook(() => useLayerTreeData([pageTwoBody]));
+
+    expect(result.current.treeNodes.map((node) => node.id)).toEqual(["body-2"]);
   });
 });

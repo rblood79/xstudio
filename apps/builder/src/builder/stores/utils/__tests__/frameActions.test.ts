@@ -146,6 +146,13 @@ describe("frameActions canonical reusable frame API", () => {
           description: "desc",
         },
       });
+      expect(doc?.children[0].children).toEqual([
+        expect.objectContaining({
+          id: "body-1",
+          type: "body",
+          props: mockBodyElement.props,
+        }),
+      ]);
 
       randomUUIDSpy.mockRestore();
     });

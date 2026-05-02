@@ -423,9 +423,9 @@ export const usePageManager = ({
           order_num: page.order_num,
         }));
 
+        setElements(renderModel.elements as Element[]);
         apiPages.forEach((page) => pageList.append(page));
         setPages(storePages);
-        setElements(renderModel.elements as Element[]);
 
         // 🆕 Multi-page: 페이지 위치 초기화 (현재 방향 + canvasSize 기반)
         const currentCanvasSize = useViewportSyncStore.getState().canvasSize;

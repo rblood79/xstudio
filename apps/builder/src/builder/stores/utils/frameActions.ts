@@ -34,6 +34,7 @@ import {
 } from "@/builder/stores/canonical/canonicalFrameStore";
 import { getLiveElementsState } from "@/builder/stores/rootStoreAccess";
 import type { Layout, LayoutUpdate } from "@/types/builder/layout.types";
+import type { Element } from "@/types/builder/unified.types";
 
 /**
  * Reusable frame 생성 입력 — canonical-shaped 명명.
@@ -86,6 +87,31 @@ function withLayoutMetadata(frame: FrameNode, layout: Layout): FrameNode {
       order_num: layout.order_num ?? 0,
     },
   };
+}
+
+function elementToCanonicalNode(element: Element): CanonicalNode {
+  return {
+    id: element.id,
+    type: element.type as CanonicalNode["type"],
+    name: element.componentName,
+    props: { ...element.props },
+  };
+}
+
+function createReusableFrameNode(
+  layout: Layout,
+  bodyElement: Element,
+): FrameNode {
+  return withLayoutMetadata(
+    {
+      id: `layout-${layout.id}`,
+      type: "frame",
+      reusable: true,
+      name: layout.name,
+      children: [elementToCanonicalNode(bodyElement)],
+    },
+    layout,
+  );
 }
 
 function upsertReusableFrame(frame: FrameNode, projectId: string): void {
@@ -143,10 +169,7 @@ export async function createReusableFrame(
   await db.layouts.insert(layout);
   await db.elements.insert(bodyElement);
 
-  const frame = withLayoutMetadata(
-    legacyLayoutToCanonicalFrame(layout, [bodyElement]),
-    layout,
-  );
+  const frame = createReusableFrameNode(layout, bodyElement);
   upsertReusableFrame(frame, input.projectId);
   setSelectedReusableFrameId(layout.id);
 

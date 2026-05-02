@@ -50,6 +50,7 @@ import {
 import { historyIndexedDB } from "../builder/stores/history/historyIndexedDB";
 import { useSettingsStore } from "../stores/settingsStore";
 import { SettingsPanel } from "./SettingsPanel";
+import { createInitialProjectDocument } from "./createInitialProjectDocument";
 import type { ProjectListItem, ProjectFilter } from "../types/dashboard.types";
 import "./index.css";
 
@@ -323,6 +324,11 @@ function Dashboard() {
         });
         await elementsApi.createElement(bodyElement);
       }
+
+      await db.documents.put(
+        newProject.id,
+        createInitialProjectDocument(homePage, bodyElement),
+      );
 
       return newProject;
     },

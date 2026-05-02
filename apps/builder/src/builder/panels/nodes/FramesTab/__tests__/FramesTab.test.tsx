@@ -484,5 +484,61 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
       // mirror id ("frame-zzz") 로 select 호출 — canonical id ("layout-frame-zzz") 아님
       expect(selectReusableFrameMock).toHaveBeenCalledWith("frame-zzz");
     });
+
+    it("선택 frame 의 canonical body 만 tree source 로 사용하고 store mirror 중복 body 는 무시", () => {
+      mockLayoutsState.selectedReusableFrameId = "frame-b";
+      mockActiveCanonicalDocument.mockReturnValue({
+        children: [
+          {
+            id: "layout-frame-a",
+            type: "frame",
+            reusable: true,
+            name: "Frame A",
+            metadata: { type: "legacy-layout", layoutId: "frame-a" },
+            children: [
+              {
+                id: "body-frame-a",
+                type: "body",
+                props: {},
+              },
+            ],
+          },
+          {
+            id: "layout-frame-b",
+            type: "frame",
+            reusable: true,
+            name: "Frame B",
+            metadata: { type: "legacy-layout", layoutId: "frame-b" },
+            children: [
+              {
+                id: "body-frame-b",
+                type: "body",
+                props: {},
+              },
+            ],
+          },
+        ],
+      });
+      const staleBody: Element = makeFrameElement("frame-b", {
+        id: "body-frame-b-stale",
+        type: "body",
+        props: {},
+        parent_id: null,
+        page_id: null,
+        order_num: 0,
+      });
+      mockStoreState.elementsMap = new Map([[staleBody.id, staleBody]]);
+
+      render(<FramesTab {...makeProps()} />);
+
+      const lastCall = mockBuildTreeFromElements.mock.calls.at(-1)?.[0] ?? [];
+      expect(lastCall.map((element: Element) => element.id)).toEqual([
+        "body-frame-b",
+      ]);
+      expect(lastCall[0]).toMatchObject({
+        page_id: null,
+        layout_id: "frame-b",
+      });
+    });
   });
 });
