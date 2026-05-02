@@ -20,6 +20,7 @@ import {
   buildParentIndex,
   extractLegacyPropsFromResolved,
   getCanonicalParentId,
+  prefetchResolvedTreeImports,
   resolveInstanceWithSharedCache,
   selectResolvedTree,
 } from "../storeBridge";
@@ -28,6 +29,10 @@ import {
   resetSharedResolverCache,
   getSharedResolverCache,
 } from "../cache";
+import {
+  createCanonicalImportRegistry,
+  resetSharedImportRegistry,
+} from "../importRegistry";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // fixture helpers (integration.test.ts 패턴 공유)
@@ -49,6 +54,7 @@ function el(partial: Partial<Element> & Pick<Element, "id" | "type">): Element {
 describe("selectResolvedTree", () => {
   beforeEach(() => {
     resetSharedResolverCache();
+    resetSharedImportRegistry();
   });
 
   it("TC1: master + instance document → ResolvedNode[] (instance 는 _resolvedFrom 세팅)", () => {
@@ -137,6 +143,41 @@ describe("selectResolvedTree", () => {
     const afterSecond = cache.stats();
     // 2 번째 호출은 동일 ref subtree 에 대해 hit 발생
     expect(afterSecond.hits).toBeGreaterThan(afterFirst.hits);
+  });
+
+  it("TC2b: prefetched import registry 를 통해 import namespace ref 를 resolve 한다", async () => {
+    const registry = createCanonicalImportRegistry(async () => ({
+      version: "composition-1.0",
+      children: [
+        {
+          id: "round-button",
+          type: "Button",
+          reusable: true,
+          props: { label: "Imported" },
+        },
+      ],
+    }));
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      imports: { kit: "./kit.pen" },
+      children: [{ id: "inst", type: "ref", ref: "kit:round-button" }],
+    };
+
+    const result = await prefetchResolvedTreeImports(doc, registry);
+    const tree = selectResolvedTree(doc, createResolverCache(), registry);
+
+    expect(result).toEqual({
+      loaded: [{ importKey: "kit", source: "./kit.pen" }],
+      failed: [],
+    });
+    expect(tree[0]).toEqual(
+      expect.objectContaining({
+        id: "inst",
+        type: "Button",
+        props: { label: "Imported" },
+        _resolvedFrom: "kit:round-button",
+      }),
+    );
   });
 });
 

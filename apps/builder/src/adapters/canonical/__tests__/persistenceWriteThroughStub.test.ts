@@ -139,6 +139,48 @@ describe("exportLegacyDocument (3-A-impl)", () => {
       { id: "f1", type: "solid", color: "#fff", visible: true },
     ]);
   });
+
+  it("metadata.legacyProps 의 mirror compatibility fields 보존", () => {
+    const before: Element[] = [
+      makeElement("master", {
+        page_id: "page-1",
+        componentRole: "master",
+        componentName: "Master Button",
+      }),
+      makeElement("instance", {
+        page_id: "page-1",
+        componentRole: "instance",
+        masterId: "master",
+        slot_name: "content",
+        overrides: { children: "Override" },
+        descendants: { label: { children: "Child Override" } },
+      }),
+    ];
+
+    const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
+    const after = exportLegacyDocument(doc);
+    const exportedMaster = after.find((element) => element.id === "master");
+    const exportedInstance = after.find((element) => element.id === "instance");
+
+    expect(exportedMaster).toEqual(
+      expect.objectContaining({
+        componentRole: "master",
+        componentName: "Master Button",
+      }),
+    );
+    expect(exportedInstance).toEqual(
+      expect.objectContaining({
+        componentRole: "instance",
+        masterId: "master",
+        slot_name: "content",
+        overrides: { children: "Override" },
+        descendants: { label: { children: "Child Override" } },
+      }),
+    );
+    expect(exportedInstance?.props).not.toHaveProperty("componentRole");
+    expect(exportedInstance?.props).not.toHaveProperty("masterId");
+    expect(exportedInstance?.props).not.toHaveProperty("slot_name");
+  });
 });
 
 // ─────────────────────────────────────────────

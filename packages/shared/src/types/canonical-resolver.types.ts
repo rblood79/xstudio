@@ -204,6 +204,24 @@ export const RESOLVER_PERFORMANCE_CONTRACT = {
 } as const;
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Import Resolver Context
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `CompositionDocument.imports` 의 `<importKey>:<nodeId>` ref 를 resolve 할 때
+ * 이미 로드된 외부 canonical document 를 동기 조회하는 컨텍스트.
+ *
+ * 외부 fetch/prefetch 정책은 runtime adapter 책임이며, core resolver 는 이
+ * 컨텍스트가 제공하는 loaded document 만 소비한다.
+ */
+export interface ImportResolverContext {
+  resolveImportDocument: (
+    importKey: string,
+    source: string,
+  ) => CompositionDocument | undefined;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // ResolveFn
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -215,6 +233,8 @@ export const RESOLVER_PERFORMANCE_CONTRACT = {
  *
  * @param doc — 전체 CompositionDocument (reusable 원본 조회 포함)
  * @param cache — 선택적 ResolverCache 인스턴스. Preview/Skia 공유 인스턴스 전달 권장
+ * @param imports — 선택적 import resolver context. `<importKey>:<nodeId>` ref
+ *                  조회 시 loaded import document 를 동기 제공
  * @returns 문서 top-level children 전체를 resolve한 ResolvedNode 배열
  *
  * @stub 실제 구현은 Phase 2+
@@ -222,6 +242,7 @@ export const RESOLVER_PERFORMANCE_CONTRACT = {
 export type ResolveFn = (
   doc: CompositionDocument,
   cache?: ResolverCache,
+  imports?: ImportResolverContext,
 ) => ResolvedNode[];
 
 /**
@@ -235,6 +256,7 @@ export type ResolveFn = (
 export const resolve: ResolveFn = (
   _doc: CompositionDocument,
   _cache?: ResolverCache,
+  _imports?: ImportResolverContext,
 ): ResolvedNode[] => {
   throw new Error("P0 stub — resolve: Phase 2+ 구현 대상");
 };

@@ -207,6 +207,37 @@ describe("ComponentSemanticsSection", () => {
     expect(useStore.getState().selectedElementIds).toEqual(["origin"]);
   });
 
+  it("canonical instance action selects its origin by metadata component alias", () => {
+    const origin = makeElement("origin", {
+      page_id: "origin-page",
+      reusable: true,
+      metadata: {
+        componentName: "PrimaryAction",
+      },
+    } as never);
+    const instance = makeElement("instance", {
+      type: "ref",
+      ref: "PrimaryAction",
+      page_id: "instance-page",
+    } as never);
+
+    useStore.setState({
+      currentPageId: "instance-page",
+      elements: [origin, instance],
+      elementsMap: new Map([
+        ["origin", origin],
+        ["instance", instance],
+      ]),
+    });
+
+    render(<ComponentSemanticsSection elementId="instance" />);
+    fireEvent.click(screen.getByRole("button", { name: "Go to component" }));
+
+    expect(useStore.getState().selectedElementId).toBe("origin");
+    expect(useStore.getState().selectedElementIds).toEqual(["origin"]);
+    expect(useStore.getState().currentPageId).toBe("origin-page");
+  });
+
   it("origin action multi-selects all matching instances", () => {
     const origin = makeElement("origin", { page_id: "page-1", reusable: true });
     const instanceA = makeElement("instance-a", {
@@ -246,6 +277,49 @@ describe("ComponentSemanticsSection", () => {
       "instance-b",
     ]);
     expect(useStore.getState().multiSelectMode).toBe(true);
+  });
+
+  it("origin action multi-selects canonical refs by metadata aliases", () => {
+    const origin = makeElement("origin", {
+      page_id: "origin-page",
+      reusable: true,
+      metadata: {
+        customId: "origin-custom",
+        componentName: "OriginComponent",
+      },
+    } as never);
+    const instanceA = makeElement("instance-a", {
+      type: "ref",
+      ref: "origin-custom",
+      page_id: "page-a",
+    } as never);
+    const instanceB = makeElement("instance-b", {
+      type: "ref",
+      ref: "OriginComponent",
+      page_id: "page-b",
+    } as never);
+
+    useStore.setState({
+      currentPageId: "origin-page",
+      elements: [origin, instanceA, instanceB],
+      elementsMap: new Map([
+        ["origin", origin],
+        ["instance-a", instanceA],
+        ["instance-b", instanceB],
+      ]),
+    });
+
+    render(<ComponentSemanticsSection elementId="origin" />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select instances (2)" }),
+    );
+
+    expect(useStore.getState().selectedElementIds).toEqual([
+      "instance-a",
+      "instance-b",
+    ]);
+    expect(useStore.getState().selectedElementId).toBe("instance-a");
+    expect(useStore.getState().currentPageId).toBe("page-a");
   });
 
   it("legacy instance detach action asks before detaching", async () => {

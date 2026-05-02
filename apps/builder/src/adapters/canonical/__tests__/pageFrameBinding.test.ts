@@ -81,6 +81,15 @@ function makeFrameNode(frameId = "frame-1"): CanonicalNode {
   };
 }
 
+function makeNativeFrameNode(frameId = "frame-native"): CanonicalNode {
+  return {
+    id: frameId,
+    type: "frame",
+    reusable: true,
+    name: "Native Frame",
+  };
+}
+
 describe("pageFrameBinding canonical primary helper", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -226,6 +235,86 @@ describe("pageFrameBinding canonical primary helper", () => {
         type: "frame",
         metadata: expect.not.objectContaining({ layoutId: "frame-1" }),
         children: [expect.objectContaining({ id: "child-1" })],
+      }),
+    );
+  });
+
+  it("uses the actual canonical FrameNode id for native frame bindings", async () => {
+    const page = makePage();
+    const state = {
+      pages: [page],
+      elementsMap: new Map<string, Element>(),
+    } as Parameters<typeof applyPageFrameBindingCanonicalPrimary>[0] extends {
+      getElementsState: () => infer S;
+    }
+      ? S
+      : never;
+    const setPages = vi.fn();
+    mocks.db.pages.getById.mockResolvedValue(page);
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore
+      .getState()
+      .setDocument("project-1", makeDoc([makeNativeFrameNode()]));
+
+    await applyPageFrameBindingCanonicalPrimary({
+      pageId: page.id,
+      frameId: "frame-native",
+      getElementsState: () => state,
+      setPages,
+    });
+
+    const doc = useCanonicalDocumentStore.getState().getDocument("project-1");
+    const pageNode = doc?.children.find((node) => node.id === "page-1") as
+      | RefNode
+      | undefined;
+    expect(pageNode).toEqual(
+      expect.objectContaining({
+        id: "page-1",
+        type: "ref",
+        ref: "frame-native",
+        metadata: expect.objectContaining({
+          layoutId: "frame-native",
+        }),
+      }),
+    );
+  });
+
+  it("maps a mirror frame id to a layout-prefixed canonical FrameNode id", async () => {
+    const page = makePage();
+    const state = {
+      pages: [page],
+      elementsMap: new Map<string, Element>(),
+    } as Parameters<typeof applyPageFrameBindingCanonicalPrimary>[0] extends {
+      getElementsState: () => infer S;
+    }
+      ? S
+      : never;
+    const setPages = vi.fn();
+    mocks.db.pages.getById.mockResolvedValue(page);
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore
+      .getState()
+      .setDocument("project-1", makeDoc([makeFrameNode("frame-2")]));
+
+    await applyPageFrameBindingCanonicalPrimary({
+      pageId: page.id,
+      frameId: "frame-2",
+      getElementsState: () => state,
+      setPages,
+    });
+
+    const doc = useCanonicalDocumentStore.getState().getDocument("project-1");
+    const pageNode = doc?.children.find((node) => node.id === "page-1") as
+      | RefNode
+      | undefined;
+    expect(pageNode).toEqual(
+      expect.objectContaining({
+        id: "page-1",
+        type: "ref",
+        ref: "layout-frame-2",
+        metadata: expect.objectContaining({
+          layoutId: "frame-2",
+        }),
       }),
     );
   });

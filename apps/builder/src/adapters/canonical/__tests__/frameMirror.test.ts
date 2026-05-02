@@ -40,6 +40,13 @@ describe("frameMirror adapter helpers", () => {
         metadata: { layoutId: "frame-2" },
       } as FrameNode),
     ).toBe("frame-2");
+    expect(
+      getReusableFrameMirrorId({
+        id: "native-frame",
+        type: "frame",
+        reusable: true,
+      } as FrameNode),
+    ).toBe("native-frame");
   });
 
   it("reads frame element mirror id", () => {

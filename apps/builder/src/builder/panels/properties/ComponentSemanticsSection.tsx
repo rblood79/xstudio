@@ -4,6 +4,7 @@ import type { Element } from "../../../types/core/store.types";
 import { PropertySection } from "../../components";
 import { useStore } from "../../stores";
 import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
+import { resolveReference } from "../../../utils/component/referenceResolution";
 import {
   canDetachInstance,
   getEditingSemanticsImpactInstanceIds,
@@ -19,18 +20,7 @@ function resolveOriginElement(
   elements: Iterable<Element>,
 ): Element | null {
   if (!originId) return null;
-
-  for (const element of elements) {
-    if (
-      element.id === originId ||
-      element.customId === originId ||
-      element.componentName === originId
-    ) {
-      return element;
-    }
-  }
-
-  return null;
+  return resolveReference(originId, elements) ?? null;
 }
 
 function getComponentDisplayName(

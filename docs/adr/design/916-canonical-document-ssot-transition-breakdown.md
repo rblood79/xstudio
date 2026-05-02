@@ -592,30 +592,30 @@ rg -n "elementsApi\.(create|update|insert|delete)|setElements\(|mergeElements\("
 
 본 §8.7 진입 시점 (2026-05-02) baseline:
 
-| wrapper                                  | input                     | 카테고리        | canonical reverse path                                                                                                                                                             | 무한 루프 방지                         |
-| ---------------------------------------- | ------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `mergeElementsCanonicalPrimary`          | `Element[]` (병합)        | in-memory       | (1) 현재 legacy state + 입력 elements merge → (2) `legacyToCanonical()` full doc → (3) `canonical.setDocument()` → (4) `exportLegacyDocument()` 결과 `legacy.setElements()` mirror | direct cutover: 항상 canonical primary |
-| `setElementsCanonicalPrimary`            | `Element[]` (전체 교체)   | in-memory       | (1) 입력 elements + 기존 pages/layouts → (2) `legacyToCanonical()` full doc → (3) `canonical.setDocument()` → (4) `exportLegacyDocument()` 결과 `legacy.setElements()` mirror      | 동일                                   |
-| `createElementCanonicalPrimary`          | `Partial<Element>` (DB)   | DB persist only | DB `elementsApi.createElement()` 그대로 — caller 가 반환 Element 받아서 별도 in-memory 호출. canonical reverse 영향 없음                                                           | —                                      |
-| `updateElementCanonicalPrimary`          | `(id, patch)` (DB)        | DB persist only | 동일 — DB persist 만, in-memory 무관                                                                                                                                               | —                                      |
-| `createMultipleElementsCanonicalPrimary` | `Partial<Element>[]` (DB) | DB persist only | 동일                                                                                                                                                                               | —                                      |
+| wrapper                                  | input                     | 카테고리        | canonical reverse path                                                                                                                                                            | 무한 루프 방지                         |
+| ---------------------------------------- | ------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `mergeElementsCanonicalPrimary`          | `Element[]` (병합)        | in-memory       | (1) active canonical document 에 legacy id 기준 upsert → (2) `canonical.setDocument()` → (3) `exportLegacyDocument()` 결과 `legacy.setElements()` mirror                          | direct cutover: 항상 canonical primary |
+| `setElementsCanonicalPrimary`            | `Element[]` (전체 교체)   | in-memory       | (1) pages/layouts snapshot 으로 canonical shell 구성 → (2) 입력 elements upsert → (3) `canonical.setDocument()` → (4) `exportLegacyDocument()` 결과 `legacy.setElements()` mirror | 동일                                   |
+| `createElementCanonicalPrimary`          | `Partial<Element>` (DB)   | DB persist only | DB `elementsApi.createElement()` 그대로 — caller 가 반환 Element 받아서 별도 in-memory 호출. canonical reverse 영향 없음                                                          | —                                      |
+| `updateElementCanonicalPrimary`          | `(id, patch)` (DB)        | DB persist only | 동일 — DB persist 만, in-memory 무관                                                                                                                                              | —                                      |
+| `createMultipleElementsCanonicalPrimary` | `Partial<Element>[]` (DB) | DB persist only | 동일                                                                                                                                                                              | —                                      |
 
-**진정 reverse work scope = in-memory wrapper 2개** (`mergeElements` / `setElements`). DB wrapper 3개는 reverse 영향 없음 (DB row = legacy export 결과, schema 변경 없음 = D17=A).
+**진정 reverse work scope = in-memory wrapper 2개** (`mergeElements` / `setElements`). DB wrapper 3개는 reverse 영향 없음 (DB row = legacy export 결과, schema 변경 없음 = D17=A). 2026-05-02 slice 18 에서 두 wrapper 의 `legacyToCanonical()` full rebuild 는 native shell/upsert 로 제거됐다.
 
 #### 8.7.2 4 의문 정밀화
 
-1. **mergeElements 의 신규/기존 분기**: `legacy state + 입력 elements` merge 시 동일 id 면 입력으로 덮어쓰기. `legacyToCanonical(mergedElements)` 가 canonical doc 재생성 — full document 재구성 path. per-element insertNode/updateNode 분기 불필요 (full doc 재구성이 더 robust, lookup 키 분리 — segId vs uuid — 회피).
-2. **setElements 전체 교체**: 입력 elements + **기존 pages/layouts 보존** (입력 elements 만 변경, pages/layouts 는 이전 state). `legacyToCanonical({elements: input, pages: currentPages, layouts: currentLayouts})` 호출.
+1. **mergeElements 의 신규/기존 분기**: `legacy state + 입력 elements` merge 시 동일 id 면 입력으로 덮어쓰기. direct cutover 후에는 active canonical document 에 legacy id 기준 upsert 한다. 기존 node replacement 와 신규 node append 를 모두 native path 로 처리하며, full document projection rebuild 는 재도입하지 않는다.
+2. **setElements 전체 교체**: 입력 elements + **기존 pages/layouts 보존** (입력 elements 만 변경, pages/layouts 는 이전 state). direct cutover 후에는 pages/layouts snapshot 으로 canonical shell 을 만들고 입력 elements 를 native upsert 한 뒤 export mirror 만 생성한다.
 3. **DB persist 와 in-memory 순서**: DB wrapper 3개는 DB save 후 caller 가 반환 Element 받아서 별도 in-memory wrapper 호출 (현재 caller 패턴). canonical reverse 시점에도 동일 — DB save 는 reverse 무관, in-memory wrapper 만 reverse.
 4. **무한 루프 방지**: wrapper 가 canonical setDocument + legacy setElements 양쪽을 처리한다. direct cutover 후 `canonicalDocumentSync` 는 legacy store subscribe/projection sync 를 수행하지 않고 active project lifecycle marker 로만 남으므로 wrapper → legacy mirror → sync 재호출 루프가 없다.
 
 #### 8.7.3 sub-step β/γ/δ 정의
 
-| sub-step                         | 정의                                                                                                | scope             | 위험                                                       |
-| -------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------- |
-| **β monitoring trigger** (선택)  | 폐기 — feature flag/shadow subscription 없이 targeted fixture 로 대체                               | 제외              | direct cutover 원칙                                        |
-| **γ wrapper internal reverse**   | mergeElements / setElements wrapper 2개 내부 reverse + DI deps 확장 (legacyToCanonical caller 주입) | 본 §8.7 본격 land | HIGH — fixture coverage gap 발견 시 즉시 fixture 보강 의무 |
-| **δ canonicalDocumentSync swap** | land — sync 는 project lifecycle marker 로만 유지하고 legacy snapshot projection 은 제거            | 본 §8.7 후속      | wrapper 가 canonical primary seed 책임                     |
+| sub-step                         | 정의                                                                                                                     | scope             | 위험                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------- | ---------------------------------------------------------- |
+| **β monitoring trigger** (선택)  | 폐기 — feature flag/shadow subscription 없이 targeted fixture 로 대체                                                    | 제외              | direct cutover 원칙                                        |
+| **γ wrapper internal reverse**   | mergeElements / setElements wrapper 2개 내부 native reverse. projection caller 주입 없이 active doc/shell upsert 로 처리 | 본 §8.7 본격 land | HIGH — fixture coverage gap 발견 시 즉시 fixture 보강 의무 |
+| **δ canonicalDocumentSync swap** | land — sync 는 project lifecycle marker 로만 유지하고 legacy snapshot projection 은 제거                                 | 본 §8.7 후속      | wrapper 가 canonical primary seed 책임                     |
 
 #### 8.7.4 진입 순서 (확정)
 
@@ -1522,7 +1522,7 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 - **Phase 3 G4 wrapper 내부 진정 reverse** (HIGH ~3-5d, drift #1 본질 해소): canonical store mutation 우선 + legacy mirror 자동. ADR-916 본질 목표 (canonical primary write) 달성. caller 16 site 무수정 (DI pattern 으로 wrapper 외부 시그니처 보존).
 - **Phase 4 G5 P5-B `overrides`** (MED-HIGH ~1-2d, ADR-911 P3 회피 영역만, drift #2 영역 결합 위험).
 
-### §10.2.16 — Projection removal slices 15~17 (2026-05-02)
+### §10.2.16 — Projection removal slices 15~19 (2026-05-02)
 
 **목표**: direct cutover 이후 hot/caller path 의 `selectCanonicalDocument()` / `legacyToCanonical()` full projection rebuild 를 제거한다. legacy payload 는 adapter/import/export mirror 경계로 제한한다.
 
@@ -1533,15 +1533,216 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 - Builder/store actions: BuilderCore refresh/theme/publish, `usePageManager.initializeProject`, `elementCreation`, `layoutActions.getLayoutSlots` caller-level `selectCanonicalDocument()` 제거.
 - Sync/store bridge: `canonicalDocumentSync` 는 project lifecycle marker 로 축소. `storeBridge.selectResolvedTree` 는 `CompositionDocument` 직접 resolve API 로 전환.
 - Adapter boundary: `pageFrameBinding`, `frameLayoutCascade` 는 active canonical document children 을 직접 upsert/remove 하고 legacy page/elements 는 mirror persistence/export 로만 생성.
+- Wrapper boundary: `canonicalMutations` 의 `mergeElementsCanonicalPrimary` / `setElementsCanonicalPrimary` 는 `legacyToCanonical()` rebuild 없이 native shell/upsert 로 canonical document 를 갱신한다. layout Slot 은 `legacy-slot-hoisted` frame 으로 변환하고 page ref slot fill 은 referenced layout frame 의 slot path 를 찾아 `descendants[slotPath].children` 에 삽입한다.
+- Store selector boundary: `elements.ts` 의 deprecated `selectCanonicalDocument()` selector 를 삭제했다. legacy store snapshot → canonical projection entrypoint 는 production source 에 남기지 않는다.
+- Export boundary: `exportLegacyDocument()` 는 `RefNode.descendants[].children` 까지 DFS 순회해 page frame slot fill legacy mirror 누락을 방지한다. G6-3 first slice 로 `slot_name` / `componentRole` / `masterId` / legacy `overrides` / legacy `descendants` / `componentName` mirror payload 도 export boundary 에서 top-level 로 복원한다.
+- Resolver boundary: `resolveCanonicalDocument()` 는 RefNode resolve 결과의 top-level `type` 을 master type 으로 명시 고정한다. ref identity 는 `id` / `_resolvedFrom` 으로 보존하고 렌더 타입은 master 기준으로 열린다.
+- Gate boundary: `exportSsotGrepGate` 는 ADR-912 dev-only editing semantics fixture 의 raw visual marker write 만 명시 allowlist 로 분리한다. runtime/persistence write gate baseline 0은 유지.
 
 **최신 grep 상태**:
 
-- production `selectCanonicalDocument()` 호출: `elements.ts` adapter 정의와 문서/comment 경계만 잔존.
-- runtime `legacyToCanonical()` 호출: `canonicalMutations` wrapper 내부 reverse 2곳 + adapter 정의. 이는 canonical primary wrapper 가 legacy `Element[]` 입력을 받는 transition boundary 로 남긴다.
+- production `selectCanonicalDocument()` 호출/정의: source 0건. 테스트와 문서/comment 경계만 잔존.
+- runtime `legacyToCanonical()` 호출: source 0건. `apps/builder/src/adapters/canonical/index.ts` adapter 정의와 themes/variables/export 문서 comment 경계만 잔존. `canonicalMutations` wrapper 내부 호출 0.
 
 **검증**:
 
 - targeted vitest 7 files / 62 tests PASS (`canonicalDocumentSync`, `usePageManager.canonical`, `BuilderCore.static`, `storeBridge`, `pageFrameBinding`, `PageLayoutSelector.static`, `layoutActions`).
+- targeted vitest 13 files / 141 tests PASS (`canonicalMutations`, `pageFrameBinding`, `persistenceWriteThroughStub`, `legacyExtensionRoundtrip`, `layoutActions`, `elementCreationCanonical`, `usePageManager.canonical`, `useIframeMessenger.canonical`, `BuilderCore.static`, `storeBridge`, `FramesTab`, `PageLayoutSelector.static`).
+- adapters/canonical 전체 18 files / 185 tests PASS.
+- builder `tsc --noEmit` PASS + projection selector removal targeted vitest 17 files / 145 tests PASS.
+- canonical adapter/resolver/store targeted vitest 27 files / 358 tests PASS.
+- editing semantics / Component semantics UI / instance detach targeted vitest 3 files / 50 tests PASS.
+- page frame binding / frame mirror / PageLayoutSelector / FramesTab targeted vitest 5 files / 22 tests PASS.
+- canonical resolver/cache/storeBridge targeted vitest 3 files / 65 tests PASS.
+- canonical import registry/resolver/cache/storeBridge targeted vitest 4 files / 72 tests PASS.
+
+### 10.2.17 G6-3 Slot/Ref/Descendants parity first slice (2026-05-02)
+
+**framing**: G6-3 전체는 ADR-911 P3 frame canvas authoring + ADR-913 P5 instance schema cleanup 과 결합된 HIGH scope 다. 본 slice 는 projection 제거 직후 새 native mutation/export path 에서 회귀 위험이 높은 Slot/Ref/Descendants compatibility evidence 만 먼저 닫는다.
+
+**land 내용**:
+
+- Slot append semantics: 같은 page ref slot 에 반복 fill 되는 element 가 referenced frame slot path (`frame-body/content`) 아래 order 를 유지한다.
+- Slot clear semantics: `setElementsCanonicalPrimary()` full replace 에서 누락된 slot fill 은 page ref `descendants` 에 남지 않는다.
+- Ref/Descendants mirror export: canonical primary native path 가 만든 master/ref/descendants 구조를 legacy mirror 로 export 할 때 `componentRole` / `masterId` / legacy `overrides` / legacy `descendants` / `componentName` 을 top-level field 로 복원한다.
+- Resolver ref parity: RefNode resolve 결과의 top-level `type` 을 master type 으로 고정해 resolved tree consumer 가 `type:"ref"` 를 렌더 타입으로 보지 않는다.
+
+**검증**:
+
+- `canonicalMutations.test.ts` 9 tests PASS.
+- `persistenceWriteThroughStub.test.ts` mirror compatibility field round-trip 추가.
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__ src/resolvers/canonical/__tests__ src/builder/stores/canonical/__tests__` — 27 files / 358 tests PASS.
+
+### 10.2.18 G6-3 Ref navigation parity second slice (2026-05-02)
+
+**framing**: G6-3 Ref parity 는 detach materialization 뿐 아니라 origin ↔ instance navigation 이 같은 reference alias contract 를 써야 닫힌다. 본 slice 는 Properties Component section 의 low-risk navigation 경계를 canonical reference helper 와 맞춘다.
+
+**land 내용**:
+
+- `ComponentSemanticsSection` 의 `Go to component` origin lookup 을 local id/customId/componentName 비교에서 `resolveReference()` 로 전환했다.
+- `getEditingSemanticsImpactInstanceIds()` 는 origin 의 canonical `name`, `metadata.customId`, `metadata.componentName` alias 를 포함해 canonical ref instance 를 수집한다.
+- UI 회귀 fixture: canonical ref 가 metadata `componentName` alias 로 origin page 에 이동하고, origin 의 metadata alias 로 매칭되는 canonical refs 를 `Select instances` 에서 multi-select 한다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/editingSemantics.test.ts src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/stores/utils/__tests__/instanceActions.test.ts` — 3 files / 50 tests PASS.
+
+### 10.2.19 G6-3 Frame connection parity third slice (2026-05-02)
+
+**framing**: G6-3 Frame parity 는 page -> reusable frame 연결이 UI 선택값과 canonical `RefNode.ref` 를 혼동하지 않아야 닫힌다. projection 제거 후 native canonical frame 은 `metadata.layoutId` 가 없을 수 있으므로, `layout-${frameId}` 를 무조건 생성하는 경로를 막는다.
+
+**land 내용**:
+
+- `PageLayoutSelector` 와 `FramesTab` 의 canonical reusable frame option id 를 `getReusableFrameMirrorId()` 로 정규화했다. legacy-prefixed `layout-<id>` frame 은 UI/mirror id 로, native canonical frame 은 실제 id 로 노출된다.
+- `pageFrameBinding` 은 active canonical document 의 reusable `FrameNode` 를 `id` / mirror id / `metadata.layoutId` / `name` / metadata `customId` / `componentName` alias 로 찾고, 실제 `FrameNode.id` 를 page `RefNode.ref` 로 기록한다.
+- fallback 은 기존 legacy bridge 와 동일하게 `layout-<frameId>` ref 를 유지하되, 이미 `layout-` prefix 가 있는 입력은 중복 prefix 를 붙이지 않는다.
+- 회귀 fixture: native frame binding 이 `ref: "frame-native"` 를 유지하고, mirror id `"frame-2"` 가 canonical id `"layout-frame-2"` 로 매핑된다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/pageFrameBinding.test.ts src/adapters/canonical/__tests__/frameMirror.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx` — 5 files / 22 tests PASS.
+
+### 10.2.20 G6-4 Imports resolver parity first slice (2026-05-02)
+
+**framing**: G6-4 는 external `.pen` fetch/cache/resolver 전체라서 바로 네트워크 fetch/UI 까지 열지 않는다. 첫 slice 는 core resolver 가 이미 loaded 된 import document 를 `<importKey>:<nodeId>` ref 로 소비하고, cache stale hit 를 막는 동기 경계를 닫는다.
+
+**land 내용**:
+
+- `packages/shared/src/types/canonical-resolver.types.ts` 에 `ImportResolverContext` 를 추가하고 `ResolveFn` 의 optional third parameter 로 노출했다.
+- `resolveCanonicalDocument(doc, cache, imports)` 는 host `CompositionDocument.imports` 의 source map 을 확인한 뒤, `imports.resolveImportDocument(importKey, source)` 로 loaded import document 를 동기 조회한다.
+- local reusable node lookup 을 우선하고, local miss 시 `<importKey>:<nodeId>` ref 를 imported document 의 reusable node id/name/metadata alias 로 resolve 한다.
+- imported master 는 resolved metadata 에 `importedFrom`, `importKey`, `importNodeId`, `importSource` 를 보존한다.
+- resolver cache key 는 host document version + sorted imports source + loaded import document version fingerprint 를 포함한다. import document version 변경 시 동일 ref node id 여도 stale resolved subtree cache hit 가 발생하지 않는다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/cache.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 3 files / 65 tests PASS.
+
+### 10.2.21 G6-4 Imports prefetch/cache registry second slice (2026-05-02)
+
+**framing**: 첫 slice 가 resolver 의 동기 import context 를 열었으므로, 두 번째 slice 는 runtime 이 외부 source 를 미리 로드해 그 context 를 채울 수 있는 registry 경계를 닫는다. UI/URL 정책과 IndexedDB fallback 은 아직 열지 않는다.
+
+**land 내용**:
+
+- `apps/builder/src/resolvers/canonical/importRegistry.ts` 신규:
+  - `createCanonicalImportRegistry(fetcher)` — loaded document / inflight request / failure status 를 관리한다.
+  - `prefetchImport(importKey, source)` — 동일 importKey/source concurrent request 를 1회 fetch 로 dedupe 한다.
+  - `prefetchDocumentImports(doc)` — host `CompositionDocument.imports` 를 순회해 성공/실패 summary 를 반환한다. 일부 실패가 전체 prefetch 를 throw 하지 않는다.
+  - `resolveImportDocument(importKey, source)` — resolver 가 render-time 에 동기 조회할 loaded document 를 반환한다.
+  - `getSharedImportRegistry()` / `resetSharedImportRegistry()` — resolver cache 와 같은 singleton/test isolation 패턴.
+- `fetchCompositionDocumentFromSource()` default fetcher 는 source JSON 이 `CompositionDocument` shape (`version` string + `children` array) 인지 검증한다. 실제 URL allowlist/CORS/IndexedDB fallback 정책은 후속 runtime adapter 영역으로 남긴다.
+- `storeBridge.selectResolvedTree()` 는 기본 import context 로 shared registry 를 사용한다. `prefetchResolvedTreeImports(doc, registry?)` helper 로 fetch/prefetch 를 render-time resolve 와 분리했다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/cache.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 72 tests PASS.
+
+### 10.2.22 G6-4 Preview import runtime third slice (2026-05-02)
+
+**framing**: registry 가 존재해도 Preview render path 가 registry context 를 넘기지 않으면 external ref 는 계속 broken ref 로 남는다. 본 slice 는 수신된 canonical document 를 Preview runtime 에서 prefetch 하고, render-time resolve 가 같은 registry 를 소비하도록 연결한다.
+
+**land 내용**:
+
+- `apps/builder/src/preview/App.tsx` 는 module-level shared canonical import registry 를 사용한다.
+- `canonicalDocument` 수신 시 `prefetchDocumentImports(canonicalDocument)` 를 호출하고, import load 성공 후 version state 를 갱신해 같은 document 를 다시 resolve 하도록 한다.
+- dev logging resolve 와 canonical render resolve 는 모두 `resolveCanonicalDocument(canonicalDocument, undefined, canonicalImportRegistry)` 로 registry context 를 전달한다.
+- `previewFrameMirror.static.test.ts` 는 Preview App 이 shared import registry prefetch 와 registry-context resolve 2곳을 유지하는지 검사한다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 57 tests PASS.
+
+### 10.2.23 G6-4 Import source URL policy fourth slice (2026-05-02)
+
+**framing**: Preview runtime 이 import prefetch 를 시작했으므로, default fetcher 는 `CompositionDocument.imports` 의 source 문자열을 그대로 `fetch()` 에 넘기면 안 된다. 본 slice 는 URL/path source 를 같은 origin URL로 정규화하고, 위험한 scheme/cross-origin source 를 default runtime 경계에서 닫는다.
+
+**land 내용**:
+
+- `resolveCompositionImportSource(source, baseUrl?)` 를 추가했다.
+- relative (`./kit.pen`), root (`/kits/basic.pen`), absolute same-origin URL 은 canonical absolute URL 로 정규화한다.
+- empty source, `javascript:`/`data:` 등 non-http(s) protocol, cross-origin URL 은 fetch 전에 reject 한다.
+- `fetchCompositionDocumentFromSource()` 는 정규화된 URL만 fetch 하고, 기존 JSON `CompositionDocument` shape 검증을 유지한다.
+- custom backend 가 필요한 테스트/후속 adapter 는 기존 `ImportDocumentFetcher` DI 경계를 그대로 사용한다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 60 tests PASS.
+
+### 10.2.24 G6-4 Import namespace guard fifth slice (2026-05-02)
+
+**framing**: source URL policy 가 fetch 대상 URL을 제한해도, `CompositionDocument.imports` 의 key namespace 자체가 열려 있으면 `ref: "<importKey>:<nodeId>"` 해석이 ambiguous 해지고 reserved object key 가 registry 경계에 들어올 수 있다. 본 slice 는 import namespace syntax 를 resolver/registry 공통 helper 로 고정한다.
+
+**land 내용**:
+
+- `importNamespace.ts` 를 추가해 `isValidCompositionImportKey`, `assertCompositionImportKey`, `parseCompositionImportReference` 를 한 곳에 둔다.
+- `importKey` 는 `/^[A-Za-z][A-Za-z0-9_-]*$/` 를 통과해야 하며 `__proto__` / `constructor` / `prototype` 은 reserved key 로 금지한다.
+- registry 는 invalid import key 를 fetcher 호출 전에 failed status 로 기록하고, valid import 만 fetch/prefetch 한다.
+- resolver 는 invalid namespace ref 또는 nested namespace 형태 (`bad:key:node`) 를 imported ref 로 해석하지 않는다. 이 경우 기존 broken ref 안전망으로 남긴다.
+- shared `CompositionDocument` 타입 주석에 importKey namespace 규칙을 반영했다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 62 tests PASS.
+
+### 10.2.25 G6-4 Import payload adapter sixth slice (2026-05-02)
+
+**framing**: URL/source/namespace guard 만으로는 external `.pen` source 가 fetch 된 뒤 resolver 에 들어갈 payload shape 가 닫히지 않는다. 본 slice 는 same-origin JSON 응답을 canonical `CompositionDocument` 또는 Pencil-style node tree 로 판별하고, resolver 에는 항상 canonical document 만 전달되도록 adapter boundary 를 둔다.
+
+**land 내용**:
+
+- `importPayloadAdapter.ts` 신규:
+  - `normalizeCompositionImportPayload(payload, source)` — canonical document payload 는 그대로 통과.
+  - Pencil-style document (`{ children: [...] }`) 또는 single node payload 는 `CompositionDocument` 로 변환한다.
+  - top-level Pencil nodes 는 external import master 로 참조 가능해야 하므로 `reusable: true` 로 승격한다.
+  - primitive mapping: `rectangle`/geometry/`frame`/`group` -> `frame`, `text` -> `Text`, `icon_font` -> `Icon`, `note`/`prompt`/`context` -> `Text`.
+  - 원본 primitive type 은 `metadata.type` / `metadata.pencilType` 에 보존하고, canonical field 외 나머지 primitive payload 는 `props` 에 둔다.
+- `fetchCompositionDocumentFromSource()` 는 URL policy 통과 후 JSON 을 normalize 하고, registry 는 normalize 된 canonical document 만 loaded import document 로 보관한다.
+- shared `CompositionDocument.imports` 주석에서 P0 stub 문구를 제거하고 ADR-916 G6-4 runtime boundary 로 갱신했다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 64 tests PASS.
+
+### 10.2.26 G6-4 Import registry stale pruning seventh slice (2026-05-02)
+
+**framing**: Preview runtime 이 canonical document update 때마다 import prefetch 를 수행하므로, import map 변경/삭제 후 이전 loaded/pending/failed entry 가 shared registry 에 남으면 stale memory 와 late fetch writeback 이 생길 수 있다. 본 slice 는 active document import map 기준으로 registry entry 를 retain 하고, pruned in-flight request 가 늦게 resolve 되어도 loaded map 에 재삽입하지 못하게 한다.
+
+**land 내용**:
+
+- `CanonicalImportRegistry.retainDocumentImports(doc)` 를 추가했다.
+- `prefetchDocumentImports(doc)` 는 prefetch 전에 현재 `doc.imports` 기준으로 loaded / pending / failed / request token map 을 prune 한다.
+- `prefetchImport()` 는 request token 을 부여하고, fulfill/catch/finally 단계에서 token 이 여전히 current 인 경우에만 loaded/failure/pending map 을 갱신한다.
+- import map 이 `kit: "./old.pen"` 에서 `kit: "./new.pen"` 로 바뀌면 old entry 는 idle 로 돌아가고, 삭제된 pending import 가 늦게 resolve 되어도 registry 에 저장되지 않는다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 66 tests PASS.
+
+### 10.2.27 G6-4 Imports parity completion sweep (2026-05-02)
+
+**framing**: G6-4 는 DesignKit copy pipeline 이 아니라 canonical document import runtime 의 fetch/cache/resolver parity gate 다. 본 sweep 은 새 runtime surface 를 늘리지 않고, 이미 land 된 G6-4 seven slices 를 completion contract 로 묶어 future regression 을 막는다.
+
+**completion 기준**:
+
+| 기준                               | evidence                                                                                                                          |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| loaded import resolver consumption | resolver 가 `ImportResolverContext` 와 `parseCompositionImportReference(refId)` 로 `<importKey>:<nodeId>` 를 resolve              |
+| cache stale hit 방지               | resolver cache document version slot 에 host import map/source 와 loaded import document version fingerprint 포함                 |
+| async prefetch/cache registry      | `CanonicalImportRegistry` 가 loaded/loading/failed/idle status, inflight dedupe, shared registry 를 제공                          |
+| Preview runtime wiring             | Preview 가 수신 `CompositionDocument.imports` 를 prefetch 하고 dev/render resolve 모두 동일 registry context 사용                 |
+| source/namespace/payload policy    | same-origin URL policy, importKey namespace guard, canonical/Pencil payload adapter 를 registry boundary 에 적용                  |
+| stale registry pruning             | `prefetchDocumentImports(doc)` 가 현재 import map 밖 loaded/pending/failed/request token 을 prune                                 |
+| static completion gate             | `importRegistry.test.ts` 가 URL policy, payload normalize, stale token guard, resolver parse, Preview context wiring 을 동시 확인 |
+
+**land 내용**:
+
+- `importRegistry.test.ts` 에 `keeps the ADR-916 G6-4 import runtime completion contract wired` 정적 테스트를 추가했다.
+- G6-4 completion 은 `imports` fetch/cache/resolver runtime parity 를 닫는 기준이다. DesignKit copy/import UX 는 ADR-915 로 무효화됐고, Pencil schema-equivalent export/import product flow 는 ADR-911 G5 로 분리한다.
+- README / ADR body / CHANGELOG 의 잔존 범위에서 G6-4 parity 확장 문구를 제거하고, 잔여를 G6-3 및 ADR-911/913 cleanup 으로 좁혔다.
+
+**검증**:
+
+- `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 67 tests PASS.
 
 ## 11. ADR 의존 관계 정리
 

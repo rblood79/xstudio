@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 2 G3 / Phase 3 G4 / Phase 5 G6-1·G6-2·G7 closure 는 유지하되, 개발 단계 전제에 맞춰 feature flag / backup / runtime DB migration / rollback marker 를 제거하고 canonical primary 를 즉시 기본 경로로 고정했다. 잔존 = ADR-911/913 의 legacy field quarantine 본격 cleanup (`layout_id`, `slot_name`, `componentRole`, `masterId`, `overrides`, legacy `descendants`) + G6-3/G6-4 parity 확장.
+In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 2 G3 / Phase 3 G4 / Phase 5 G6-1·G6-2·G6-4·G7 closure 는 유지하되, 개발 단계 전제에 맞춰 feature flag / backup / runtime DB migration / rollback marker 를 제거하고 canonical primary 를 즉시 기본 경로로 고정했다. 잔존 = ADR-911/913 의 legacy field quarantine 본격 cleanup (`layout_id`, `slot_name`, `componentRole`, `masterId`, `overrides`, legacy `descendants`) + G6-3 parity 확장.
 
 ### 진행 로그
 
@@ -192,8 +192,66 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
   - `canonicalDocumentSync` 는 legacy `useStore`/`useLayoutsStore` subscribe 와 `selectCanonicalDocument()` projection sync 를 제거하고, active project id lifecycle marker 로만 남겼다. scheduler diagnostic API 는 no-op compatibility surface 로 유지한다.
   - `storeBridge.selectResolvedTree` 는 `elements/pages/layouts` snapshot 을 받지 않고 `CompositionDocument` 를 직접 resolve 한다. 테스트 fixture 도 legacy snapshot 생성 없이 canonical document fixture 로 전환했다.
   - `pageFrameBinding` 과 `frameLayoutCascade` 는 active canonical document 를 직접 갱신한다. page frame binding 변경, reusable frame 삭제, page binding clear 는 canonical document children 을 직접 교체/삭제하고, legacy page/elements payload 는 adapter mirror/persistence 경계에서만 생성한다.
-  - production `selectCanonicalDocument()` 호출은 `elements.ts` adapter 정의와 문서/comment 경계만 남았다. runtime `legacyToCanonical()` 호출은 `canonicalMutations` wrapper 내부 reverse 경로와 adapter 정의로 제한된다.
+  - production `selectCanonicalDocument()` 호출은 `elements.ts` adapter 정의와 문서/comment 경계만 남았다.
   - 검증: targeted vitest 7 files / 62 tests PASS.
+- **2026-05-02 — ADR-916 projection removal eighteenth cleanup slice**:
+  - `canonicalMutations` wrapper 내부 `legacyToCanonical()` full document rebuild 를 제거했다. `mergeElementsCanonicalPrimary` 는 active canonical document 에 incoming elements 를 legacy id 기준 upsert 하고, `setElementsCanonicalPrimary` 는 pages/layouts shell 을 만든 뒤 입력 elements 를 upsert 한다.
+  - layout Slot element 는 native path 에서 `legacy-slot-hoisted` frame 으로 변환하고, page ref slot fill 은 referenced layout frame 의 slot path 를 찾아 `descendants[slotPath].children` 에 삽입한다.
+  - `exportLegacyDocument()` 는 `RefNode.descendants[].children` 까지 DFS 순회해 page frame slot fill mirror 누락을 방지한다.
+  - `exportSsotGrepGate` 는 ADR-912 dev-only editing semantics fixture 의 raw visual marker write 만 allowlist 로 분리했다. runtime/persistence write gate baseline 은 0을 유지한다.
+  - runtime `legacyToCanonical()` 호출은 `elements.ts`/`index.ts` adapter 정의와 themes/variables/export 문서 comment 경계만 남았다.
+  - 검증: targeted vitest 13 files / 141 tests PASS + adapters/canonical 전체 18 files / 185 tests PASS.
+- **2026-05-02 — ADR-916 projection removal nineteenth cleanup slice**:
+  - `elements.ts` 의 deprecated `selectCanonicalDocument()` selector 를 삭제해 legacy store snapshot → `legacyToCanonical()` projection entrypoint 를 production source 에서 제거했다.
+  - production `selectCanonicalDocument()` 호출/정의는 0건이다. `legacyToCanonical()` 은 `apps/builder/src/adapters/canonical/index.ts` adapter import/export boundary 와 adapter 테스트/문서 경계에만 남긴다.
+  - 검증: builder `tsc --noEmit` PASS + projection selector removal targeted vitest 17 files / 145 tests PASS.
+- **2026-05-02 — ADR-916 G6-3 Slot/Ref/Descendants parity first slice**:
+  - `canonicalMutations` native path 에 slot append semantics 와 full replace clear slot fixture 를 추가했다. 같은 page ref slot 에 반복 fill 되는 element 는 referenced frame slot path (`frame-body/content`) 아래 order 를 유지하고, `setElementsCanonicalPrimary()` 전체 교체에서 누락된 slot fill 은 `descendants` 에서 제거된다.
+  - `exportLegacyDocument()` 는 export boundary 에서 `slot_name` / `componentRole` / `masterId` / legacy `overrides` / legacy `descendants` / `componentName` mirror payload 를 top-level field 로 복원한다. `metadata.legacyProps` 의 events/dataBinding dual-storage 금지는 유지한다.
+  - `resolveCanonicalDocument()` 는 RefNode resolve 결과의 top-level `type` 을 master type 으로 명시 고정해 Ref parity contract(`type:"ref"` 가 아니라 resolved master type) 를 보장한다.
+  - 검증: canonical adapter/resolver/store targeted vitest 27 files / 358 tests PASS.
+- **2026-05-02 — ADR-916 G6-3 Ref navigation parity second slice**:
+  - `ComponentSemanticsSection` 의 `Go to component` 는 canonical reference alias helper (`resolveReference`) 로 origin 을 찾는다. origin id 뿐 아니라 `customId`, `componentName`, canonical `name`, metadata `customId`/`componentName` alias 가 navigation 대상이 된다.
+  - origin impact 계산도 canonical `name` 과 metadata alias 를 포함해 `Select instances` 가 canonical ref alias 를 빠뜨리지 않는다.
+  - 검증: editing semantics / Component semantics UI / instance detach targeted vitest 3 files / 50 tests PASS.
+- **2026-05-02 — ADR-916 G6-3 Frame connection parity third slice**:
+  - `PageLayoutSelector` / `FramesTab` 의 reusable frame option id 는 `getReusableFrameMirrorId()` 로 정규화한다. `metadata.layoutId` 가 없는 native canonical frame 은 frame id 그대로, `layout-<id>` prefix frame 은 mirror id 로 UI 선택값을 맞춘다.
+  - `pageFrameBinding` 은 page ref 생성 시 active canonical document 의 reusable `FrameNode` 를 먼저 찾아 실제 `FrameNode.id` 를 `RefNode.ref` 로 사용한다. native frame 연결에서 `layout-${frameId}` broken ref 를 새로 만들지 않고, legacy-prefixed frame 은 mirror id → canonical id 로 매핑한다.
+  - 검증: page frame binding / frame mirror / PageLayoutSelector / FramesTab targeted vitest 5 files / 22 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Imports resolver parity first slice**:
+  - `resolveCanonicalDocument()` 는 optional `ImportResolverContext` 를 받아 `CompositionDocument.imports` 의 `<importKey>:<nodeId>` ref 를 loaded import document 의 reusable node 로 resolve 할 수 있다. 외부 fetch/prefetch 는 아직 adapter/runtime 후속 경계로 남기고, resolver 는 동기 loaded document 만 소비한다.
+  - resolver cache key 의 document version slot 에 imports fingerprint 를 포함한다. host `imports` map/source 와 loaded import document version 이 바뀌면 기존 resolved subtree cache hit 를 재사용하지 않는다.
+  - 검증: canonical resolver/cache/storeBridge targeted vitest 3 files / 65 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Imports prefetch/cache registry second slice**:
+  - `importRegistry` 를 추가해 `CompositionDocument.imports` source 를 async prefetch 하고, loaded import document 를 `ImportResolverContext` 로 동기 제공한다. fetcher 는 `ImportDocumentFetcher` 로 DI 가능하고, default fetcher 는 JSON `CompositionDocument` payload 만 허용한다.
+  - registry 는 동일 importKey/source inflight request 를 dedupe 하고, loaded / loading / failed / idle status 와 실패 error 를 추적한다. `prefetchDocumentImports()` 는 일부 import 실패가 있어도 성공/실패 summary 를 반환한다.
+  - `storeBridge.selectResolvedTree()` 의 기본 import context 를 shared import registry 로 연결하고, `prefetchResolvedTreeImports()` helper 를 노출했다. fetch/prefetch 와 render-time sync resolve 경계를 분리한 상태로 외부 `.pen` UI/URL 정책은 다음 slice 로 남긴다.
+  - 검증: canonical import registry/resolver/cache/storeBridge targeted vitest 4 files / 72 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Preview import runtime third slice**:
+  - Preview runtime 은 수신한 `CompositionDocument` 의 `imports` 를 shared import registry 로 prefetch 한다. import load 성공 시 version state 를 갱신해 같은 document 를 registry context 로 다시 resolve 한다.
+  - `App.tsx` 의 dev resolve 와 canonical render resolve 는 모두 `resolveCanonicalDocument(canonicalDocument, undefined, canonicalImportRegistry)` 를 사용한다. Preview 렌더 중 legacy snapshot projection 은 계속 0건이다.
+  - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 57 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Import source URL policy fourth slice**:
+  - default import fetcher 는 `resolveCompositionImportSource(source, baseUrl)` 로 source 를 fetch 직전에 정규화한다. relative/root/absolute same-origin URL 은 허용하고, empty source / non-http(s) protocol / cross-origin source 는 차단한다.
+  - policy 는 default fetcher 경계에만 적용한다. 테스트/후속 adapter 는 `ImportDocumentFetcher` DI 로 명시적인 다른 source backend 를 붙일 수 있다.
+  - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 60 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Import namespace guard fifth slice**:
+  - `importKey` namespace 는 `/^[A-Za-z][A-Za-z0-9_-]*$/` 로 제한하고 `__proto__` / `constructor` / `prototype` reserved object key 를 차단한다.
+  - registry prefetch 는 invalid import key 를 fetcher 호출 전에 failed status 로 기록한다. resolver 는 invalid namespace ref (`bad:key:node`) 를 imported ref 로 해석하지 않고 broken local ref 로 둔다.
+  - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 62 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Import payload adapter sixth slice**:
+  - `importPayloadAdapter` 를 추가해 fetched JSON payload 를 canonical `CompositionDocument` 또는 Pencil-style node tree 로 판별한다.
+  - Pencil-style payload 는 top-level node 를 reusable canonical master 로 승격한다. `rectangle` / `frame` / geometry primitive 는 `frame`, `text` 는 `Text`, `icon_font` 는 `Icon`, note/prompt/context 는 `Text` 로 변환하고 원본 primitive type 은 metadata 에 보존한다.
+  - default fetcher 는 same-origin URL policy 통과 후 JSON payload 를 canonical document 로 normalize 한 뒤 registry 에 loaded document 로 저장한다.
+  - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 64 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Import registry stale pruning seventh slice**:
+  - `prefetchDocumentImports(doc)` 는 현재 `doc.imports` 에 없는 registry entry 를 retain 대상에서 제거한다. loaded / failed entry 뿐 아니라 pending request token 도 함께 지운다.
+  - in-flight request 가 prune 이후 늦게 resolve 되어도 request token mismatch 로 registry 에 다시 loaded entry 를 저장하지 않는다.
+  - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 66 tests PASS.
+- **2026-05-02 — ADR-916 G6-4 Imports parity completion sweep**:
+  - G6-4 를 resolver loaded-import consumption, imports fingerprint cache invalidation, async prefetch/cache registry, Preview runtime prefetch, same-origin URL policy, namespace guard, canonical/Pencil payload adapter, stale registry pruning까지 닫힌 runtime slice 로 고정했다.
+  - `importRegistry.test.ts` 에 completion static contract 를 추가해 fetch payload normalize, URL policy, stale pruning token guard, resolver namespace parse, Preview prefetch/resolve context wiring 이 동시에 유지되는지 검증한다.
+  - 검증: preview import runtime / canonical import registry/resolver/storeBridge targeted vitest 4 files / 67 tests PASS.
 
 ## Context
 

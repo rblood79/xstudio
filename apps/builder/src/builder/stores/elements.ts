@@ -74,19 +74,9 @@ import {
   rebuildVariableUsageIndex,
   getPageElements as getPageElementsFromIndex,
 } from "./utils/elementIndexer";
-// ADR-903 P1 Stage 2: canonical document adapter imports
-import {
-  legacyToCanonical,
-  type LegacyAdapterDeps,
-} from "@/adapters/canonical";
 import { getNullablePageFrameBindingId } from "@/adapters/canonical/frameMirror";
-import type { LegacyAdapterInput } from "@/adapters/canonical/types";
-import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
-import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { updateElementCanonicalPrimary } from "@/adapters/canonical/canonicalMutations";
-import type { CompositionDocument } from "@composition/shared";
-import type { Layout } from "../../types/builder/layout.types";
 
 function pageLayoutId(page: Page): string | null {
   return getNullablePageFrameBindingId(page);
@@ -2011,44 +2001,3 @@ export const useCurrentPageElementCount = (): number => {
     return pageIndex.elementsByPage.get(currentPageId)?.size ?? 0;
   });
 };
-
-// ============================================================
-// ADR-903 P1 Stage 2 — Canonical Document Selector
-// ============================================================
-
-/**
- * @experimental ADR-903 P1 Stage 2 — store state → CompositionDocument selector.
- *
- * Zustand elementsMap에서 elements 배열을 추출하고, caller가 inject한
- * pages / layouts를 함께 legacyToCanonical adapter로 변환한다.
- *
- * 설계 원칙:
- *  - pure function — useLayoutsStore 직접 호출 없이 caller가 layouts를 inject
- *  - memoization 미적용 (의도적) — 매 호출 시 adapter 재실행.
- *    P2에서 ResolverCache (canonical-resolver.types.ts)와 통합 시 cache hit 활용.
- *  - 기존 store 로직 무변경 — 추가만 (ADR-903 Hard Constraint #2/#6)
- *
- * @param state  useElementsStore.getState() 또는 selector로 전달한 store snapshot
- * @param pages  state.pages (또는 useElementsStore.getState().pages)
- * @param layouts useLayoutsStore에서 별도 read한 Layout[] 배열
- * @returns CompositionDocument — canonical tree (version "composition-1.0")
- *
- * @example
- * // 스냅샷 기반 호출 (비-React 컨텍스트, P2 resolver 등)
- * const doc = selectCanonicalDocument(
- *   useStore.getState(),
- *   useStore.getState().pages,
- *   useLayoutsStore.getState().layouts,
- * );
- */
-export function selectCanonicalDocument(
-  state: ElementsState,
-  pages: Page[],
-  layouts: Layout[],
-): CompositionDocument {
-  // elementsMap → Element[] (O(1) Map에서 값만 추출 — 배열 순회는 adapter 내부 책임)
-  const elements = Array.from(state.elementsMap.values());
-  const input: LegacyAdapterInput = { elements, pages, layouts };
-  const deps: LegacyAdapterDeps = { convertComponentRole, convertPageLayout };
-  return legacyToCanonical(input, deps);
-}

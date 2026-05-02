@@ -19,6 +19,7 @@ import type {
   ResolvedNode,
   ResolverCache,
   ResolverCacheKey,
+  ImportResolverContext,
 } from "@composition/shared";
 
 import {
@@ -36,6 +37,9 @@ import {
   computeDescendantsFingerprint,
   computeSlotBindingFingerprint,
 } from "./cache";
+import { parseCompositionImportReference } from "./importNamespace";
+
+export type { ImportResolverContext } from "@composition/shared";
 
 type SlotHostNode = CanonicalNode & { slot?: false | string[] };
 
@@ -53,8 +57,9 @@ type SlotHostNode = CanonicalNode & { slot?: false | string[] };
 export function resolveCanonicalDocument(
   doc: CompositionDocument,
   cache?: ResolverCache,
+  imports?: ImportResolverContext,
 ): ResolvedNode[] {
-  return doc.children.map((node) => resolveNode(node, doc, cache));
+  return doc.children.map((node) => resolveNode(node, doc, cache, imports));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,11 +75,12 @@ function resolveNode(
   node: CanonicalNode,
   doc: CompositionDocument,
   cache?: ResolverCache,
+  imports?: ImportResolverContext,
 ): ResolvedNode {
   if (node.type === "ref") {
-    return resolveRefNode(node as RefNode, doc, cache);
+    return resolveRefNode(node as RefNode, doc, cache, imports);
   }
-  return resolveFrameOrPlain(node, doc, cache);
+  return resolveFrameOrPlain(node, doc, cache, imports);
 }
 
 /**
@@ -86,13 +92,14 @@ function resolveRefNode(
   refNode: RefNode,
   doc: CompositionDocument,
   cache?: ResolverCache,
+  imports?: ImportResolverContext,
 ): ResolvedNode {
   // ── 캐시 조회 ─────────────────────────────────────────────────────────────
   if (cache) {
     // slot children fingerprint 는 ref root 기준이므로 refNode.children 사용
     const slotChildren = refNode.children as CanonicalNode[] | undefined;
     const key: ResolverCacheKey = [
-      doc.version,
+      getResolverDocumentVersion(doc, imports),
       refNode.id,
       computeDescendantsFingerprint(
         refNode.descendants as Record<string, unknown> | undefined,
@@ -102,12 +109,12 @@ function resolveRefNode(
     const hit = cache.get(key);
     if (hit) return hit;
 
-    const resolved = _resolveRefNodeUncached(refNode, doc, cache);
+    const resolved = _resolveRefNodeUncached(refNode, doc, cache, imports);
     cache.set(key, resolved);
     return resolved;
   }
 
-  return _resolveRefNodeUncached(refNode, doc, cache);
+  return _resolveRefNodeUncached(refNode, doc, cache, imports);
 }
 
 /**
@@ -117,9 +124,10 @@ function _resolveRefNodeUncached(
   refNode: RefNode,
   doc: CompositionDocument,
   cache: ResolverCache | undefined,
+  imports: ImportResolverContext | undefined,
 ): ResolvedNode {
   // ── Step 1: reusable master lookup ────────────────────────────────────────
-  const master = findReusableMaster(doc, refNode.ref);
+  const master = findReusableMaster(doc, refNode.ref, imports);
 
   if (!master) {
     // broken ref: warn 1회 + 원본 ref 노드 그대로 반환 (_resolvedFrom 미주입)
@@ -142,6 +150,7 @@ function _resolveRefNodeUncached(
   //
   // Why: resolver 가 master.metadata.type 으로 덮어쓰면 "legacy-layout" 등 master 타입이
   //      인스턴스의 "legacy-page" 식별자를 소실시켜 App.tsx page filter 에서 miss 됨.
+  const importedMasterMetadata = getImportedMasterMetadata(master.metadata);
   const resolvedBase: CanonicalNode = {
     ...master,
     ...refNode,
@@ -149,9 +158,11 @@ function _resolveRefNodeUncached(
     // NOTE: ResolvedNode 에는 _resolvedFrom 이 있으므로 원본 추적 가능.
     //       여기서는 refNode.id 를 그대로 유지 (인스턴스 identity 보존).
     id: refNode.id,
+    type: master.type,
     metadata: {
       // refNode 의 instance-level metadata 를 base 로 (page 식별자 등 보존)
       ...refNode.metadata,
+      ...importedMasterMetadata,
       // master 의 element props 는 별도 키로 보존 (renderer 가 접근 가능하도록)
       masterType: master.metadata?.type,
       masterLegacyProps: master.metadata?.legacyProps,
@@ -171,6 +182,7 @@ function _resolveRefNodeUncached(
     refNode.descendants,
     doc,
     cache,
+    imports,
     "",
   );
 
@@ -204,6 +216,7 @@ function applyDescendantsToTree(
   descendants: Record<string, DescendantOverride> | undefined,
   doc: CompositionDocument,
   cache: ResolverCache | undefined,
+  imports: ImportResolverContext | undefined,
   parentPath: string,
 ): ResolvedNode[] {
   return children.map((child) => {
@@ -214,17 +227,31 @@ function applyDescendantsToTree(
       Object.prototype.hasOwnProperty.call(descendants, currentPath)
     ) {
       const override = descendants[currentPath]!;
-      return applyOverrideToNode(child, override, currentPath, doc, cache);
+      return applyOverrideToNode(
+        child,
+        override,
+        currentPath,
+        doc,
+        cache,
+        imports,
+      );
     }
 
     // 매칭 없음 — ref 자식은 자체 master 로 재귀 resolve.
     // inherited descendants 는 path 가 ref 까지 매칭되지 않았으므로 침투 안 함
     // (RefNode 자체 descendants 가 별도 resolve 시 적용됨).
     if (child.type === "ref") {
-      return resolveRefNode(child as RefNode, doc, cache);
+      return resolveRefNode(child as RefNode, doc, cache, imports);
     }
 
-    return resolveFrameOrPlain(child, doc, cache, descendants, currentPath);
+    return resolveFrameOrPlain(
+      child,
+      doc,
+      cache,
+      imports,
+      descendants,
+      currentPath,
+    );
   });
 }
 
@@ -237,6 +264,7 @@ function applyOverrideToNode(
   pathKey: string,
   doc: CompositionDocument,
   cache: ResolverCache | undefined,
+  imports: ImportResolverContext | undefined,
 ): ResolvedNode {
   const hasType = "type" in override && override.type !== undefined;
   const hasChildren = "children" in override && override.children !== undefined;
@@ -251,7 +279,7 @@ function applyOverrideToNode(
   // mode B: node replacement (type 존재) → 서브트리 완전 교체
   if (hasType) {
     const replacementNode = override as CanonicalNode;
-    return resolveNode(replacementNode, doc, cache);
+    return resolveNode(replacementNode, doc, cache, imports);
   }
 
   // mode C: children replacement (children 존재 + type 없음)
@@ -259,7 +287,7 @@ function applyOverrideToNode(
     const childrenOverride = (override as { children: CanonicalNode[] })
       .children;
     const resolvedChildren = childrenOverride.map((c) =>
-      resolveNode(c, doc, cache),
+      resolveNode(c, doc, cache, imports),
     );
     const resolved: ResolvedNode = {
       ...nodeToResolved(child),
@@ -268,7 +296,7 @@ function applyOverrideToNode(
     };
     // mode C 가 slot host children 을 교체한 경우 slot contract 검증
     if (hasSlotContract(child)) {
-      validateSlotContract(child, resolved, doc);
+      validateSlotContract(child, resolved, doc, imports);
     }
     return resolved;
   }
@@ -279,7 +307,7 @@ function applyOverrideToNode(
     { [pathKey]: override },
     pathKey,
   );
-  const resolved = resolveFrameOrPlain(patched, doc, cache);
+  const resolved = resolveFrameOrPlain(patched, doc, cache, imports);
   return {
     ...resolved,
     _overrides: [
@@ -300,6 +328,7 @@ function resolveFrameOrPlain(
   node: CanonicalNode,
   doc: CompositionDocument,
   cache: ResolverCache | undefined,
+  imports?: ImportResolverContext,
   inheritedDescendants?: Record<string, DescendantOverride>,
   pathPrefix?: string,
 ): ResolvedNode {
@@ -310,6 +339,7 @@ function resolveFrameOrPlain(
           inheritedDescendants,
           doc,
           cache,
+          imports,
           pathPrefix ?? node.id,
         )
       : node.children?.map((c) => nodeToResolved(c));
@@ -322,7 +352,7 @@ function resolveFrameOrPlain(
 
   // Step 3: slot contract validate
   if (hasSlotContract(node)) {
-    validateSlotContract(node, result, doc);
+    validateSlotContract(node, result, doc, imports);
   }
 
   return result;
@@ -342,6 +372,7 @@ function validateSlotContract(
   frame: SlotHostNode,
   resolved: ResolvedNode,
   doc: CompositionDocument,
+  imports?: ImportResolverContext,
 ): void {
   if (!Array.isArray(frame.slot) || frame.slot.length === 0) return;
 
@@ -351,7 +382,7 @@ function validateSlotContract(
     const refId = child._resolvedFrom ?? child.id;
     if (
       !frame.slot.some((reference) =>
-        matchesResolvedSlotChildReference(child, reference, doc),
+        matchesResolvedSlotChildReference(child, reference, doc, imports),
       )
     ) {
       console.warn(
@@ -369,14 +400,13 @@ function matchesResolvedSlotChildReference(
   child: ResolvedNode,
   reference: string,
   doc: CompositionDocument,
+  imports?: ImportResolverContext,
 ): boolean {
   if (matchesReference(child, reference)) return true;
 
   if (!child._resolvedFrom) return false;
 
-  const master = doc.children.find(
-    (node) => node.reusable === true && node.id === child._resolvedFrom,
-  );
+  const master = findReusableMaster(doc, child._resolvedFrom, imports);
   return master ? matchesReference(master, reference) : false;
 }
 
@@ -392,11 +422,91 @@ function matchesResolvedSlotChildReference(
 function findReusableMaster(
   doc: CompositionDocument,
   refId: string,
+  imports?: ImportResolverContext,
 ): CanonicalNode | undefined {
-  return resolveReference(
+  const local = resolveReference(
     refId,
     doc.children.filter((node) => node.reusable === true),
   );
+  if (local) return local;
+
+  return resolveImportedReusableMaster(doc, refId, imports);
+}
+
+function resolveImportedReusableMaster(
+  doc: CompositionDocument,
+  refId: string,
+  imports?: ImportResolverContext,
+): CanonicalNode | undefined {
+  const parsed = parseCompositionImportReference(refId);
+  if (!parsed || !imports) return undefined;
+
+  const source = doc.imports?.[parsed.importKey];
+  if (!source) return undefined;
+
+  const importedDoc = imports.resolveImportDocument(parsed.importKey, source);
+  if (!importedDoc) return undefined;
+
+  const master = resolveReference(
+    parsed.nodeId,
+    importedDoc.children.filter((node) => node.reusable === true),
+  );
+
+  if (!master) return undefined;
+
+  return {
+    ...master,
+    id: refId,
+    metadata: {
+      ...(master.metadata ?? { type: "imported" }),
+      type: master.metadata?.type ?? "imported",
+      importedFrom: refId,
+      importKey: parsed.importKey,
+      importNodeId: master.id,
+      importSource: source,
+    },
+  };
+}
+
+function getResolverDocumentVersion(
+  doc: CompositionDocument,
+  imports?: ImportResolverContext,
+): string {
+  const fingerprint = getImportsFingerprint(doc, imports);
+  return fingerprint ? `${doc.version}|imports:${fingerprint}` : doc.version;
+}
+
+function getImportsFingerprint(
+  doc: CompositionDocument,
+  imports?: ImportResolverContext,
+): string {
+  const entries = Object.entries(doc.imports ?? {}).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  if (entries.length === 0) return "";
+
+  return entries
+    .map(([importKey, source]) => {
+      const importedVersion =
+        imports?.resolveImportDocument(importKey, source)?.version ?? "";
+      return `${importKey}:${source}:${importedVersion}`;
+    })
+    .join("|");
+}
+
+function getImportedMasterMetadata(
+  metadata: CanonicalNode["metadata"],
+): Record<string, unknown> {
+  if (!metadata || typeof metadata.importedFrom !== "string") {
+    return {};
+  }
+
+  return {
+    importedFrom: metadata.importedFrom,
+    importKey: metadata.importKey,
+    importNodeId: metadata.importNodeId,
+    importSource: metadata.importSource,
+  };
 }
 
 /**

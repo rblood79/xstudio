@@ -147,6 +147,28 @@ describe("editingSemantics", () => {
     ).toEqual(["i1", "i2", "i3"]);
   });
 
+  it("collects impacted instances by canonical name and metadata aliases", () => {
+    expect(
+      getEditingSemanticsImpactInstanceIds(
+        {
+          id: "origin-id",
+          name: "OriginName",
+          metadata: {
+            customId: "origin-custom",
+            componentName: "OriginComponent",
+          },
+          reusable: true,
+        },
+        [
+          { id: "i1", type: "ref", ref: "OriginName" },
+          { id: "i2", type: "ref", ref: "origin-custom" },
+          { id: "i3", type: "ref", ref: "OriginComponent" },
+          { id: "i4", type: "ref", ref: "other" },
+        ],
+      ),
+    ).toEqual(["i1", "i2", "i3"]);
+  });
+
   it("counts 1000 impacted instances within the ADR-912 100ms budget", () => {
     const elements = Array.from({ length: 1000 }, (_, index) => ({
       id: `instance-${index}`,

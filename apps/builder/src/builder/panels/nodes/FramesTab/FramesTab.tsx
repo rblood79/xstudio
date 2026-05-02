@@ -37,6 +37,7 @@ import {
   hasHydratedFrameElements,
   loadFrameElements,
 } from "../../../../adapters/canonical/frameElementLoader";
+import { getReusableFrameMirrorId } from "../../../../adapters/canonical/frameMirror";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
@@ -99,14 +100,10 @@ export function FramesTab({
         (n): n is FrameNode =>
           n.type === "frame" && (n as FrameNode).reusable === true,
       )
-      .map((f) => {
-        const layoutId = (f.metadata as { layoutId?: string } | undefined)
-          ?.layoutId;
-        return {
-          id: layoutId ?? f.id,
-          name: f.name ?? "",
-        };
-      });
+      .map((f) => ({
+        id: getReusableFrameMirrorId(f),
+        name: f.name ?? "",
+      }));
   }, [activeCanonicalDocument, layouts]);
 
   // selectedReusableFrameId 기반 현재 프레임 조회

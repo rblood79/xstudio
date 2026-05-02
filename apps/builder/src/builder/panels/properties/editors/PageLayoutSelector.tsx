@@ -23,6 +23,7 @@ import {
   applyPageFrameBindingCanonicalPrimary,
   getPageFrameBindingId,
 } from "../../../../adapters/canonical/pageFrameBinding";
+import { getReusableFrameMirrorId } from "../../../../adapters/canonical/frameMirror";
 import type { FrameNode } from "@composition/shared";
 
 interface PageLayoutSelectorProps {
@@ -68,7 +69,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
           | { layoutId?: string; description?: string }
           | undefined;
         return {
-          id: meta?.layoutId ?? f.id,
+          id: getReusableFrameMirrorId(f),
           name: f.name ?? "",
           description: meta?.description,
         };

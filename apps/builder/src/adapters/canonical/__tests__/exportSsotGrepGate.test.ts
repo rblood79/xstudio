@@ -31,6 +31,9 @@ const EXCLUDE_PATTERNS: readonly RegExp[] = [
   /\/apps\/builder\/src\/adapters\//,
   /\/apps\/builder\/src\/lib\/db\/migration[^\/]*\.ts$/,
   /\/apps\/builder\/src\/builder\/utils\/exportLegacyDocument\.ts$/,
+  // ADR-912 dev-only evidence fixture intentionally preserves raw marker fields
+  // (`reusable`, `ref`, `slot`) that are not legacy mirror persistence writes.
+  /\/apps\/builder\/src\/builder\/dev\/editingSemanticsFixture\.ts$/,
 ];
 
 const VIOLATION_PATTERN =

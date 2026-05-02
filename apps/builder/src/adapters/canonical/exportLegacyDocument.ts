@@ -27,6 +27,7 @@ import type {
   CanonicalNode,
   CompositionDocument,
   CompositionExtension,
+  RefNode,
 } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
 import type { FillItem } from "@/types/builder/fill.types";
@@ -38,9 +39,15 @@ interface LegacyPropsShape {
   parent_id?: string | null;
   page_id?: string | null;
   layout_id?: string | null;
+  slot_name?: string | null;
   order_num?: number;
   fills?: FillItem[];
   type?: string;
+  componentRole?: Element["componentRole"];
+  masterId?: string;
+  overrides?: Record<string, unknown>;
+  descendants?: Element["descendants"];
+  componentName?: string;
   [propKey: string]: unknown;
 }
 
@@ -75,6 +82,22 @@ function walkAndCollect(node: CanonicalNode, out: Element[]): void {
       walkAndCollect(child, out);
     }
   }
+
+  if (node.type === "ref") {
+    const descendants = (node as RefNode).descendants ?? {};
+    for (const override of Object.values(descendants)) {
+      if (
+        override &&
+        typeof override === "object" &&
+        "children" in override &&
+        Array.isArray(override.children)
+      ) {
+        for (const child of override.children) {
+          walkAndCollect(child, out);
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -105,9 +128,15 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
     parent_id,
     page_id,
     layout_id,
+    slot_name,
     order_num,
     fills,
     type,
+    componentRole,
+    masterId,
+    overrides,
+    descendants,
+    componentName,
     ...restProps
   } = legacyProps;
 
@@ -130,6 +159,24 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
 
   if (fills !== undefined) {
     element.fills = fills as FillItem[];
+  }
+  if (slot_name !== undefined) {
+    element.slot_name = slot_name;
+  }
+  if (componentRole !== undefined) {
+    element.componentRole = componentRole;
+  }
+  if (masterId !== undefined) {
+    element.masterId = masterId;
+  }
+  if (overrides !== undefined) {
+    element.overrides = overrides;
+  }
+  if (descendants !== undefined) {
+    element.descendants = descendants;
+  }
+  if (componentName !== undefined) {
+    element.componentName = componentName;
   }
 
   // ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — events/dataBinding 은

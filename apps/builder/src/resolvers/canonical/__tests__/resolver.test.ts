@@ -17,7 +17,7 @@ import type {
   ResolvedNode,
   ResolverCache,
 } from "@composition/shared";
-import { resolveCanonicalDocument } from "../index";
+import { resolveCanonicalDocument, type ImportResolverContext } from "../index";
 import { createResolverCache } from "../cache";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -485,6 +485,117 @@ describe("resolveCanonicalDocument", () => {
     expect(statsAfterSecond.hits).toBe(1);
     // 두 번째 호출은 새 miss 없음 (hit 만 증가)
     expect(statsAfterSecond.misses).toBe(1);
+  });
+
+  it("TC12b: import namespace ref 는 loaded import document 의 reusable node 로 resolve 된다", () => {
+    // Arrange
+    const importedButton = makeReusable(
+      "round-button",
+      "Button",
+    ) as CanonicalNode;
+    importedButton.props = { label: "Imported" };
+    const importedDoc = makeDoc([importedButton]);
+    const imports: ImportResolverContext = {
+      resolveImportDocument: vi.fn(() => importedDoc),
+    };
+    const ref = makeRef("i1", "kit:round-button");
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      imports: { kit: "./kit.pen" },
+      children: [ref],
+    };
+
+    // Act
+    const result = resolveCanonicalDocument(doc, undefined, imports);
+
+    // Assert
+    const resolvedRef = result.find((n) => n.id === "i1") as ResolvedNode;
+    expect(resolvedRef).toEqual(
+      expect.objectContaining({
+        id: "i1",
+        type: "Button",
+        props: { label: "Imported" },
+        _resolvedFrom: "kit:round-button",
+      }),
+    );
+    expect(resolvedRef.metadata).toEqual(
+      expect.objectContaining({
+        importedFrom: "kit:round-button",
+        importKey: "kit",
+        importNodeId: "round-button",
+        importSource: "./kit.pen",
+      }),
+    );
+    expect(imports.resolveImportDocument).toHaveBeenCalledWith(
+      "kit",
+      "./kit.pen",
+    );
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it("TC12b-1: invalid import namespace ref 는 import resolver 를 호출하지 않는다", () => {
+    // Arrange
+    const importedButton = makeReusable(
+      "round-button",
+      "Button",
+    ) as CanonicalNode;
+    const importedDoc = makeDoc([importedButton]);
+    const imports: ImportResolverContext = {
+      resolveImportDocument: vi.fn(() => importedDoc),
+    };
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      imports: { "bad:key": "./bad.pen" },
+      children: [makeRef("i1", "bad:key:round-button")],
+    };
+
+    // Act
+    const result = resolveCanonicalDocument(doc, undefined, imports);
+
+    // Assert
+    expect(result[0]).toEqual(
+      expect.objectContaining({ id: "i1", type: "ref" }),
+    );
+    expect(imports.resolveImportDocument).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('master "bad:key:round-button" not found'),
+    );
+  });
+
+  it("TC12c: import document version change invalidates resolver cache key", () => {
+    // Arrange
+    const makeImportedDoc = (
+      version: string,
+      label: string,
+    ): CompositionDocument => {
+      const button = makeReusable("round-button", "Button") as CanonicalNode;
+      button.props = { label };
+      return { version, children: [button] };
+    };
+    let importedDoc = makeImportedDoc("composition-1.0", "First");
+    const imports: ImportResolverContext = {
+      resolveImportDocument: vi.fn(() => importedDoc),
+    };
+    const cache: ResolverCache = createResolverCache();
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      imports: { kit: "./kit.pen" },
+      children: [makeRef("i1", "kit:round-button")],
+    };
+
+    // Act
+    const first = resolveCanonicalDocument(doc, cache, imports);
+    importedDoc = makeImportedDoc("composition-1.1", "Second");
+    const second = resolveCanonicalDocument(doc, cache, imports);
+
+    // Assert
+    expect(first.find((node) => node.id === "i1")?.props).toEqual({
+      label: "First",
+    });
+    expect(second.find((node) => node.id === "i1")?.props).toEqual({
+      label: "Second",
+    });
+    expect(cache.stats()).toEqual({ hits: 0, misses: 2, size: 2 });
   });
 
   // ────────────────────────────────────────────

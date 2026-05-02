@@ -30,6 +30,7 @@ import { EventEngine } from "../utils/events/eventEngine";
 import { camelToKebab } from "./utils/computedStyleExtractor";
 
 import { resolveCanonicalDocument } from "../resolvers/canonical";
+import { getSharedImportRegistry } from "../resolvers/canonical/importRegistry";
 import type { Element } from "../types/builder/unified.types";
 
 // ADR-903 P2 옵션 C: canonical renderer feature flag
@@ -62,6 +63,8 @@ const USE_CANONICAL_RENDER: boolean = (() => {
     return true;
   }
 })();
+
+const canonicalImportRegistry = getSharedImportRegistry();
 
 // body style 적용 상수 — useEffect 내 재생성 방지
 const CSS_UNITLESS = new Set([
@@ -106,6 +109,7 @@ function CanvasContent() {
   const currentLayoutId = useRuntimeStore((s) => s.currentLayoutId);
   const currentPageId = useRuntimeStore((s) => s.currentPageId);
   const canonicalDocument = useRuntimeStore((s) => s.canonicalDocument);
+  const [, bumpImportRegistryVersion] = useState(0);
   const navigate = useNavigate();
 
   // ⭐ 모듈 레벨 싱글톤 EventEngine 사용
@@ -138,11 +142,47 @@ function CanvasContent() {
   // 않는다. dev 에서는 수신된 document resolve 결과만 로깅한다.
   // ────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!canonicalDocument) return;
+
+    let isCancelled = false;
+
+    void canonicalImportRegistry
+      .prefetchDocumentImports(canonicalDocument)
+      .then((result) => {
+        if (isCancelled) return;
+        if (result.loaded.length > 0) {
+          bumpImportRegistryVersion((version) => version + 1);
+        }
+        if (result.failed.length > 0) {
+          console.warn("[ADR-916] preview canonical import prefetch failed", {
+            failed: result.failed.map((failure) => ({
+              importKey: failure.importKey,
+              source: failure.source,
+              message: failure.error.message,
+            })),
+          });
+        }
+      })
+      .catch((err: unknown) => {
+        if (isCancelled) return;
+        console.warn("[ADR-916] preview canonical import prefetch failed", err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [canonicalDocument]);
+
+  useEffect(() => {
     if (!import.meta.env.DEV) return;
     if (!canonicalDocument) return;
 
     try {
-      const resolved = resolveCanonicalDocument(canonicalDocument);
+      const resolved = resolveCanonicalDocument(
+        canonicalDocument,
+        undefined,
+        canonicalImportRegistry,
+      );
 
       const refCount = canonicalDocument.children.filter(
         (c) => c.type === "ref",
@@ -818,7 +858,11 @@ function CanvasContent() {
     // ──────────────────────────────────────────────────────────────────────────
     if (USE_CANONICAL_RENDER && canonicalDocument) {
       try {
-        const resolved = resolveCanonicalDocument(canonicalDocument);
+        const resolved = resolveCanonicalDocument(
+          canonicalDocument,
+          undefined,
+          canonicalImportRegistry,
+        );
 
         // 현재 page 에 해당하는 top-level 노드 필터링.
         // page 식별: metadata.type === "page" (P3-1 결정) 또는 "legacy-page" (P1 adapter 결과).

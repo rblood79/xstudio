@@ -11,7 +11,11 @@ import { enqueuePagePersistence } from "@/builder/utils/pagePersistenceQueue";
 import { mergeElementsCanonicalPrimary } from "./canonicalMutations";
 import { loadFrameElements } from "./frameElementLoader";
 import { LEGACY_LAYOUT_ID_FIELD } from "./legacyElementFields";
-import { getPageFrameBindingId, withPageFrameBinding } from "./frameMirror";
+import {
+  getPageFrameBindingId,
+  getReusableFrameMirrorId,
+  withPageFrameBinding,
+} from "./frameMirror";
 
 export { getPageFrameBindingId } from "./frameMirror";
 
@@ -35,6 +39,54 @@ function isPageNode(node: CanonicalNode, pageId: string): boolean {
     metadata?.type === "legacy-page" &&
     metadata.pageId === pageId
   );
+}
+
+function isReusableFrameNode(node: CanonicalNode): node is FrameNode {
+  return node.type === "frame" && (node as FrameNode).reusable === true;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function reusableFrameMatchesBindingId(
+  frame: FrameNode,
+  frameId: string,
+): boolean {
+  if (frame.id === frameId) return true;
+  if (getReusableFrameMirrorId(frame) === frameId) return true;
+  if (frame.name === frameId) return true;
+
+  const metadata = frame.metadata as
+    | {
+        componentName?: unknown;
+        customId?: unknown;
+        layoutId?: unknown;
+      }
+    | undefined;
+
+  return (
+    metadata?.layoutId === frameId ||
+    (isNonEmptyString(metadata?.customId) && metadata.customId === frameId) ||
+    (isNonEmptyString(metadata?.componentName) &&
+      metadata.componentName === frameId)
+  );
+}
+
+function toLegacyFrameRefId(frameId: string): string {
+  return frameId.startsWith("layout-") ? frameId : `layout-${frameId}`;
+}
+
+function resolvePageFrameRefId(
+  doc: CompositionDocument,
+  frameId: string,
+): string {
+  const frame = doc.children.find(
+    (node): node is FrameNode =>
+      isReusableFrameNode(node) && reusableFrameMatchesBindingId(node, frameId),
+  );
+
+  return frame?.id ?? toLegacyFrameRefId(frameId);
 }
 
 function buildPageMetadata(
@@ -92,6 +144,7 @@ function getChildrenFromDescendants(refNode: RefNode): CanonicalNode[] {
 function buildPageNode(
   updatedPage: Page,
   frameId: string | null,
+  frameRefId: string | null,
   existingNode?: CanonicalNode,
 ): CanonicalNode {
   if (frameId) {
@@ -104,7 +157,7 @@ function buildPageNode(
     const nextNode: RefNode = {
       id: updatedPage.id,
       type: "ref",
-      ref: `layout-${frameId}`,
+      ref: frameRefId ?? toLegacyFrameRefId(frameId),
       name: updatedPage.title,
       metadata: buildPageMetadata(updatedPage, frameId, existingNode),
       ...(descendants && Object.keys(descendants).length > 0
@@ -146,9 +199,11 @@ function setCanonicalDocumentFromPageBinding(
   );
   const existingPageNode =
     pageIndex >= 0 ? currentDoc.children[pageIndex] : undefined;
+  const frameId = getPageFrameBindingId(updatedPage) || null;
   const nextPageNode = buildPageNode(
     updatedPage,
-    getPageFrameBindingId(updatedPage) || null,
+    frameId,
+    frameId ? resolvePageFrameRefId(currentDoc, frameId) : null,
     existingPageNode,
   );
   const nextChildren = [...currentDoc.children];

@@ -14,11 +14,14 @@ export const LEGACY_ELEMENT_PROPS_METADATA_TYPE =
  * shared renderer 의 `childrenMap.get(element.id)` 가 자식의 `parent_id` 와 정합.
  * 미주입 시 fallback 으로 canonical path-id (segId) 사용 → mismatch → 자식 미렌더 회귀.
  *
- * **보존 필수 7 fields** (element top-level): `id` / `parent_id` / `page_id` /
- * `layout_id` / `order_num` / `fills` / `type` (ADR-916 Phase 2 G3 Step 1b — hot
- * path inverse 변환에서 element.type 복원에 필요. ref 노드의 경우 canonical type
- * 이 "ref" 로 변환되므로 원본 element.type 보존 없이 LayerTree 분기 불가).
- * 추가 필드 (componentRole / slot_name 등) 는 canonical 변환에서 별도 metadata 로 보존.
+ * **보존 필수 fields**:
+ * - core top-level: `id` / `parent_id` / `page_id` / `layout_id` / `order_num` /
+ *   `fills` / `type` (ADR-916 Phase 2 G3 Step 1b — hot path inverse 변환에서
+ *   element.type 복원에 필요. ref 노드의 경우 canonical type 이 "ref" 로
+ *   변환되므로 원본 element.type 보존 없이 LayerTree 분기 불가).
+ * - mirror compatibility: `slot_name` / `componentRole` / `masterId` /
+ *   `overrides` / `descendants` / `componentName` (ADR-916 G6-3 parity — legacy
+ *   mirror payload 를 export boundary 에서만 복원).
  *
  * **ADR-916 Phase 5 G7 본격 cutover** (2026-05-01): `element.events` /
  * `element.dataBinding` 은 본 metadata 에 더 이상 spread 되지 않는다. 대신
@@ -43,6 +46,12 @@ export function buildLegacyElementMetadata(element: Element): {
       order_num: element.order_num,
       fills: element.fills,
       type: element.type,
+      slot_name: element.slot_name,
+      componentRole: element.componentRole,
+      masterId: element.masterId,
+      overrides: element.overrides,
+      descendants: element.descendants,
+      componentName: element.componentName,
     },
   };
 }

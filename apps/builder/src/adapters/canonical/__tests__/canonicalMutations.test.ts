@@ -1,0 +1,616 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CompositionDocument } from "@composition/shared";
+import type { Element, Page } from "@/types/builder/unified.types";
+import type { Layout } from "@/types/builder/layout.types";
+import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import {
+  mergeElementsCanonicalPrimary,
+  registerCanonicalMutationStoreActions,
+  resetCanonicalMutationStoreActions,
+  setElementsCanonicalPrimary,
+} from "../canonicalMutations";
+
+function makeElement(
+  id: string,
+  type: string,
+  patch: Partial<Element> = {},
+): Element {
+  return {
+    id,
+    type,
+    props: {},
+    parent_id: null,
+    page_id: null,
+    layout_id: null,
+    order_num: 0,
+    ...patch,
+  } as Element;
+}
+
+function makePage(id: string): Page {
+  return {
+    id,
+    title: id,
+    project_id: "project-1",
+    slug: `/${id}`,
+    order_num: 0,
+  } as Page;
+}
+
+function makeLayout(id: string): Layout {
+  return {
+    id,
+    name: id,
+    project_id: "project-1",
+  };
+}
+
+function makeDocument(children: CompositionDocument["children"] = []) {
+  return {
+    version: "composition-1.0",
+    children,
+  } satisfies CompositionDocument;
+}
+
+describe("canonical mutation wrappers", () => {
+  beforeEach(() => {
+    resetCanonicalMutationStoreActions();
+    useCanonicalDocumentStore.setState({
+      documents: new Map(),
+      currentProjectId: null,
+      documentVersion: 0,
+    });
+  });
+
+  it("mergeElementsCanonicalPrimary upserts frame-owned elements into active canonical document", () => {
+    const setElements = vi.fn();
+    const layout = makeLayout("frame-1");
+    const doc = makeDocument([
+      {
+        id: "layout-frame-1",
+        type: "frame",
+        reusable: true,
+        metadata: { type: "legacy-layout", layoutId: "frame-1" },
+        children: [],
+      },
+    ]);
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore.getState().setDocument("project-1", doc);
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [],
+        layouts: [layout],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    mergeElementsCanonicalPrimary([
+      makeElement("body-1", "body", {
+        layout_id: "frame-1",
+        props: { role: "body" },
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    const frame = nextDoc?.children.find(
+      (node) => node.id === "layout-frame-1",
+    );
+    expect(frame?.children).toEqual([
+      expect.objectContaining({
+        id: "body-1",
+        type: "body",
+        metadata: expect.objectContaining({
+          legacyProps: expect.objectContaining({ id: "body-1" }),
+        }),
+      }),
+    ]);
+    expect(setElements).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "body-1", layout_id: "frame-1" }),
+    ]);
+  });
+
+  it("mergeElementsCanonicalPrimary preserves parent-child ordering in page-owned batches", () => {
+    const setElements = vi.fn();
+    const page = makePage("page-1");
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore.getState().setDocument(
+      "project-1",
+      makeDocument([
+        {
+          id: "page-1",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "page-1" },
+          children: [],
+        },
+      ]),
+    );
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [page],
+        layouts: [],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    mergeElementsCanonicalPrimary([
+      makeElement("child-1", "Text", {
+        parent_id: "parent-1",
+        page_id: "page-1",
+        order_num: 1,
+      }),
+      makeElement("parent-1", "Box", {
+        page_id: "page-1",
+        order_num: 0,
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    const pageNode = nextDoc?.children.find((node) => node.id === "page-1");
+    expect(pageNode?.children).toEqual([
+      expect.objectContaining({
+        id: "parent-1",
+        children: [expect.objectContaining({ id: "child-1" })],
+      }),
+    ]);
+    expect(setElements).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "parent-1", page_id: "page-1" }),
+      expect.objectContaining({
+        id: "child-1",
+        parent_id: "parent-1",
+        page_id: "page-1",
+      }),
+    ]);
+  });
+
+  it("mergeElementsCanonicalPrimary can nest children inside page ref descendants", () => {
+    const setElements = vi.fn();
+    const page = makePage("page-1");
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore.getState().setDocument(
+      "project-1",
+      makeDocument([
+        {
+          id: "layout-frame-1",
+          type: "frame",
+          reusable: true,
+          metadata: { type: "legacy-layout", layoutId: "frame-1" },
+          children: [],
+        },
+        {
+          id: "page-1",
+          type: "ref",
+          ref: "layout-frame-1",
+          metadata: {
+            type: "legacy-page",
+            pageId: "page-1",
+            layoutId: "frame-1",
+          },
+          descendants: {},
+        },
+      ]),
+    );
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [page],
+        layouts: [makeLayout("frame-1")],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    mergeElementsCanonicalPrimary([
+      makeElement("child-1", "Text", {
+        parent_id: "parent-1",
+        page_id: "page-1",
+        order_num: 1,
+      }),
+      makeElement("parent-1", "Box", {
+        page_id: "page-1",
+        slot_name: "content",
+        order_num: 0,
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    const pageNode = nextDoc?.children.find((node) => node.id === "page-1");
+    expect(pageNode).toEqual(
+      expect.objectContaining({
+        type: "ref",
+        descendants: {
+          content: {
+            children: [
+              expect.objectContaining({
+                id: "parent-1",
+                children: [expect.objectContaining({ id: "child-1" })],
+              }),
+            ],
+          },
+        },
+      }),
+    );
+  });
+
+  it("setElementsCanonicalPrimary rebuilds canonical shell without legacy projection", () => {
+    const setElements = vi.fn();
+    const page = {
+      ...makePage("page-1"),
+      layout_id: "frame-1",
+    } as Page;
+    const layout = makeLayout("frame-1");
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore
+      .getState()
+      .setDocument("project-1", makeDocument());
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [page],
+        layouts: [layout],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    setElementsCanonicalPrimary([
+      makeElement("frame-body", "body", {
+        layout_id: "frame-1",
+      }),
+      makeElement("slot-content", "Slot", {
+        parent_id: "frame-body",
+        layout_id: "frame-1",
+        props: { name: "content" },
+        slot_name: "content",
+      }),
+      makeElement("page-box", "Box", {
+        page_id: "page-1",
+        slot_name: "content",
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    expect(nextDoc?.children).toEqual([
+      expect.objectContaining({
+        id: "layout-frame-1",
+        type: "frame",
+        reusable: true,
+        children: [
+          expect.objectContaining({
+            id: "frame-body",
+            children: [
+              expect.objectContaining({
+                id: "content",
+                metadata: expect.objectContaining({
+                  type: "legacy-slot-hoisted",
+                  slotName: "content",
+                }),
+              }),
+            ],
+          }),
+        ],
+      }),
+      expect.objectContaining({
+        id: "page-1",
+        type: "ref",
+        ref: "layout-frame-1",
+        descendants: {
+          "frame-body/content": {
+            children: [expect.objectContaining({ id: "page-box" })],
+          },
+        },
+      }),
+    ]);
+    expect(setElements).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "frame-body", layout_id: "frame-1" }),
+      expect.objectContaining({ id: "page-box", page_id: "page-1" }),
+    ]);
+  });
+
+  it("mergeElementsCanonicalPrimary appends repeated slot fills in order", () => {
+    const setElements = vi.fn();
+    const page = {
+      ...makePage("page-1"),
+      layout_id: "frame-1",
+    } as Page;
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore.getState().setDocument(
+      "project-1",
+      makeDocument([
+        {
+          id: "layout-frame-1",
+          type: "frame",
+          reusable: true,
+          metadata: { type: "legacy-layout", layoutId: "frame-1" },
+          children: [
+            {
+              id: "frame-body",
+              type: "body",
+              metadata: { legacyProps: { id: "frame-body", order_num: 0 } },
+              children: [
+                {
+                  id: "content",
+                  type: "frame",
+                  placeholder: true,
+                  metadata: {
+                    type: "legacy-slot-hoisted",
+                    slotName: "content",
+                  },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: "page-1",
+          type: "ref",
+          ref: "layout-frame-1",
+          metadata: {
+            type: "legacy-page",
+            pageId: "page-1",
+            layoutId: "frame-1",
+          },
+          descendants: {},
+        },
+      ]),
+    );
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [page],
+        layouts: [makeLayout("frame-1")],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    mergeElementsCanonicalPrimary([
+      makeElement("slot-fill-a", "Button", {
+        page_id: "page-1",
+        slot_name: "content",
+        order_num: 0,
+      }),
+      makeElement("slot-fill-b", "Text", {
+        page_id: "page-1",
+        slot_name: "content",
+        order_num: 1,
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    const pageNode = nextDoc?.children.find((node) => node.id === "page-1");
+    expect(pageNode).toEqual(
+      expect.objectContaining({
+        descendants: {
+          "frame-body/content": {
+            children: [
+              expect.objectContaining({ id: "slot-fill-a" }),
+              expect.objectContaining({ id: "slot-fill-b" }),
+            ],
+          },
+        },
+      }),
+    );
+    expect(setElements).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "slot-fill-a", page_id: "page-1" }),
+        expect.objectContaining({ id: "slot-fill-b", page_id: "page-1" }),
+      ]),
+    );
+  });
+
+  it("setElementsCanonicalPrimary clears omitted slot fills during full replace", () => {
+    const setElements = vi.fn();
+    const page = {
+      ...makePage("page-1"),
+      layout_id: "frame-1",
+    } as Page;
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore.getState().setDocument(
+      "project-1",
+      makeDocument([
+        {
+          id: "layout-frame-1",
+          type: "frame",
+          reusable: true,
+          metadata: { type: "legacy-layout", layoutId: "frame-1" },
+          children: [],
+        },
+        {
+          id: "page-1",
+          type: "ref",
+          ref: "layout-frame-1",
+          metadata: {
+            type: "legacy-page",
+            pageId: "page-1",
+            layoutId: "frame-1",
+          },
+          descendants: {
+            "frame-body/content": {
+              children: [
+                {
+                  id: "old-fill",
+                  type: "Button",
+                  props: {},
+                  metadata: {
+                    legacyProps: {
+                      id: "old-fill",
+                      page_id: "page-1",
+                      slot_name: "content",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ]),
+    );
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [page],
+        layouts: [makeLayout("frame-1")],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    setElementsCanonicalPrimary([
+      makeElement("frame-body", "body", {
+        layout_id: "frame-1",
+      }),
+      makeElement("slot-content", "Slot", {
+        parent_id: "frame-body",
+        layout_id: "frame-1",
+        props: { name: "content" },
+        slot_name: "content",
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    const pageNode = nextDoc?.children.find((node) => node.id === "page-1");
+    expect(pageNode).toEqual(
+      expect.objectContaining({
+        type: "ref",
+        descendants: {},
+      }),
+    );
+    expect(setElements).toHaveBeenCalledWith(
+      expect.not.arrayContaining([expect.objectContaining({ id: "old-fill" })]),
+    );
+  });
+
+  it("mergeElementsCanonicalPrimary preserves ref and descendants mirror fields for legacy export", () => {
+    const setElements = vi.fn();
+    const page = makePage("page-1");
+    useCanonicalDocumentStore.getState().setCurrentProject("project-1");
+    useCanonicalDocumentStore.getState().setDocument(
+      "project-1",
+      makeDocument([
+        {
+          id: "page-1",
+          type: "frame",
+          metadata: { type: "legacy-page", pageId: "page-1" },
+          children: [],
+        },
+      ]),
+    );
+    registerCanonicalMutationStoreActions({
+      mergeElements: vi.fn(),
+      setElements,
+      getCurrentLegacySnapshot: () => ({
+        elements: [],
+        pages: [page],
+        layouts: [],
+      }),
+      getCurrentProjectId: () => "project-1",
+    });
+
+    mergeElementsCanonicalPrimary([
+      makeElement("master", "Button", {
+        page_id: "page-1",
+        componentRole: "master",
+        componentName: "Master Button",
+        order_num: 0,
+      }),
+      makeElement("master-label", "Text", {
+        parent_id: "master",
+        page_id: "page-1",
+        order_num: 1,
+      }),
+      makeElement("instance", "Button", {
+        page_id: "page-1",
+        componentRole: "instance",
+        masterId: "master",
+        overrides: { children: "Override" },
+        descendants: { "master-label": { children: "Child Override" } },
+        order_num: 2,
+      }),
+    ]);
+
+    const nextDoc = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1");
+    const pageNode = nextDoc?.children.find((node) => node.id === "page-1");
+    expect(pageNode?.children).toEqual([
+      expect.objectContaining({
+        id: "instance",
+        type: "ref",
+        ref: "master",
+        props: { children: "Override" },
+        descendants: {
+          "master-label": { children: "Child Override" },
+        },
+      }),
+    ]);
+    expect(setElements).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "master",
+          componentRole: "master",
+          componentName: "Master Button",
+        }),
+        expect.objectContaining({
+          id: "instance",
+          componentRole: "instance",
+          masterId: "master",
+          overrides: { children: "Override" },
+          descendants: { "master-label": { children: "Child Override" } },
+        }),
+      ]),
+    );
+  });
+
+  it("merge path does not rebuild via legacyToCanonical", async () => {
+    const source = await readFile(
+      resolve(__dirname, "../canonicalMutations.ts"),
+      "utf-8",
+    );
+    const mergeBody = source.slice(
+      source.indexOf("function applyCanonicalPrimaryMerge"),
+      source.indexOf("function applyCanonicalPrimarySet"),
+    );
+
+    expect(mergeBody).not.toContain("legacyToCanonical(");
+  });
+
+  it("set path does not rebuild via legacyToCanonical", async () => {
+    const source = await readFile(
+      resolve(__dirname, "../canonicalMutations.ts"),
+      "utf-8",
+    );
+    const setBody = source.slice(
+      source.indexOf("function applyCanonicalPrimarySet"),
+      source.indexOf(
+        "// ─────────────────────────────────────────────\n// In-memory store wrapper API",
+      ),
+    );
+
+    expect(setBody).not.toContain("legacyToCanonical(");
+  });
+});

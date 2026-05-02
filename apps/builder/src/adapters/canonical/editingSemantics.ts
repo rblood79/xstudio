@@ -20,6 +20,7 @@ type EditingSemanticsElementLike = {
   ref?: unknown;
   reusable?: unknown;
   slot?: unknown;
+  name?: unknown;
   type?: unknown;
 };
 
@@ -252,7 +253,15 @@ export function getEditingSemanticsImpactInstanceIds(
   if (!origin) return [];
 
   const originKeys = new Set<string>();
-  for (const value of [origin.id, origin.customId, origin.componentName]) {
+  const metadata = asRecord(origin.metadata);
+  for (const value of [
+    origin.id,
+    origin.customId,
+    origin.componentName,
+    origin.name,
+    metadata?.customId,
+    metadata?.componentName,
+  ]) {
     if (typeof value === "string" && value.length > 0) {
       originKeys.add(value);
     }

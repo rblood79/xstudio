@@ -28,6 +28,7 @@ import type {
   RefNode,
   ResolvedNode,
   ResolverCache,
+  ImportResolverContext,
 } from "@composition/shared";
 
 import type { Element } from "@/types/builder/unified.types";
@@ -35,6 +36,11 @@ import { isInstanceElement } from "@/types/builder/unified.types";
 import { getComponentOverridesMirror } from "@/adapters/canonical/componentSemanticsMirror";
 import { resolveCanonicalDocument } from "./index";
 import { getSharedResolverCache } from "./cache";
+import {
+  getSharedImportRegistry,
+  type CanonicalImportRegistry,
+  type PrefetchDocumentImportsResult,
+} from "./importRegistry";
 import { extractLegacyPropsFromResolved } from "./extractLegacyProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,8 +62,16 @@ import { extractLegacyPropsFromResolved } from "./extractLegacyProps";
 export function selectResolvedTree(
   doc: CompositionDocument,
   cache: ResolverCache = getSharedResolverCache(),
+  imports: ImportResolverContext = getSharedImportRegistry(),
 ): ResolvedNode[] {
-  return resolveCanonicalDocument(doc, cache);
+  return resolveCanonicalDocument(doc, cache, imports);
+}
+
+export function prefetchResolvedTreeImports(
+  doc: CompositionDocument,
+  registry: CanonicalImportRegistry = getSharedImportRegistry(),
+): Promise<PrefetchDocumentImportsResult> {
+  return registry.prefetchDocumentImports(doc);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

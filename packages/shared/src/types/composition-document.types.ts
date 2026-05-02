@@ -335,7 +335,8 @@ export interface RefNode extends CanonicalNode {
    *
    * - local id: 같은 document 내 reusable 노드 id
    * - import 참조: `"<importKey>:<nodeId>"` 형식 (e.g. `"basic-kit:round-button"`)
-   *   (import resolver 는 Phase 5 이후 구현)
+   *   (`importKey` 는 `/^[A-Za-z][A-Za-z0-9_-]*$/` namespace)
+   *   (runtime import resolver/fetch boundary 는 ADR-916 G6-4 에서 구현)
    */
   ref: string;
 
@@ -402,8 +403,11 @@ export interface CompositionDocument {
    *
    * import 된 reusable 노드 id 는 `"<importKey>:<nodeId>"` 형식으로 `ref` 참조 가능.
    * 예: `{ "basic-kit": "./kits/basic.pen" }` → `ref: "basic-kit:round-button"`
+   * `importKey` 는 `/^[A-Za-z][A-Za-z0-9_-]*$/` namespace 이며 reserved object
+   * key (`__proto__`, `constructor`, `prototype`) 는 허용하지 않는다.
    *
-   * **P0 타입 스텁만**: 실제 resolver/fetch 구현은 Phase 5 이후 (ADR-914).
+   * Resolver/fetch/payload adapter boundary 는 ADR-916 G6-4 runtime 경계에서
+   * 처리한다. shared 타입은 저장 schema 계약만 정의한다.
    */
   imports?: Record<string, string>;
 

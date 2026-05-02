@@ -21,4 +21,18 @@ describe("preview frame mirror contract", () => {
       expect(source).not.toContain("legacyToCanonical");
     }
   });
+
+  it("resolves preview canonical documents with the shared import registry", async () => {
+    const source = await readFile(resolve(__dirname, "App.tsx"), "utf-8");
+
+    expect(source).toContain(
+      "const canonicalImportRegistry = getSharedImportRegistry();",
+    );
+    expect(source).toContain(".prefetchDocumentImports(canonicalDocument)");
+    expect(
+      source.match(
+        /resolveCanonicalDocument\(\s*canonicalDocument,\s*undefined,\s*canonicalImportRegistry,\s*\)/g,
+      ) ?? [],
+    ).toHaveLength(2);
+  });
 });

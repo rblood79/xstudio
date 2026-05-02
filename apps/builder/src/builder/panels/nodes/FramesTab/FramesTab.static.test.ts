@@ -38,6 +38,7 @@ describe("FramesTab frame selection race guard", () => {
     const source = await readFile(resolve(__dirname, "FramesTab.tsx"), "utf-8");
 
     expect(source).toContain("useActiveCanonicalDocument");
+    expect(source).toContain("getReusableFrameMirrorId");
     expect(source).not.toContain("selectCanonicalDocument");
   });
 });
