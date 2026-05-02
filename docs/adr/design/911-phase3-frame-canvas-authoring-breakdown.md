@@ -1,7 +1,7 @@
 # ADR-911 Phase 3 — Frame Canvas Authoring 시각 path Breakdown
 
 > **상태**: Closed (2026-04-30) — P3-α/β/γ/δ + δ fix #1~#4 + θ + P3-ε/P3-ζ closure 완료. ADR-911 본문 G3/G4/G5 잔여는 별도 진행
-> **연결 ADR**: [911](../911-layout-frameset-pencil-redesign.md) Phase 3 sub-phase
+> **연결 ADR**: [911](../completed/911-layout-frameset-pencil-redesign.md) Phase 3 sub-phase
 > **prerequisite**: 본 sub-phase 가 [ADR-912](../completed/912-editing-semantics-ui-5elements.md) 의 Canvas 시각 마커 land 의 prerequisite
 
 ## 1. 결함 요약
@@ -483,7 +483,7 @@ P3-ε 의 drag gate 는 다음처럼 해석한다:
 
 ## 6. 참조
 
-- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md) (진행 로그 2026-04-28 entry)
+- [ADR-911 본문](../completed/911-layout-frameset-pencil-redesign.md) (진행 로그 2026-04-28 entry)
 - [ADR-911 design breakdown 본체](911-layout-frameset-pencil-redesign-breakdown.md)
 - [ADR-911 Closure 체크리스트](911-closure-checklist.md) — 본 P3 land 후 종결 체크
 - [ADR-912](../completed/912-editing-semantics-ui-5elements.md) — 시각 마커 (본 P3 prerequisite)

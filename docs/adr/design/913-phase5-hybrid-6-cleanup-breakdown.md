@@ -1,6 +1,6 @@
 # ADR-913 Phase 5 Implementation Breakdown — Hybrid 6 Fields Cleanup
 
-> 본 문서는 [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) **Phase 5 (HIGH risk, ~2d 예상)** 의 sub-phase 분해 + 영향 영역 + 검증 명령. ADR-903 P3-E + ADR-911/913 Phase 1~4 패턴을 답습하되, 2026-04-30 이후 실행 순서는 [ADR-916](../916-canonical-document-ssot-transition.md) 선행으로 재정렬한다.
+> 본 문서는 [ADR-913](../completed/913-tag-type-rename-hybrid-cleanup.md) **Phase 5 (HIGH risk, ~2d 예상)** 의 sub-phase 분해 + 영향 영역 + 검증 명령. ADR-903 P3-E + ADR-911/913 Phase 1~4 패턴을 답습하되, 2026-04-30 이후 실행 순서는 [ADR-916](../completed/916-canonical-document-ssot-transition.md) 선행으로 재정렬한다.
 
 ## 1. 목표 + Gate G5
 
@@ -190,10 +190,10 @@ ADR-913 line 121 R2 (mechanical rename + hybrid cleanup):
 
 ## 관련 문서
 
-- ADR-913: `docs/adr/913-tag-type-rename-hybrid-cleanup.md`
+- ADR-913: `docs/adr/completed/913-tag-type-rename-hybrid-cleanup.md`
 - ADR-913 Phase 4 breakdown: `docs/adr/design/913-phase4-db-schema-migration-breakdown.md`
 - ADR-913 inventory (2026-04-27 세션 36): `docs/adr/design/913-tag-type-rename-inventory.md`
 - ADR-903 §3.10: `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md`
-- ADR-911 (layout_id 흡수): `docs/adr/911-layout-frameset-pencil-redesign.md`
-- ADR-916 (canonical document SSOT 선행 gate): `docs/adr/916-canonical-document-ssot-transition.md`
+- ADR-911 (layout_id 흡수): `docs/adr/completed/911-layout-frameset-pencil-redesign.md`
+- ADR-916 (canonical document SSOT 선행 gate): `docs/adr/completed/916-canonical-document-ssot-transition.md`
 - ADR-914 (Superseded): `docs/adr/completed/914-imports-resolver-designkit-integration.md`

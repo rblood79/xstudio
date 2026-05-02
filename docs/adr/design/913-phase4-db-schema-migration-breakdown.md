@@ -286,8 +286,8 @@ pnpm vitest run apps/builder/src/lib/db
 
 ## 관련 문서
 
-- ADR-913: `docs/adr/913-tag-type-rename-hybrid-cleanup.md`
+- ADR-913: `docs/adr/completed/913-tag-type-rename-hybrid-cleanup.md`
 - ADR-903 P3-E breakdown: `docs/adr/design/903-phase3e-persistence-breakdown.md` (620 LOC, 본 Phase 4 의 baseline 패턴)
 - ADR-913 inventory: `docs/adr/design/913-tag-type-rename-inventory.md`
-- ADR-916: `docs/adr/916-canonical-document-ssot-transition.md`
+- ADR-916: `docs/adr/completed/916-canonical-document-ssot-transition.md`
 - ADR-903: `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md`

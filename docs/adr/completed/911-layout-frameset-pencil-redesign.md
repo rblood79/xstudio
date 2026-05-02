@@ -2,20 +2,21 @@
 
 ## Status
 
-In Progress — 2026-05-02 direct cutover 반영 (P3-ε/P3-ζ closure + G3 cascade slices 유지, legacy flag/migration/panel-slot 명칭 정리, legacy layout store 제거 완료)
+Implemented — 2026-05-02 direct cutover + G5 Pencil import/export parity closure
 
 > **재개 사유** (2026-04-30): 본 ADR 은 ADR-912 (Editing Semantics UI — reusable component + slot 추상) 의 **frame-bundled preset 편의 확장** 임이 framing 재정의 됐고, 2026-04-30 ADR-912 가 Component/Slot base 를 `Implemented` 로 승격했다. 본 ADR 은 여전히 ADR-912 에 영향을 주거나 기준을 제공하지 않는다. `Frame.reusable` / `Frame.slot` / `Ref.descendants` schema 의 사용자 가시 편집 base 는 ADR-912 기준을 따른다. 본 ADR 의 이전 ##Slot section## 소유권 표현은 잘못된 설계 전제였고, ADR-912 기준으로 supersede 된다. **재개 범위**: P3-ε / P3-ζ 는 FramesTab / frame preset UX 가 완료된 ADR-912 기능을 더 쉽게 쓰게 하는 보조 흐름으로만 재설계한다.
 
 > **동결 보존 범위**: Phase 0~2 (Implemented) + Phase 3 의 P3-α/β/γ/δ + δ fix #1+#2+#3+#4 + B1 filter + θ scope land + θ regression fix #1 (~commit `e4f24697` + 세션 49 후속) 모두 보존. P3-θ regression fix #1 은 frame instance composition body 채택 정책 GREEN — frame schema 자체 land 는 ADR-912 base 와 무관하게 실 사용자 가시 동작 (frame default + page slot fill) 보존 가치.
 
-> **재개 조건 및 closure 결과**: 충족됨. ADR-912 Component/Slot base 완료(2026-04-30) 후 P3-ε / P3-ζ 는 ADR-912 기능의 frame authoring 편의 확장으로 재설계했고, 사용자 브라우저 회귀 검증까지 완료했다. G3 cascade 는 `duplicateLayout` write-through slice #1, `deleteLayout` orphan page-ref cleanup slice #2, Page frame binding live invalidation slice #3 까지 보강했으나, ADR-911 전체는 아직 G3 canonical-native cascade 완결 / G4 legacy adapter 0 / G5 pencil 호환 검증 잔여가 있으므로 `Implemented` 로 승격하지 않는다.
+> **재개 조건 및 closure 결과**: 충족됨. ADR-912 Component/Slot base 완료(2026-04-30) 후 P3-ε / P3-ζ 는 ADR-912 기능의 frame authoring 편의 확장으로 재설계했고, 사용자 브라우저 회귀 검증까지 완료했다. 이후 2026-05-02 direct cutover 로 G3 canonical frame action surface 와 G4 legacy layout store/명칭 충돌 잔여를 닫았고, G5 Pencil import/export parity 를 완료해 본 ADR 을 `Implemented` 로 승격한다.
 >
-> **ADR-916 우선순위 조정 (2026-04-30)**: 남은 G3/G4/G5 는 ADR-916 의 `CompositionDocument` canonical store/API 및 adapter boundary 확정 이후 재개한다. G3 의 canonical-native frame mutation 은 ADR-916 G2 이후에, G4 legacy adapter 0건은 ADR-916 G5 field quarantine 안에서, G5 pencil import/export parity 는 ADR-916 import/export adapter 및 runtime parity gate 이후에 닫는다. ADR-914 는 completed archive 에 Superseded 로 이동했으며, `imports` resolver/cache 잔여 scope 는 ADR-916 + 본 ADR G5 로 흡수된다.
+> **ADR-916 우선순위 조정 closure (2026-05-02)**: ADR-916 이 `CompositionDocument` canonical store/API 및 import/export adapter boundary 를 닫은 뒤, 본 ADR 의 G3/G4/G5 잔여도 순차 closure 했다. ADR-914 는 completed archive 에 Superseded 로 이동했으며, `imports` resolver/cache 잔여 scope 는 ADR-916 canonical import registry 와 본 ADR G5 Pencil adapter 로 흡수됐다.
 
 > **Direct cutover 정정 (2026-05-02)**: 개발 단계라 기존 사용자/데이터 보존, feature flag, dev migration trigger, backup/rollback 을 유지하지 않는다. `VITE_FRAMES_TAB_CANONICAL` / `isFramesTabCanonical()` / `migrationP911` / FramesTab dev migration UI 를 제거했고, FramesTab/PageLayoutSelector read path 는 canonical reusable FrameNode surface 로 고정했다. G4 명칭 충돌 항목인 `PanelSlot` / `BottomPanelSlot` 은 `PanelArea` / `BottomPanelArea` 로 rename 완료했다. `useLayoutsStore` / `layoutActions` legacy store 본체도 제거했다.
 
 ### 진행 로그
 
+- **2026-05-02 — G5 final closure / Implemented**: `apps/builder/src/adapters/pencil/` 에 Pencil document-level import/export adapter, schema map, type re-export, 5개 `.pen` fixture, import/roundtrip tests 를 추가했다. `packages/shared/src/types/pencil-adapter.types.ts` 의 Phase 5+ stub 함수는 실제 순수 매핑 함수로 승격했고, ADR-916 import payload adapter 는 같은 mapper 를 사용해 `.pen` top-level node 를 reusable canonical master 로 normalize 한다. 검증: targeted vitest 3 files / 24 tests PASS + `pnpm run codex:typecheck` PASS.
 - **2026-05-02 — G5 first cleanup slice**: Layout selection state 의 `currentLayoutId` backward-compat alias 를 제거하고 `selectedReusableFrameId` 단일 상태로 고정했다. `layouts.ts` persist payload, `layoutActions.ts`, `BuilderCore`, `useIframeMessenger`, `ComponentsPanel`, 관련 static/unit tests 를 갱신했다. 검증: targeted vitest 4 files / 19 tests PASS + `pnpm run codex:typecheck` PASS.
 - **2026-05-02 — G5 second cleanup slice**: `PageLayoutSelector` 의 page-frame binding write boundary 를 `apps/builder/src/adapters/canonical/pageFrameBinding.ts` 로 이동했다. 컴포넌트는 legacy `layout_id` field/persistence helper 를 직접 import 하지 않고, adapter 가 canonical document store 를 먼저 갱신한 뒤 현재 DB 구조에 필요한 `pages.layout_id` mirror payload 만 격리해 persist 한다. 검증: targeted vitest `pageFrameBinding.test.ts` + `PageLayoutSelector.static.test.ts` 2 files / 3 tests PASS + `pnpm run codex:typecheck` PASS.
 - **2026-05-02 — G3/G5 third cleanup slice**: `layoutActions` 의 reusable frame create/delete/duplicate cascade 에서 legacy field 접근을 `apps/builder/src/adapters/canonical/frameLayoutCascade.ts` 로 이동했다. `deleteLayout` 은 `nextPages + nextLayouts` 로 canonical document 를 먼저 재구성하고 `exportLegacyDocument()` 결과를 live elements mirror 로 반영한다. DB 의 `layout_id` 기반 page/element cleanup 은 adapter 내부 persistence payload 로만 유지한다. 검증: targeted vitest `layoutActions.test.ts` 1 file / 9 tests PASS + `pnpm run codex:typecheck` PASS.
@@ -234,17 +235,17 @@ In Progress — 2026-05-02 direct cutover 반영 (P3-ε/P3-ζ closure + G3 casca
 - **2026-04-30 — P3-ζ browser regression closure**:
   - 사용자 브라우저 검증으로 Frames 탭 기본 렌더, 새로고침 후 body/slot 유지, Pages↔Frames 전환, Frame body/Slot hover+selection, Transform/Layout 편집, Frame 적용 Page, 동일 Frame 다중 Page 적용, Tabs 복합 컴포넌트 회귀, drag 위치 소유권 기준을 모두 확인했다.
   - 이로써 P3-δ (c) Chrome 사용자 시나리오, G3-θ (d) screenshot/user scenario, G3-ε, G3-ζ 를 frame authoring 편의 확장 범위에서 닫는다.
-  - 다음 잔여는 ADR-911 본문 Gate 기준의 G3 cascade 회귀 0, G4 legacy adapter 0건 + 명칭 충돌 해소, G5 pencil import/export schema-equivalent 검증이다. 단, 실행 순서는 ADR-916 선행으로 조정한다.
+  - 당시 잔여는 ADR-911 본문 Gate 기준의 G3 cascade 회귀 0, G4 legacy adapter 0건 + 명칭 충돌 해소, G5 pencil import/export schema-equivalent 검증이었다. 이후 2026-05-02 direct cutover + G5 final closure 로 닫았다.
 - **2026-04-30 — G3 cascade slice #1 (`duplicateLayout` immediate merge)**:
   - `createDuplicateLayoutAction` 이 cloned layout element subtree 를 IndexedDB 에 `insertMany` 한 뒤 live Zustand `elementsMap` 에 merge 하지 않아, 복제한 Frame body/Slot 이 새로고침 전 authoring surface 에 누락될 수 있는 회귀를 보강했다.
   - cloned subtree 는 새 `layout_id`, 새 id, remapped `parent_id`, `page_id:null` 을 유지하며, DB write-through 와 같은 턴에 `mergeElements(newElements)` 로 store 를 동기화한다.
   - 회귀 테스트: `layoutActions.test.ts` 에 slot+child 포함 frame clone fixture 를 추가해 DB insert payload 와 live store merge 를 함께 검증한다.
-  - 잔여: G3 전체 완료 조건인 canonical-native `deleteReusableFrame` / `duplicateReusableFrame` / `setPageFrameRef` 전환, 50+ fixture roundtrip, undo/redo 검증은 아직 남아 있다. 이 작업은 ADR-916 G2 canonical store/API 이후 재개한다.
+  - 당시 잔여: G3 전체 완료 조건인 canonical-native `deleteReusableFrame` / `duplicateReusableFrame` / `setPageFrameRef` 전환, 50+ fixture roundtrip, undo/redo 검증은 ADR-916 G2 canonical store/API 이후 재개하기로 했다. 이후 direct cutover 에서 canonical frame action surface 로 정리했다.
 - **2026-04-30 — G3 cascade slice #2 (`deleteLayout` orphan page-ref cleanup)**:
   - `createDeleteLayoutAction` 의 canonical frame projection guard 는 element cascade skip 용도로 유지하되, 삭제되는 layout row 를 참조하는 Page `layout_id` 는 frame projection 유무와 무관하게 항상 `null` 로 해제한다.
   - 이로써 stale layout row 삭제나 projection race 상황에서도 Page 가 존재하지 않는 Frame 을 계속 가리키는 orphan reference 를 남기지 않는다.
   - 회귀 테스트: canonical document 에 frame 이 없는 삭제 시나리오에서 `removeElements` 는 호출하지 않지만 `db.pages.update(pageId, { layout_id:null })` 와 live `setPages` 는 실행됨을 검증한다.
-  - 잔여: element cascade 자체는 아직 `layout_id` legacy fallback 기반이며, canonical-native frame subtree mutation 으로의 완전 전환은 ADR-916 G2 이후 후속 G3 작업이다.
+  - 당시 잔여: element cascade 자체는 `layout_id` legacy fallback 기반이었고, canonical-native frame subtree mutation 으로의 완전 전환은 ADR-916 G2 이후 후속 G3 작업이었다. 이후 adapter boundary + active `CompositionDocument` path 로 정리했다.
 - **2026-04-30 — G3 cascade slice #3 (`setPages` page frame binding invalidation)**:
   - Frame 삭제 액션이 `stores/elements.ts` 의 standalone compatibility store 를 갱신하고, Skia/PageLayoutSelector 는 `stores/index.ts` 통합 store 를 구독해 live 화면이 삭제 전 Frame 합성을 유지하던 회귀를 보강한다.
   - `layoutActions` 와 `layouts.getLayoutSlots` 는 `rootStoreAccess.getLiveElementsState()` 로 런타임 통합 Builder store 를 우선 사용하고, 테스트/비브라우저 환경에서만 기존 elements store 로 fallback 한다.
@@ -260,7 +261,7 @@ In Progress — 2026-05-02 direct cutover 반영 (P3-ε/P3-ζ closure + G3 casca
 
 ### 배경
 
-[ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) 가 Implemented 승격되었으나, **Phase 3 G3 의 (b)/(c)/(d) 항목** 은 잔여:
+[ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) 가 Implemented 승격되었으나, **Phase 3 G3 의 (b)/(c)/(d) 항목** 은 잔여:
 
 - **G3 (b)**: NodesPanel `LayoutsTab` → `FramesTab` 재설계 (canonical `ref`/`slot`/`descendants` 직접 조작). 사용자 가시 frame authoring base 는 닫혔고, 직접 canonical mutation 은 ADR-916 G2 이후 재개
 - **G3 (c)**: repo-wide 결합 해체 — 잔여 caller (FramesTab/layoutActions/usePageManager/PageLayoutSelector 등 다수) `el.layout_id === X` 매칭이 여전히 legacy fallback 으로 동작. adapter-only 격리는 ADR-916 G5 field quarantine 에서 닫음
@@ -412,7 +413,7 @@ In Progress — 2026-05-02 direct cutover 반영 (P3-ε/P3-ζ closure + G3 casca
 | `cssComponentPresets.ts` / `cssLabelPresets.ts` / `specPresetResolver.ts`                                                   | Spec/CSS preset resolver                                | **유지** — Spec D3 영역, pencil 무관                |
 | `components/particle/presets.ts`                                                                                            | particle effect presets                                 | **유지** — pencil 무관                              |
 
-> 구현 상세: [911-layout-frameset-pencil-redesign-breakdown.md](design/911-layout-frameset-pencil-redesign-breakdown.md) — 후속 세션에 작성 (Phase 분해 + 파일 변경 목록 + 마이그레이션 도구 + 검증 시나리오)
+> 구현 상세: [911-layout-frameset-pencil-redesign-breakdown.md](../design/911-layout-frameset-pencil-redesign-breakdown.md) — 후속 세션에 작성 (Phase 분해 + 파일 변경 목록 + 마이그레이션 도구 + 검증 시나리오)
 
 ## Risks
 
@@ -445,7 +446,7 @@ In Progress — 2026-05-02 direct cutover 반영 (P3-ε/P3-ζ closure + G3 casca
 - pencil app 과 schema 호환 → 외부 디자인 자산 import/export 자연스럽게 지원
 - 단일 frame authoring 인터페이스 → 사용자 학습 비용 감소 + UI 일관성
 - ADR-903 G4 (Editing Semantics UI 5요소) 의 토대 제공
-- ADR-916 이 흡수한 ADR-903 P5-D/E (`imports` resolver/cache) 와 자연스럽게 통합 — DesignKit 통합은 [ADR-915](completed/915-remove-designkit-system.md) 로 제거됐고 ADR-914 는 Superseded 됨
+- ADR-916 이 흡수한 ADR-903 P5-D/E (`imports` resolver/cache) 와 자연스럽게 통합 — DesignKit 통합은 [ADR-915](915-remove-designkit-system.md) 로 제거됐고 ADR-914 는 Superseded 됨
 - **pencil 공식 명칭 단일 표준 채택** — 2026-04-27 inventory 결과 실제 충돌 영역은 Builder UI panel slot 2건 (`PanelSlot` / `BottomPanelSlot`) 으로 한정. Skia rendering 의 `Frame` 단어는 canonical FrameNode 의 시각 표현으로 의미 일치 → 유지
 
 ### Negative
@@ -457,12 +458,12 @@ In Progress — 2026-05-02 direct cutover 반영 (P3-ε/P3-ζ closure + G3 casca
 
 ## References
 
-- [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 G3 (b)/(c)/(d) 잔여 흡수)
-- [ADR-903 phase 3 frameset breakdown](design/903-phase3-frameset-breakdown.md) — frameset 흡수 분석 (본 ADR Phase 1 마이그레이션 도구 설계 시 참조)
-- [ADR-903 residual grep audit](design/903-residual-grep-audit-2026-04-26.md) — 잔여 caller inventory (Phase 4 G4 측정 baseline)
+- [ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 G3 (b)/(c)/(d) 잔여 흡수)
+- [ADR-903 phase 3 frameset breakdown](../design/903-phase3-frameset-breakdown.md) — frameset 흡수 분석 (본 ADR Phase 1 마이그레이션 도구 설계 시 참조)
+- [ADR-903 residual grep audit](../design/903-residual-grep-audit-2026-04-26.md) — 잔여 caller inventory (Phase 4 G4 측정 baseline)
 - [ADR-916](916-canonical-document-ssot-transition.md) — canonical document SSOT 전환. 본 ADR 의 남은 G3/G4/G5 실행 순서를 선행 gate 로 재정렬
-- [ADR-912](completed/912-editing-semantics-ui-5elements.md) — Editing Semantics UI 6요소 + Slot section base. 본 ADR 은 ADR-912 의 영향을 주지 않으며, 완료된 ADR-912 Component/Slot 기능 위 frame authoring 편의 확장만 제공
-- [ADR-914](completed/914-imports-resolver-designkit-integration.md) — Superseded. `imports` resolver/cache 잔여 scope 는 ADR-916 + 본 ADR G5 로 흡수
+- [ADR-912](912-editing-semantics-ui-5elements.md) — Editing Semantics UI 6요소 + Slot section base. 본 ADR 은 ADR-912 의 영향을 주지 않으며, 완료된 ADR-912 Component/Slot 기능 위 frame authoring 편의 확장만 제공
+- [ADR-914](914-imports-resolver-designkit-integration.md) — Superseded. `imports` resolver/cache 잔여 scope 는 ADR-916 + 본 ADR G5 로 흡수
 - [pencil app schema (`.pen` 2.11)](https://pencil.dev/) — 본 ADR 의 호환 기준. 핵심 type 직접 확인 (2026-04-28 MCP 직접 fetch):
   - `Entity.reusable: boolean` — origin 마킹
   - `Frame.slot: false | string[]` — false=일반 frame, array=slot (각 element 는 권장 ref id)

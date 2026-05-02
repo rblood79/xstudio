@@ -1,0 +1,16 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "id": "button",
+      "type": "frame",
+      "reusable": true,
+      "slot": ["label"]
+    },
+    {
+      "id": "button-instance",
+      "type": "ref",
+      "ref": "button"
+    }
+  ]
+}

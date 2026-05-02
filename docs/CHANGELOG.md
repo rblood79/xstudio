@@ -5,7 +5,7 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [ADR-916/911/913 direct cutover — flags, backup, runtime migrations 제거] - 2026-05-02
+## [ADR-916/911/913 direct cutover — flags, backup, runtime migrations 제거 + ADR-911 Implemented] - 2026-05-02
 
 ### Architecture
 
@@ -51,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ADR-916 G6-4 import payload adapter 를 추가했다. default fetcher 는 same-origin JSON 응답을 canonical `CompositionDocument` 또는 Pencil-style node tree 로 판별하고, Pencil-style top-level nodes 를 reusable canonical masters 로 정규화한다.
   - ADR-916 G6-4 import registry stale pruning 을 추가했다. document import map 변경/삭제 시 loaded/pending/failed entry 를 현재 import map 기준으로 retain 하고, pruned in-flight fetch 는 늦게 resolve 되어도 registry 에 재저장하지 않는다.
   - ADR-916 G6-4 imports parity completion sweep 으로 resolver loaded-import consumption, imports cache fingerprint, prefetch/cache registry, Preview prefetch/resolve context, same-origin URL policy, namespace guard, payload adapter, stale pruning 을 하나의 static contract gate 로 고정했다.
+- ADR-911 G5 Pencil import/export parity 를 완료했다.
+  - `apps/builder/src/adapters/pencil/` 에 document-level import/export adapter, schema map, type re-export, 5개 `.pen` fixture, import/roundtrip tests 를 추가했다.
+  - `packages/shared/src/types/pencil-adapter.types.ts` 의 Phase 5+ stub 함수는 `pencilDocumentToCompositionDocument()` / `compositionDocumentToPencilDocument()` / node-level mapper 실제 구현으로 승격했다.
+  - ADR-916 import payload adapter 는 같은 shared mapper 를 사용해 fetched `.pen` payload 를 canonical import document 로 normalize 한다. file-open adapter 는 원본 `reusable` 값을 보존하고, import registry 경로만 `forceTopLevelReusable` 로 external top-level node 를 reusable master 로 승격한다.
+  - 5개 fixture (`minimal`, `slots`, `ref`, `descendants`, `imports`) roundtrip schema-equivalent 검증을 통과해 ADR-911 을 `Implemented` 로 승격했다.
 - ADR-916/913 legacy field quarantine helper boundary 를 정리했다.
   - `isMasterElement` / `isInstanceElement` / `getInstanceMasterRef` read-through helper 를 `unified.types.ts` 에서 제거하고, component marker read 는 `componentSemanticsMirror` adapter 경계로 고정했다.
   - `Element` / shared `Element` type schema 에서 `componentRole` / `masterId` / legacy `overrides` mirror field 선언을 제거하고, adapter-owned `ElementWithLegacyMirror` / component mirror fixture helper 로 legacy payload 생성을 격리했다.
@@ -74,6 +79,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `normalizeLegacyElement` read-through helper 제거
   - `runTagTypeMigration` 및 관련 dry-run entry/test 제거
   - `descendants` runtime access gate 를 추가해 non-adapter 접근을 canonical resolver/store/type validation allowlist 로 제한
+
+### Documentation
+
+- 완료 ADR 본문 911/913/916 을 `docs/adr/completed/` archive 로 이동하고, ADR README / design breakdown / adjacent completed ADR 링크를 새 위치로 갱신했다.
 
 ### Verification
 
@@ -118,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/pageFrameBinding.test.ts src/adapters/canonical/__tests__/frameMirror.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx` — 5 files / 22 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/cache.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 3 files / 65 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/cache.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 72 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/adapters/pencil/__tests__/pencilImport.test.ts src/adapters/pencil/__tests__/pencilRoundtrip.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts` — 3 files / 24 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 57 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 60 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/preview/previewFrameMirror.static.test.ts src/resolvers/canonical/__tests__/importRegistry.test.ts src/resolvers/canonical/__tests__/resolver.test.ts src/resolvers/canonical/__tests__/storeBridge.test.ts` — 4 files / 62 tests PASS
@@ -200,7 +210,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Architecture
 
 - **ADR-916 Status `Proposed → Accepted` 승격** (Phase 0 G1 Schema Boundary Freeze land 동시):
-  - 위치: `docs/adr/916-canonical-document-ssot-transition.md` + `docs/adr/design/916-canonical-document-ssot-transition-breakdown.md`
+  - 위치: `docs/adr/completed/916-canonical-document-ssot-transition.md` + `docs/adr/design/916-canonical-document-ssot-transition-breakdown.md`
   - **Why**: ADR-903/910/911/912/913/914 라인업 누적 + tier3 entry "다음 Tier 1 = ADR-916 진입" 권고 — `CompositionDocument` canonical schema 를 저장/편집/렌더/history/preview/publish 의 장기 SSOT 로 승격. 본 phase 는 schema boundary 만 고정 (logic 변경 0).
   - ADR fork checkpoint 4 질문 lock-in (§Decision):
     1. base/응용 분류 — ADR-916 = canonical SSOT 추상 base / ADR-911/913/914 = 응용 specialization
@@ -546,7 +556,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 본문 + design §7 framing 정정 — "선결 ADR-911" 제거 / "ADR-911 = preset 응용" 명시 / 차단 해제 조건 = "사용자 review + Status Proposed→Accepted" (ADR-911 P3 land 와 무관)
   - 다음: ADR-912 Component/Slot base 우선 구현
 - **ADR-911 Frozen (Phase 3 후속 동결)**:
-  - 위치: `docs/adr/911-layout-frameset-pencil-redesign.md` Status `In Progress → Frozen`
+  - 위치: `docs/adr/completed/911-layout-frameset-pencil-redesign.md` Status `In Progress → Frozen`
   - 보존 범위: Phase 0~2 (Implemented) + Phase 3 P3-α/β/γ/δ + δ fix #1~#4 + B1 filter + θ scope + θ regression fix #1 모두 land 보존 — 사용자 가시 동작 (frame default + page slot fill GREEN) 유지
   - 정지 영역: P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot — 모두 ADR-912 Component/Slot base 완료 후 재개
   - 재개 조건: ADR-912 Component/Slot base 완료 시 P3-ε / P3-ζ 가 frame authoring 편의 확장으로 재설계 진입
@@ -615,7 +625,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Gate G2 (시각 회귀 0) 위반 확정** — Phase 2 closure 5단계 체크리스트 보류. monitoring 6일 대기 framing 무의미 (사용자 결정: monitoring 종결 의미 없음)
   - **본 세션 land**: design breakdown 신규 sub-phase 만 — `docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md`. P3-α (`framePositions` map) → P3-β (`computeLayoutGroups` 확장) → P3-γ (`editingContextId` 갱신) → P3-δ (Skia render path 통합) → P3-ε (hit-test/drag/selection) → P3-ζ (Chrome MCP 회귀 검증). 본격 fix 는 별도 세션 (1주+ HIGH)
   - **ADR-912 prerequisite 관계 명시**: 본 P3 가 base render → ADR-912 시각 마커는 위에 land
-  - 위치: `docs/adr/911-layout-frameset-pencil-redesign.md` (진행 로그 entry) + `docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md` (신규)
+  - 위치: `docs/adr/completed/911-layout-frameset-pencil-redesign.md` (진행 로그 entry) + `docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md` (신규)
 
 ### Known Issues
 
@@ -1004,7 +1014,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 - **ADR-911 진행 로그 + sub-PR 분할 표 갱신**:
-  - `docs/adr/911-layout-frameset-pencil-redesign.md` 진행 로그에 PR-B entry 추가 (handler 시그니처 변경 명시)
+  - `docs/adr/completed/911-layout-frameset-pencil-redesign.md` 진행 로그에 PR-B entry 추가 (handler 시그니처 변경 명시)
   - `docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md` PR-B 상태 `후속 세션` → `✅ 2026-04-27 (PR pending)`
 
 ## [ADR-911 Phase 2 PR-A — frameActions canonical wrapper + FRAMES_TAB_CANONICAL flag — 세션 37 후반] - 2026-04-27
@@ -1029,7 +1039,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 - **ADR-911 진행 로그 + design breakdown sub-PR 분할 명시**:
-  - `docs/adr/911-layout-frameset-pencil-redesign.md` Status: `Proposed` → `In Progress`. 진행 로그 3 entry 추가 (세션 35 Proposed / 세션 36 Phase 1 함수 / 세션 37 Phase 2 PR-A)
+  - `docs/adr/completed/911-layout-frameset-pencil-redesign.md` Status: `Proposed` → `In Progress`. 진행 로그 3 entry 추가 (세션 35 Proposed / 세션 36 Phase 1 함수 / 세션 37 Phase 2 PR-A)
   - `docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md` P2 Step 분해 표를 5-PR 분할 (A: 본 PR / B: FramesTab consumer / C: read path / D: UI 분리 / E: PageLayoutSelector + dev migration / G: cutover) 로 보강
 
 ## [ADR-913 P1+P2 mechanical rename — Element.tag → Element.type — 세션 37 마감] - 2026-04-27
@@ -1176,7 +1186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 대안 A (단일 ADR + 단일 Phase 일괄) 채택 — B (2 ADR 분리, 중간 상태 복잡) / C (점진 rename, 유지보수 HIGH) 기각
   - 안전망 3중: ast-grep 자동 도구 + tsc --noEmit gate + roundtrip 검증
   - Gate G5-B~G5-F. ADR-911 와 독립 진행 가능 (영역 분리)
-  - 위치: `docs/adr/913-tag-type-rename-hybrid-cleanup.md` (Risk-First 본문 ~210 LOC). design 문서 `903-phase5-persistence-imports-breakdown.md` §P5-C 그대로 활용
+  - 위치: `docs/adr/completed/913-tag-type-rename-hybrid-cleanup.md` (Risk-First 본문 ~210 LOC). design 문서 `903-phase5-persistence-imports-breakdown.md` §P5-C 그대로 활용
 
 - **ADR-914 — `imports` resolver + DesignKit 통합 (Proposed 당시, 2026-04-30 Superseded)**:
   - ADR-903 P5-D/E/F 잔여 흡수. P5-D imports fetch + parse / P5-E ResolverCache 동기 캐시 히트 + async prefetch / P5-F DesignKit 통합 결정 (Option α 무수정 + 별도 vs Option β 통합)

@@ -295,7 +295,7 @@
 ## 9. 관련
 
 - [ADR-912 본문](../completed/912-editing-semantics-ui-5elements.md) (Implemented — 2026-04-30 gate closure)
-- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md) (Ready to Resume 2026-04-30 — Slot section base 소유권은 본 ADR 로 supersede, 이후 frame authoring 편의 확장으로만 P3-ε/P3-ζ 재개)
+- [ADR-911 본문](../completed/911-layout-frameset-pencil-redesign.md) (Ready to Resume 2026-04-30 — Slot section base 소유권은 본 ADR 로 supersede, 이후 frame authoring 편의 확장으로만 P3-ε/P3-ζ 재개)
 - [ADR-903 Phase 4 baseline](903-phase4-editing-semantics-breakdown.md) (637 LOC, 본 fork 의 baseline)
 - [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md) — D1/D2/D3 분할 정본
 - [adr-writing.md](../../../.claude/rules/adr-writing.md) — Risk-First 템플릿 + "스캐폴딩 먼저" 원칙

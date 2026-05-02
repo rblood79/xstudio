@@ -1,10 +1,10 @@
 # ADR-911 Layout/Slot Frameset 완전 재설계 — 구현 상세
 
-> **상위 ADR**: [ADR-911](../911-layout-frameset-pencil-redesign.md) (Status: In Progress — 2026-05-02 direct cutover)
-> **의존 ADR**: ADR-903 (Implemented 2026-04-26) + ADR-916 (In Progress direct cutover) — `useLayoutsStore` / `layoutActions` 본체는 2026-05-02 legacy layout store removal 로 삭제됨. 잔여는 ADR-916 G5 legacy field quarantine + 본 ADR G5 pencil import/export parity.
+> **상위 ADR**: [ADR-911](../completed/911-layout-frameset-pencil-redesign.md) (Status: Implemented — 2026-05-02)
+> **의존 ADR**: ADR-903 (Implemented 2026-04-26) + ADR-916 (Implemented 2026-05-02). `useLayoutsStore` / `layoutActions` 본체는 2026-05-02 legacy layout store removal 로 삭제됐고, ADR-911 G5 Pencil import/export parity 도 완료됨.
 > **총 예상 규모**: historical plan. 2026-05-02 이후 feature flag / migration / backup / adapter shim 유지 전제는 direct cutover 로 superseded.
 
-> **2026-05-02 current override**: 아래 Phase 1~4의 migration/dual-mode/shim 계획은 역사적 설계 기록이다. 현재 구현 기준은 canonical frame surface (`canonicalFrameStore`) + active `CompositionDocument` 가 in-memory SSOT이고, current DB `layouts` row 는 persistence mirror 로만 남는다. `apps/builder/src/builder/stores/layouts.ts` / `stores/utils/layoutActions.ts` 는 삭제 완료.
+> **2026-05-02 current override**: 아래 Phase 1~4의 migration/dual-mode/shim 계획은 역사적 설계 기록이다. 현재 구현 기준은 canonical frame surface (`canonicalFrameStore`) + active `CompositionDocument` 가 in-memory SSOT이고, current DB `layouts` row 는 persistence mirror 로만 남는다. `apps/builder/src/builder/stores/layouts.ts` / `stores/utils/layoutActions.ts` 는 삭제 완료. Phase 5 는 `apps/builder/src/adapters/pencil/**` + shared mapper + ADR-916 import payload adapter 통합으로 완료.
 
 ---
 
@@ -781,6 +781,8 @@ grep -rn "PanelSlot\|BottomPanelSlot" apps/builder/src/ \
 
 ## Phase 5 (G5): pencil 호환 검증 — 6h
 
+> **Status (2026-05-02)**: Implemented. `apps/builder/src/adapters/pencil/` 에 document-level adapter 와 fixture 5종 roundtrip test 를 추가했고, `packages/shared/src/types/pencil-adapter.types.ts` 의 Phase 5+ stub 을 실제 mapper 로 승격했다. ADR-916 `normalizeCompositionImportPayload()` 는 같은 mapper 를 사용해 fetched `.pen` payload 를 canonical import document 로 normalize 한다.
+
 ### 목적
 
 샘플 `.pen` 파일 5종 import → composition canonical document 변환 → roundtrip export → schema-equivalent 검증. ADR-914 는 Superseded 되었으므로 imports resolver/cache 통합은 ADR-916 의 canonical import/export adapter boundary 를 기준으로 명세한다.
@@ -814,7 +816,7 @@ apps/builder/src/adapters/pencil/
 | `document.imports`                                      | `CompositionDocument.imports`                              | 직접 매핑                  |
 | pencil 무대응 필드                                      | `metadata.composition*` namespace 격리                     | composition 확장 필드 격리 |
 
-**pencilImport.ts 핵심 변환**:
+**pencilImport.ts 실제 변환 surface**:
 
 ```ts
 // apps/builder/src/adapters/pencil/pencilImport.ts
@@ -822,47 +824,13 @@ apps/builder/src/adapters/pencil/
 import type { CompositionDocument } from "@composition/shared";
 import type { PencilDocument } from "./types";
 
-/**
- * .pen 파일 (PencilDocument) → composition canonical CompositionDocument 변환
- *
- * 변환 원칙:
- * 1. pencil 공식 필드는 1:1 직접 매핑 (schema 동일)
- * 2. composition 확장 필드는 metadata.composition* namespace
- * 3. pencil 미지원 필드 (theme override 등)는 metadata 안에 격리
- */
 export function importPencilDocument(
-  penDoc: PencilDocument,
-): CompositionDocument {
-  return {
-    version: "composition-1.1",
-    id: penDoc.id ?? crypto.randomUUID(),
-    children: penDoc.children.map(convertPencilNode),
-    imports: penDoc.imports ?? [],
-    metadata: {
-      compositionProjectId: undefined, // import 시 신규 생성
-      compositionTheme: undefined, // composition-only 확장
-      pencilSchemaVersion: penDoc.schema, // 원본 schema version 보존
-    },
-  };
-}
-
-function convertPencilNode(node: PencilNode): CanonicalNode {
-  // pencil type 1:1 매핑
-  if (node.type === "frame") {
-    return { ...node } as FrameNode; // schema 동일 — 직접 spread
-  }
-  if (node.type === "ref") {
-    return { ...node } as RefNode; // schema 동일 — 직접 spread
-  }
-  // 기타 node type (text, image 등) — metadata 격리
-  return {
-    type: "frame",
-    id: node.id,
-    children: [],
-    metadata: { pencilOriginalType: node.type, ...node },
-  };
-}
+  payload: PencilDocument | PencilNode,
+  options?: PencilDocumentImportOptions,
+): CompositionDocument;
 ```
+
+실제 node-level mapping 은 shared `pencilPrimitiveToComponent()` / `componentToPencilTree()` 가 소유한다. Builder adapter 는 file-open/roundtrip semantics 에서는 원본 `reusable` 값을 보존하고, ADR-916 import registry 경로에서는 `forceTopLevelReusable` 옵션으로 external `.pen` top-level node 를 reusable master 로 승격한다.
 
 ### P5-b: 샘플 .pen 파일 5종 roundtrip 테스트
 
@@ -903,78 +871,48 @@ it.each(SAMPLE_FILES)("roundtrip: %s", async (filename) => {
 
 ADR-916 은 `.pen` 파일의 `imports` field 를 canonical core hook 으로 유지하고, import/export adapter boundary 에서 외부 reusable frame 을 로컬 canonical document 에 합성한다. 본 P5 에서 ADR-916 이 흡수한 imports resolver/cache scope 가 의존할 인터페이스를 정의한다.
 
-**통합 인터페이스 명세**:
+**실제 통합 인터페이스**:
 
 ```ts
-// packages/shared/src/types/pencil-adapter.types.ts (수정)
+// apps/builder/src/resolvers/canonical/importPayloadAdapter.ts
+export function normalizeCompositionImportPayload(
+  payload: unknown,
+  source: string,
+): CompositionDocument;
 
-/**
- * ADR-916 imports resolver/cache boundary 가 사용하는 adapter contract
- *
- * importResolver.register("pencil", pencilImportAdapter)
- * 호출 후 외부 .pen 파일 fetch → canonical 변환 → 로컬 document 합성
- */
-export interface PencilImportAdapter {
-  /**
-   * .pen 파일 경로 또는 URL → canonical CompositionDocument 변환
-   * ADR-916 importResolver.resolve(importEntry) 에서 호출
-   */
-  loadAsCanonicalDocument(source: string): Promise<CompositionDocument>;
+// packages/shared/src/types/pencil-adapter.types.ts
+export function pencilDocumentToCompositionDocument(
+  document: PencilDocument,
+  options?: PencilDocumentImportOptions,
+): CompositionDocument;
 
-  /**
-   * 로컬 canonical document 에 외부 frame 합성
-   * imports[].resolved 가 있으면 이 함수 경유
-   */
-  mergeImportedFrames(
-    localDoc: CompositionDocument,
-    importedFrames: FrameNode[],
-    importEntry: ImportEntry,
-  ): CompositionDocument;
-}
-
-// pencilImportAdapter 구현 등록 (ADR-916 연계)
-export const pencilImportAdapter: PencilImportAdapter = {
-  async loadAsCanonicalDocument(source) {
-    const raw = await fetchPencilFile(source);
-    return importPencilDocument(raw);
-  },
-  mergeImportedFrames(localDoc, importedFrames, importEntry) {
-    // imports[].namespace 아래에 imported frames 배치
-    return {
-      ...localDoc,
-      children: [
-        ...localDoc.children,
-        ...importedFrames.map((f) => ({
-          ...f,
-          metadata: { importedFrom: importEntry.source },
-        })),
-      ],
-    };
-  },
-};
+export function compositionDocumentToPencilDocument(
+  document: CompositionDocument,
+  options?: PencilExportOptions,
+): PencilDocument;
 ```
 
-**ADR-916 연계 단계**: `importResolver.register("pencil", pencilImportAdapter)` 호출. ADR-914 standalone scope 는 Superseded 이며, 본 ADR 는 Pencil parity 인터페이스 명세까지 담당한다.
+**ADR-916 연계 방식**: standalone `importResolver.register("pencil", ...)` registry 는 두지 않는다. ADR-916 default import fetcher 가 same-origin JSON 을 받아 `normalizeCompositionImportPayload()` 로 canonical/Pencil payload 를 판별하고, Pencil-style payload 는 shared mapper 경유로 canonical `CompositionDocument` 로 normalize 한다. ADR-914 standalone scope 는 Superseded 이다.
 
 **G5 통과 조건**:
 
-| 조건                                     | 측정 방법                            |
-| ---------------------------------------- | ------------------------------------ |
-| (a) 샘플 5종 roundtrip schema-equivalent | `pnpm test pencilRoundtrip` 5/5 PASS |
-| (b) ADR-916 통합 인터페이스 타입 정합    | `pnpm type-check` 0 error            |
+| 조건                                     | 측정 방법                                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| (a) 샘플 5종 roundtrip schema-equivalent | `pnpm -F @composition/builder exec vitest run src/adapters/pencil/__tests__/pencilRoundtrip.test.ts` 5/5 PASS |
+| (b) ADR-916 통합 인터페이스 타입 정합    | `pnpm run codex:typecheck` PASS                                                                               |
 
 ### P5 변경 파일 목록
 
-| 파일                                                | 변경 유형 | 내용                                                              |
-| --------------------------------------------------- | --------- | ----------------------------------------------------------------- |
-| `adapters/pencil/pencilImport.ts`                   | **신규**  | .pen → canonical 변환                                             |
-| `adapters/pencil/pencilExport.ts`                   | **신규**  | canonical → .pen 역변환                                           |
-| `adapters/pencil/pencilSchemaMap.ts`                | **신규**  | 1:1 매핑 테이블                                                   |
-| `adapters/pencil/types.ts`                          | **신규**  | PencilDocument / PencilNode 타입                                  |
-| `adapters/pencil/__tests__/pencilImport.test.ts`    | **신규**  | import unit test                                                  |
-| `adapters/pencil/__tests__/pencilRoundtrip.test.ts` | **신규**  | 5종 roundtrip 검증                                                |
-| `packages/shared/src/types/pencil-adapter.types.ts` | **수정**  | PencilImportAdapter interface + ADR-916 imports boundary contract |
-| `adapters/pencil/fixtures/`                         | **신규**  | 샘플 .pen 파일 5종 (mocked schema)                                |
+| 파일                                                | 변경 유형 | 내용                                                                 |
+| --------------------------------------------------- | --------- | -------------------------------------------------------------------- |
+| `adapters/pencil/pencilImport.ts`                   | **신규**  | .pen → canonical 변환                                                |
+| `adapters/pencil/pencilExport.ts`                   | **신규**  | canonical → .pen 역변환                                              |
+| `adapters/pencil/pencilSchemaMap.ts`                | **신규**  | 1:1 매핑 테이블                                                      |
+| `adapters/pencil/types.ts`                          | **신규**  | PencilDocument / PencilNode 타입                                     |
+| `adapters/pencil/__tests__/pencilImport.test.ts`    | **신규**  | import unit test                                                     |
+| `adapters/pencil/__tests__/pencilRoundtrip.test.ts` | **신규**  | 5종 roundtrip 검증                                                   |
+| `packages/shared/src/types/pencil-adapter.types.ts` | **수정**  | shared Pencil node/document mapper + ADR-916 import payload boundary |
+| `adapters/pencil/fixtures/`                         | **신규**  | 샘플 .pen 파일 5종 (mocked schema)                                   |
 
 ---
 
@@ -984,28 +922,28 @@ export const pencilImportAdapter: PencilImportAdapter = {
 | ------ | ------------------------------- | --------------------------------------------- | ------------------------------------------------ |
 | **D1** | pencil schema 호환 버전         | 현재 pencil 최신 schema (2.x) 기준            | 사용자 결정: "pencil 공식 명칭 그대로 사용"      |
 | **D2** | composition 확장 필드 namespace | `metadata.composition*` prefix                | ADR-903 §3.10 패턴 준용, pencil 미지원 필드 격리 |
-| **D3** | dual-mode 운영 기간             | 최소 1주, 이슈 0건 확인 후 cutover            | R2 (UI 학습 부담) 완화                           |
-| **D4** | adapter shim 최종 제거 시점     | P4 완료 + G4 통과 후 (ADR-903 P5-C 와 동시)   | ADR-903 decisions.md 결정 5 준수                 |
+| **D3** | dual-mode 운영 기간             | 폐기 — 2026-05-02 direct cutover              | 개발 단계라 기존 사용자/데이터 보존 불필요       |
+| **D4** | adapter shim 최종 제거 시점     | 완료 — legacy layout store 본체 삭제          | ADR-916 final SSOT 와 동시 closure               |
 | **D5** | PanelArea CSS class 전환        | `panel-slot` → `panel-area` (CSS도 동시 변경) | 의미 충돌 완전 격리                              |
 
 ---
 
 ## 7. 후속 ADR 연계
 
-| ADR                                   | 관계                                                         | 선행 조건  |
-| ------------------------------------- | ------------------------------------------------------------ | ---------- |
-| ADR-912 (Editing Semantics UI)        | 본 ADR FramesTab 위 reusable/ref/override UX 기준 제공       | 완료됨     |
-| ADR-913 (tag→type rename)             | ADR-916 G5 field quarantine 에서 함께 정렬                   | ADR-916 G2 |
-| ADR-914 (imports + DesignKit)         | Superseded. `imports` fetch/cache scope 는 ADR-916 으로 흡수 | —          |
-| ADR-916 (canonical document SSOT)     | 잔여 P3/P4/P5 의 선행 store/API + adapter boundary           | G2/G5/G6   |
-| ADR-910 (themes/variables)            | 독립 진행 가능                                               | —          |
-| ADR-903 P5-C (adapter shim 완전 해체) | 본 ADR P4 G4 + ADR-916 G5 adapter quarantine 와 동시 정렬    | P4 G4      |
+| ADR                                   | 관계                                                         | 선행 조건 |
+| ------------------------------------- | ------------------------------------------------------------ | --------- |
+| ADR-912 (Editing Semantics UI)        | 본 ADR FramesTab 위 reusable/ref/override UX 기준 제공       | 완료됨    |
+| ADR-913 (tag→type rename)             | ADR-916 G5 field quarantine 에서 함께 정렬                   | 완료됨    |
+| ADR-914 (imports + DesignKit)         | Superseded. `imports` fetch/cache scope 는 ADR-916 으로 흡수 | —         |
+| ADR-916 (canonical document SSOT)     | 잔여 P3/P4/P5 의 선행 store/API + adapter boundary           | 완료됨    |
+| ADR-910 (themes/variables)            | 독립 진행 가능                                               | —         |
+| ADR-903 P5-C (adapter shim 완전 해체) | 본 ADR P4 G4 + ADR-916 G5 adapter quarantine 와 동시 정렬    | P4 G4     |
 
 ---
 
 ## 8. 참조
 
-- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md)
+- [ADR-911 본문](../completed/911-layout-frameset-pencil-redesign.md)
 - [ADR-903 Phase 3 frameset breakdown](903-phase3-frameset-breakdown.md)
 - [ADR-903 residual grep audit](903-residual-grep-audit-2026-04-26.md)
 - [ADR-903 phase 5 persistence imports breakdown](903-phase5-persistence-imports-breakdown.md)

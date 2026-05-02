@@ -1,6 +1,6 @@
 # ADR-916 구현 상세 — Canonical Document SSOT 전환
 
-본 문서는 [ADR-916](../916-canonical-document-ssot-transition.md)의 phase plan, inventory, gate 측정 방법을 정의한다. 핵심은 `CompositionDocument`를 최종 SSOT로 승격하고, legacy `elements[]`를 runtime 중심이 아니라 adapter 경계로 격리하는 것이다.
+본 문서는 [ADR-916](../completed/916-canonical-document-ssot-transition.md)의 phase plan, inventory, gate 측정 방법을 정의한다. 핵심은 `CompositionDocument`를 최종 SSOT로 승격하고, legacy `elements[]`를 runtime 중심이 아니라 adapter 경계로 격리하는 것이다.
 
 > **2026-05-02 direct cutover 정정**: 개발 단계라 기존 사용자/데이터 보존 의무가 없으므로 feature flag, backup, rollback marker, runtime DB migration 은 더 이상 목표가 아니다. 아래 historical sub-phase 중 flag/backup/migration 전제는 direct cutover 로 superseded 된다.
 
@@ -1492,7 +1492,7 @@ elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.t
 - `BuilderCore.tsx`:
   - mount useEffect 에서 `registerCanonicalMutationStoreActions({ mergeElements: useStore.getState().mergeElements, setElements: useStore.getState().setElements })` 1회 호출
   - ADR-916 Phase 2 G3 sync useEffect 직전 위치, deps `[]`
-- ADR 본문 (`docs/adr/916-canonical-document-ssot-transition.md`): Status line + 진행 로그 entry (검증 evidence 포함)
+- ADR 본문 (`docs/adr/completed/916-canonical-document-ssot-transition.md`): Status line + 진행 로그 entry (검증 evidence 포함)
 
 **외부 영향**:
 

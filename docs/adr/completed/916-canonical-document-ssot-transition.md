@@ -382,7 +382,7 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 3. **baseline framing reverse 검증**: ADR-903 의 "canonical = read-through projection" framing 을 본 ADR 이 "canonical = primary SSOT" 로 reverse 한다. 이 reverse 가 valid 한 사유 — (a) ADR-903 의 read-through 는 format 도입을 위한 transition bridge 였고, hot path projection 영구화 의도가 아님 (R2 직접 명시). (b) ADR-910/911/912/913 가 ADR-903 위에 차곡차곡 쌓이면서 canonical document 가 이미 사실상 운영 SSOT 로 성장. legacy `elements[]` 가 SSOT 로 남으면 hybrid 비용이 영구화 (대안 A 기각 사유와 동일). (c) ADR-903 자체의 final cutover gate 가 미정의 상태로 남아 본 ADR 이 그 closure ADR. 따라서 reverse 는 base ADR 의 의도된 후속 결정이며, ADR-903 framing 의 위반이 아닌 완성.
 4. **codex 3차까지 미루지 말 것**: framing #3 reverse 정당화는 본 §Decision 시점 lock-in. Phase 0 G1 land 와 동시에 codex 1차 review 진입. 본문 정합 (Risk/Gate 매핑) 은 codex round 에 위임하되, framing reverse 의 valid 성은 본 시점 본문에 명문화한다.
 
-> 구현 상세: [916-canonical-document-ssot-transition-breakdown.md](design/916-canonical-document-ssot-transition-breakdown.md)
+> 구현 상세: [916-canonical-document-ssot-transition-breakdown.md](../design/916-canonical-document-ssot-transition-breakdown.md)
 
 ## Risks
 
@@ -427,12 +427,12 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 
 ## References
 
-- [ADR-903: ref/descendants + slot 기본 composition 포맷 전환 계획](completed/903-ref-descendants-slot-composition-format-migration-plan.md)
-- [ADR-910: Canonical `themes`/`variables` 필드 Land Plan](completed/910-canonical-themes-variables-land-plan.md)
+- [ADR-903: ref/descendants + slot 기본 composition 포맷 전환 계획](903-ref-descendants-slot-composition-format-migration-plan.md)
+- [ADR-910: Canonical `themes`/`variables` 필드 Land Plan](910-canonical-themes-variables-land-plan.md)
 - [ADR-911: Layout/Slot Frameset 완전 재설계](911-layout-frameset-pencil-redesign.md)
-- [ADR-912: Editing Semantics UI 6요소 + Slot section base](completed/912-editing-semantics-ui-5elements.md)
+- [ADR-912: Editing Semantics UI 6요소 + Slot section base](912-editing-semantics-ui-5elements.md)
 - [ADR-913: `Element.tag -> Element.type` rename + hybrid 6 필드 cleanup](913-tag-type-rename-hybrid-cleanup.md)
-- [ADR-914: `imports` resolver + DesignKit 통합](completed/914-imports-resolver-designkit-integration.md) — Superseded; 잔여 `imports` resolver/cache scope 는 본 ADR 이 흡수
+- [ADR-914: `imports` resolver + DesignKit 통합](914-imports-resolver-designkit-integration.md) — Superseded; 잔여 `imports` resolver/cache scope 는 본 ADR 이 흡수
 - `[CompositionDocument` 타입](../../packages/shared/src/types/composition-document.types.ts)
 - [Legacy `Element` 타입](../../apps/builder/src/types/builder/unified.types.ts)
 - [Legacy -> canonical adapter](../../apps/builder/src/adapters/canonical/index.ts)

@@ -4,7 +4,7 @@
 
 Superseded — 2026-04-30
 
-> **Superseded by [ADR-916](../916-canonical-document-ssot-transition.md) + [ADR-915](915-remove-designkit-system.md)**.
+> **Superseded by [ADR-916](916-canonical-document-ssot-transition.md) + [ADR-915](915-remove-designkit-system.md)**.
 > DesignKit integration scope was invalidated by ADR-915. The remaining `imports` fetch/cache/resolver work is no longer executed as a standalone ADR; it is absorbed into ADR-916 canonical document SSOT transition (`imports` canonical core hook + import/export adapter boundary) and ADR-911 G5 Pencil import/export parity.
 >
 > Historical note: 2026-04-27 partial invalidation had already removed the P5-F DesignKit section. 2026-04-30 closes the remaining P5-D/P5-E/G-Integration scope as ADR-916-owned follow-up.
@@ -148,10 +148,10 @@ Historical decision: **대안 A: 단일 ADR + 3 Phase (imports → ResolverCache
 
 ## References
 
-- [ADR-916](../916-canonical-document-ssot-transition.md) — canonical document SSOT 전환 (본 ADR 의 `imports` resolver/cache 잔여 scope 흡수)
+- [ADR-916](916-canonical-document-ssot-transition.md) — canonical document SSOT 전환 (본 ADR 의 `imports` resolver/cache 잔여 scope 흡수)
 - [ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 P5-D/E ~~/F~~ 잔여 흡수, P5-F 는 ADR-915 로 분리)
 - [ADR-903 Phase 5 design](../design/903-phase5-persistence-imports-breakdown.md) — P5-D/E/F historical design reference (P5-F 는 ADR-915 로 무효화, P5-D/E 는 ADR-916 으로 재귀속)
-- [ADR-911](../911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (ADR-916 이후 G5 import/export parity 통합 대상)
-- [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) — `tag → type` rename + hybrid cleanup (ADR-916 G5 field quarantine 에 연결)
+- [ADR-911](911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (ADR-916 이후 G5 import/export parity 통합 대상)
+- [ADR-913](913-tag-type-rename-hybrid-cleanup.md) — `tag → type` rename + hybrid cleanup (ADR-916 G5 field quarantine 에 연결)
 - [ADR-915](915-remove-designkit-system.md) — DesignKit 시스템 즉시 전수 제거 (Implemented 2026-04-27, 본 ADR 의 P5-F 무효화 근거)
 - pencil app `imports` schema — 본 ADR 의 호환 기준

@@ -1,0 +1,41 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "id": "button",
+      "type": "frame",
+      "reusable": true,
+      "children": [
+        {
+          "id": "label",
+          "type": "text",
+          "text": "Default"
+        }
+      ]
+    },
+    {
+      "id": "button-instance",
+      "type": "ref",
+      "ref": "button",
+      "descendants": {
+        "label": {
+          "text": "Submit"
+        },
+        "icon": {
+          "children": [
+            {
+              "id": "icon-replacement",
+              "type": "icon_font",
+              "icon": "check"
+            }
+          ]
+        },
+        "footer": {
+          "id": "footer",
+          "type": "text",
+          "text": "Done"
+        }
+      }
+    }
+  ]
+}

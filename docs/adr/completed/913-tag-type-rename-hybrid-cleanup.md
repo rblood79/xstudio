@@ -79,7 +79,7 @@ Implemented — 2026-05-02. `Element.tag → Element.type` direct cutover 와 hy
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - ~~Phase 4 (DB schema migration DB_VERSION 8→9)~~ — **direct cutover 로 종결 (2026-05-02)**. Step 4-4 write-through / 4-5 normalize helper / 4-6 validation 은 별도 migration 없이 제거 완료.
-  - ~~Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외)~~ — **종결 (2026-05-02)**. runtime access gate, `componentRole` / `masterId` / legacy `overrides` type schema, frame/slot/descendants type schema, broader raw fixture key bucket 모두 0건. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
+  - ~~Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외)~~ — **종결 (2026-05-02)**. runtime access gate, `componentRole` / `masterId` / legacy `overrides` type schema, frame/slot/descendants type schema, broader raw fixture key bucket 모두 0건. 구현 상세: [Phase 5 breakdown](../design/913-phase5-hybrid-6-cleanup-breakdown.md)
 
 ## Context
 
@@ -89,7 +89,7 @@ Implemented — 2026-05-02. `Element.tag → Element.type` direct cutover 와 hy
 
 ### 배경
 
-[ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) Implemented (2026-04-26) 후 canonical document 의 schema 는 `type` 필드 (pencil 공식) 기준으로 정의되었으나, **runtime/persistence 경로의 hybrid 잔존**:
+[ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) Implemented (2026-04-26) 후 canonical document 의 schema 는 `type` 필드 (pencil 공식) 기준으로 정의되었으나, **runtime/persistence 경로의 hybrid 잔존**:
 
 - **`Element.tag` → `Element.type` rename** — baseline 2026-04-22 실측 1031 ref / 154 파일 → **Phase 1+2 mechanical rename 후 0 ref 도달** (2026-04-27 세션 36~37, PR #250). 2026-05-02 direct cutover 로 IDB adapter `normalizeLegacyElement` read-through compat helper 도 제거 완료
 - **hybrid 6 필드** — baseline 2026-04-22 실측 1472 ref / 184 파일. **2026-04-27 세션 45 재측정 합계 486 ref / Phase 5 scope 279 ref / 73 file** (layout_id 207 ADR-911 흡수 영역 제외):
@@ -164,9 +164,9 @@ Implemented — 2026-05-02. `Element.tag → Element.type` direct cutover 와 hy
 - **대안 B 기각**: 두 작업이 같은 schema 영역 → 분리 시 일관성 추적 부담
 - **대안 C 기각**: hybrid 영구 잔존 → ADR-903 R1 영구화
 
-> 구현 상세: [903-phase5-persistence-imports-breakdown.md](design/903-phase5-persistence-imports-breakdown.md) §P5-C — ADR-903 Phase 5 design 문서 그대로 활용
+> 구현 상세: [903-phase5-persistence-imports-breakdown.md](../design/903-phase5-persistence-imports-breakdown.md) §P5-C — ADR-903 Phase 5 design 문서 그대로 활용
 >
-> **Phase 4 direct cutover 상세**: [913-phase4-db-schema-migration-breakdown.md](design/913-phase4-db-schema-migration-breakdown.md) — 기존 DB migration/backup/flag 계획은 2026-05-02 direct cutover 로 superseded. `type` 단일 기준 + migration/read-through helper 제거가 현행 결정이다.
+> **Phase 4 direct cutover 상세**: [913-phase4-db-schema-migration-breakdown.md](../design/913-phase4-db-schema-migration-breakdown.md) — 기존 DB migration/backup/flag 계획은 2026-05-02 direct cutover 로 superseded. `type` 단일 기준 + migration/read-through helper 제거가 현행 결정이다.
 
 ## Risks
 
@@ -208,10 +208,10 @@ Implemented — 2026-05-02. `Element.tag → Element.type` direct cutover 와 hy
 
 ## References
 
-- [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 G5 (b)~(f) 잔여 흡수)
-- [ADR-903 Phase 5 design](design/903-phase5-persistence-imports-breakdown.md) — P5-C 영역 본 ADR 의 구현 상세 그대로 활용
+- [ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 G5 (b)~(f) 잔여 흡수)
+- [ADR-903 Phase 5 design](../design/903-phase5-persistence-imports-breakdown.md) — P5-C 영역 본 ADR 의 구현 상세 그대로 활용
 - [ADR-903 P3-E E-6](#) — IndexedDB schema 자동 migration 패턴 (본 ADR Phase 4 G5-E 에서 재사용)
 - [ADR-911](911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (본 ADR 가 hybrid `layout_id` 영역 cleanup 의 일부 흡수)
 - [ADR-916](916-canonical-document-ssot-transition.md) — canonical document SSOT 전환. 본 ADR 의 Phase 4 write-through 와 Phase 5 hybrid cleanup 의 선행 gate
-- [ADR-914](completed/914-imports-resolver-designkit-integration.md) — Superseded. import/export 관련 잔여 scope 는 ADR-916 으로 흡수
+- [ADR-914](914-imports-resolver-designkit-integration.md) — Superseded. import/export 관련 잔여 scope 는 ADR-916 으로 흡수
 - pencil app schema — 본 ADR 의 `type` 필드 호환 기준

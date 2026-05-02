@@ -1,0 +1,18 @@
+{
+  "version": "2.10",
+  "imports": {
+    "kit": "./kit.pen"
+  },
+  "children": [
+    {
+      "id": "remote-button",
+      "type": "ref",
+      "ref": "kit:round-button",
+      "descendants": {
+        "label": {
+          "text": "Remote"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "id": "card",
+      "type": "frame",
+      "name": "Card",
+      "slot": ["title", "actions"],
+      "clip": true,
+      "placeholder": true,
+      "children": [
+        {
+          "id": "title",
+          "type": "text",
+          "text": "Untitled"
+        }
+      ]
+    }
+  ]
+}

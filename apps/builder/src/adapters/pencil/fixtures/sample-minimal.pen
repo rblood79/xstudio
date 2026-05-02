@@ -1,0 +1,18 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "id": "hero",
+      "type": "rectangle",
+      "name": "Hero",
+      "fill": "#ffffff",
+      "children": [
+        {
+          "id": "title",
+          "type": "text",
+          "text": "Hello"
+        }
+      ]
+    }
+  ]
+}
