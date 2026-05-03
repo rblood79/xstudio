@@ -465,7 +465,6 @@ export function BuilderCanvas({
     currentPageId,
     pages,
     framePositions,
-    framePositionsVersion,
     isFrameEditMode,
     pageHeight,
     pageLayoutDirection,

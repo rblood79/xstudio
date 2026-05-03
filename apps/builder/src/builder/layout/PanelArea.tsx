@@ -8,7 +8,7 @@
  */
 
 import { memo, useCallback, useMemo } from "react";
-import type { PanelSide } from "../panels/core/types";
+import type { PanelId, PanelSide } from "../panels/core/types";
 import { usePanelLayout } from "../hooks";
 import { PanelNav } from "./PanelNav";
 import { PanelContainer } from "./PanelContainer";
@@ -42,9 +42,8 @@ export const PanelArea = memo(function PanelArea({ side }: PanelAreaProps) {
 
   // ⭐ 최적화: 핸들러 함수 메모이제이션
   const handlePanelClick = useCallback(
-    (panelId: (typeof panelState.panelIds)[number]) => {
+    (panelId: PanelId) => {
       togglePanel(side, panelId);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [side, togglePanel],
   );

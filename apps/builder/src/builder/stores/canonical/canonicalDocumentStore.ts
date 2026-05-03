@@ -146,7 +146,6 @@ function devWarn(message: string, context?: Record<string, unknown>): void {
     typeof process !== "undefined" &&
     process.env?.NODE_ENV !== "production"
   ) {
-    // eslint-disable-next-line no-console
     console.warn(`[canonicalDocumentStore] ${message}`, context ?? "");
   }
 }

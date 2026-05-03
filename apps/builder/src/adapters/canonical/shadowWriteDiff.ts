@@ -122,7 +122,6 @@ export function logShadowWriteResult(
   }]`;
 
   if (result.hasDestructive) {
-    // eslint-disable-next-line no-console
     console.warn(
       `${tag} destructive=${result.summary.destructive} reorder=${result.summary.reorder} cosmetic=${result.summary.cosmetic}`,
       result.diff.destructive,
@@ -131,7 +130,6 @@ export function logShadowWriteResult(
   }
 
   if (result.summary.reorder > 0) {
-    // eslint-disable-next-line no-console
     console.info(
       `${tag} destructive=0 reorder=${result.summary.reorder} cosmetic=${result.summary.cosmetic}`,
     );
