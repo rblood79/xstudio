@@ -23,9 +23,11 @@ const EXCLUDE_PATH_PATTERNS: readonly RegExp[] = [
   /\/__tests__\//,
   /\.test\.tsx?$/,
   /\/apps\/builder\/src\/adapters\/canonical\//,
+  /\/apps\/builder\/src\/adapters\/pencil\//,
   /\/packages\/shared\/src\/schemas\//,
   /\/packages\/shared\/src\/types\/composition-document\.types\.ts$/,
   /\/packages\/shared\/src\/types\/canonical-resolver\.types\.ts$/,
+  /\/packages\/shared\/src\/types\/pencil-adapter\.types\.ts$/,
 ];
 
 const CANONICAL_DESCENDANTS_ALLOWLIST = new Set([
