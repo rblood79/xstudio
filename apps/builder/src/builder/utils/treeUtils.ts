@@ -7,7 +7,6 @@
 import type { Element } from "../../types/core/store.types";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import type { ElementProps } from "../../types/integrations/supabase.types";
-import type { DataBinding } from "../../types/builder/unified.types";
 import { getElementDataBinding } from "../../adapters/canonical/legacyExtensionFields";
 
 /**

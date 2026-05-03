@@ -34,7 +34,6 @@ import { getElementDataBinding } from "../utils/legacyExtensionFields";
 import type {
   PreviewElement,
   RenderContext,
-  DataBinding,
   ColumnMapping,
   BadgeVariant,
   ComponentSize,

@@ -43,7 +43,6 @@ import type { ElementProps } from "../../types/integrations/supabase.types";
 import { Element } from "../../types/core/store.types";
 // ElementUtils는 현재 사용되지 않음
 import { MessageService } from "../../utils/messaging";
-import { elementsApi } from "../../services/api";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import {
   mergeElementsCanonicalPrimary,

@@ -29,7 +29,7 @@ const SCAN_DIRS = [
 const EXCLUDE_PATTERNS: readonly RegExp[] = [
   /\/__tests__\//,
   /\/apps\/builder\/src\/adapters\//,
-  /\/apps\/builder\/src\/lib\/db\/migration[^\/]*\.ts$/,
+  /\/apps\/builder\/src\/lib\/db\/migration[^/]*\.ts$/,
   /\/apps\/builder\/src\/builder\/utils\/exportLegacyDocument\.ts$/,
   // ADR-912 dev-only evidence fixture intentionally preserves raw marker fields
   // (`reusable`, `ref`, `slot`) that are not legacy mirror persistence writes.

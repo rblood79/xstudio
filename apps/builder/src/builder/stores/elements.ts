@@ -51,7 +51,6 @@ import {
   resetInstanceOverrideField as resetInstanceOverrideFieldAction,
   toggleComponentOrigin as toggleComponentOriginAction,
 } from "./utils/instanceActions";
-import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
 import { observe, PERF_LABEL } from "../utils/perfMarks";
 import {
