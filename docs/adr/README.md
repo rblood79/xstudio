@@ -224,7 +224,7 @@
 | [034](034-events-panel-renovation.md)       | Events Panel Renovation                         | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                            |  **P3**  |
 | [038](038-figma-import.md)                  | Figma 디자인 임포트 시스템                      | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                            |  **P3**  |
 | [054](054-local-llm-architecture.md)        | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)     | Proposed | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede |  **P2**  |
-| [917](917-canvaskit-pathbuilder-upgrade.md) | CanvasKit PathBuilder 전환 및 0.41.1 업그레이드 | Proposed | 4 Phase — PathBuilder compatibility wrapper + Skia path migration + package bump + visual/perf smoke |  **P2**  |
+| [917](917-canvaskit-pathbuilder-upgrade.md) | CanvasKit PathBuilder 전환 및 0.41.1 업그레이드 | Proposed | 5 Phase — API spike + PathBuilder compatibility wrapper + Skia path migration + package bump + visual/perf smoke |  **P2**  |
 
 ## Spec SSOT 해체 ADR 체인 — **ADR-036 Fully Implemented 달성 (2026-04-22 세션 18)**
 

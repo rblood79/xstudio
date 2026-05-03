@@ -23,6 +23,8 @@ CanvasKit upstream changelog는 `0.41.0`에서 `Path` 객체를 immutable로 바
   <https://github.com/google/skia/blob/main/modules/canvaskit/CHANGELOG.md>
 - `0.41.1` release commit:
   <https://chromium.googlesource.com/skia/+/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84>
+- `PathBuilder` type declaration:
+  <https://skia.googlesource.com/skia/+/a31411879251/modules/canvaskit/npm_build/types/index.d.ts>
 
 **Hard Constraints**:
 
@@ -75,7 +77,7 @@ CanvasKit upstream changelog는 `0.41.0`에서 `Path` 객체를 immutable로 바
   검증할 수 있다. 0.40.0 단계에서는 wrapper가 기존 `Path` 생성 방식을 감싸고,
   bump 이후에는 `PathBuilder` 기반 생성으로 전환한다.
 - 위험:
-  - 기술: M — `PathBuilder` API 세부 이름과 dispose lifecycle은 Phase 0에서
+  - 기술: M — `PathBuilder` API 세부 이름과 ownership lifecycle은 Phase 0에서
     실제 타입으로 확정해야 한다.
   - 성능: L — wrapper 비용은 path construction 비용에 비해 작게 유지할 수 있다.
   - 유지보수: L — path 생성 규칙이 한 곳으로 모인다.
@@ -131,8 +133,8 @@ CanvasKit upstream changelog는 `0.41.0`에서 `Path` 객체를 immutable로 바
 ## Residual Risks
 
 - `PathBuilder`의 TypeScript 선언과 JS runtime API가 기존 `Path` mutator와 1:1로
-  대응하지 않을 수 있다. Phase 0 spike에서 실제 package 타입을 기준으로 helper
-  API를 확정한다.
+  대응하지 않을 수 있다. Phase 0 spike에서 `detach()`, `detachAndDelete()`,
+  `snapshot()` lifecycle과 `close()` 반환값을 실제 package 타입 기준으로 확정한다.
 - `Path.MakeFromSVGString()` 반환 객체의 immutable 동작은 보존되더라도, icon stroke
   렌더링의 antialiasing 또는 bounds가 미세하게 달라질 수 있다.
 - `libpng` 업데이트는 이미지 디코딩 경로에 영향을 줄 수 있으나, 이 ADR은 path
@@ -142,7 +144,7 @@ CanvasKit upstream changelog는 `0.41.0`에서 `Path` 객체를 immutable로 바
 
 | Gate                | 시점           | 통과 조건                                                                                                  | 실패 시 대안                        |
 | ------------------- | -------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| G0: API 확인        | Phase 0 종료   | `canvaskit-wasm@0.41.1`의 `PathBuilder` 생성/finish/dispose API를 실제 타입 또는 runtime spike로 확정      | 0.40.0 유지, ADR 보류               |
+| G0: API 확인        | Phase 0 종료   | `canvaskit-wasm@0.41.1`의 `PathBuilder` 생성, `detach()`/`detachAndDelete()`/`snapshot()` lifecycle, `close()` 반환값을 실제 타입 또는 runtime spike로 확정 | 0.40.0 유지, ADR 보류               |
 | G1: path inventory  | Phase 0 종료   | `new ck.Path()` 및 path mutator call site 목록을 파일별로 기록하고 허용 예외를 분류                        | inventory 완료 전 구현 금지         |
 | G2: wrapper 수렴    | Phase 1-2 종료 | Skia renderer의 직접 mutable `Path` 생성이 helper 또는 명시 허용 경로로만 남음                             | 해당 renderer slice rollback        |
 | G3: dependency bump | Phase 3 종료   | `canvaskit-wasm` `0.41.1` lockfile 반영, Builder에서 `canvaskit.wasm` 로드 성공                            | package bump rollback               |
