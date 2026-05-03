@@ -1,0 +1,1 @@
+import{r as t}from"./slotMirror-BFWTjrAL.js";import{bd as o,be as i}from"./main-C08lo82r.js";const n=t.memo(function(e){const r=i("GridList");return r?t.createElement(o,{...e,spec:r}):null});export{n as default};
