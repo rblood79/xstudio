@@ -21,9 +21,15 @@ import {
 } from "../../../utils/featureFlags";
 // 🚀 Skia 레지스트리 동기화 — React useEffect cleanup 지연 문제 해결
 import { unregisterSkiaNode } from "../../workspace/canvas/skia/useSkiaNode";
+import {
+  areCanonicalMutationStoreActionsRegistered,
+  setElementsCanonicalPrimary,
+} from "../../../adapters/canonical/canonicalMutations";
+import { useCanonicalDocumentStore } from "../canonical/canonicalDocumentStore";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
+type BuilderDb = Awaited<ReturnType<typeof getDB>>;
 
 // ADR-100 Phase 1 (098-a 슬롯): "SelectItem" = RAC 공식 `ListBoxItem` alias. composition 내부 식별자 유지.
 // ADR-101 Phase 1 (098-b 슬롯): "ComboBoxItem" = RAC alias 이름 동일. ADR-073 items SSOT 이관 완료.
@@ -39,6 +45,20 @@ const COLLECTION_ITEM_TAGS = new Set([
   "TreeItem",
   "ToggleButton",
 ]);
+
+function syncRemovedElementsToCanonical(elements: Element[]): void {
+  if (!areCanonicalMutationStoreActionsRegistered()) return;
+  setElementsCanonicalPrimary(elements);
+}
+
+async function persistActiveCanonicalDocument(db: BuilderDb): Promise<void> {
+  const canonical = useCanonicalDocumentStore.getState();
+  const projectId = canonical.currentProjectId;
+  if (!projectId) return;
+  const doc = canonical.documents.get(projectId);
+  if (!doc) return;
+  await db.documents.put(projectId, doc);
+}
 
 /**
  * 단일 요소에 대해 삭제해야 할 모든 연관 요소를 수집하는 헬퍼
@@ -183,10 +203,12 @@ async function executeRemoval(
     removeSet,
   );
 
+  let db: BuilderDb | null = null;
+
   // IndexedDB 삭제
   if (typeof indexedDB !== "undefined") {
     try {
-      const db = await getDB();
+      db = await getDB();
       await db.elements.deleteMany(elementIdsToRemove);
       if (autoDetach.elements.length > 0) {
         await db.elements.insertMany(
@@ -312,6 +334,19 @@ async function executeRemoval(
       editingContextId: null,
     }),
   }));
+
+  syncRemovedElementsToCanonical(updatedElements);
+
+  if (db) {
+    try {
+      await persistActiveCanonicalDocument(db);
+    } catch (error) {
+      console.warn(
+        "⚠️ [IndexedDB] canonical document 삭제 반영 중 오류 (메모리는 정상):",
+        error,
+      );
+    }
+  }
 
   // postMessage
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();

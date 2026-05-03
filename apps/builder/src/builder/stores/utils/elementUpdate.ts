@@ -16,6 +16,13 @@ import {
   getEditingSemanticsRole,
 } from "../../utils/editingSemantics";
 import { requestEditingSemanticsImpactConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
+import {
+  areCanonicalMutationStoreActionsRegistered,
+  mergeElementsCanonicalPrimary,
+} from "../../../adapters/canonical/canonicalMutations";
+import { useCanonicalDocumentStore } from "../canonical/canonicalDocumentStore";
+
+type BuilderDb = Awaited<ReturnType<typeof getDB>>;
 
 // ─── Dirty Tracking 유틸리티 ─────────────────────────────────────────
 // elements.ts의 NON_LAYOUT_PROPS/INHERITED_LAYOUT_PROPS를 재사용하지 않고
@@ -91,6 +98,20 @@ const INHERITED_LAYOUT_PROPS_UPDATE = new Set([
   "direction",
   "writingMode",
 ]);
+
+function syncUpdatedElementToCanonical(element: Element): void {
+  if (!areCanonicalMutationStoreActionsRegistered()) return;
+  mergeElementsCanonicalPrimary([element]);
+}
+
+async function persistActiveCanonicalDocument(db: BuilderDb): Promise<void> {
+  const canonical = useCanonicalDocumentStore.getState();
+  const projectId = canonical.currentProjectId;
+  if (!projectId) return;
+  const doc = canonical.documents.get(projectId);
+  if (!doc) return;
+  await db.documents.put(projectId, doc);
+}
 
 function isLayoutAffectingUpdate(
   changedStyle: Record<string, unknown>,
@@ -182,9 +203,7 @@ function sanitizePropsPatch<T extends Record<string, unknown>>(props: T): T {
   return nextProps as T;
 }
 
-function sanitizeElementUpdate(
-  updates: Partial<Element>,
-): Partial<Element> {
+function sanitizeElementUpdate(updates: Partial<Element>): Partial<Element> {
   if (!updates.props) {
     return updates;
   }
@@ -329,7 +348,10 @@ export const createUpdateElementPropsAction =
 
     // ADR-006 P3-1: props.style 변경 시 dirty tracking
     // props 중 style 객체만 추출하여 레이아웃 영향 여부 판단
-    const changedStyle = (sanitizedProps.style ?? {}) as Record<string, unknown>;
+    const changedStyle = (sanitizedProps.style ?? {}) as Record<
+      string,
+      unknown
+    >;
     const hasStyleChange = Object.keys(changedStyle).length > 0;
     const isLayoutChange = hasStyleChange
       ? isLayoutAffectingUpdate(changedStyle)
@@ -369,6 +391,8 @@ export const createUpdateElementPropsAction =
       });
     }
 
+    syncUpdatedElementToCanonical(updatedElement);
+
     // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
     // 3. IndexedDB에 저장 (로컬 우선 저장) — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
@@ -383,9 +407,10 @@ export const createUpdateElementPropsAction =
       try {
         const db = await getDB();
         await db.elements.update(elementId, { props: updatedElement.props });
+        await persistActiveCanonicalDocument(db);
       } catch (error) {
         console.warn(
-          "⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):",
+          "⚠️ [IndexedDB] 요소/canonical document 저장 중 오류 (메모리는 정상):",
           error,
         );
         // 🚀 Phase 7: Toast + Undo 버튼

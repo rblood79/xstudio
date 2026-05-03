@@ -18,10 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `isFrameElementForFrame` 의 legacy mirror predicate 는 `isLegacyFrameElementForFrame` fallback 으로 명시 분리했다.
 - Frame Slot 추가 후 authoring tree / Skia render / reload persistence 가 깨지던 회귀를 수정했다.
   - `legacy-slot-hoisted` canonical placeholder 를 Builder derived Element view 에서 `Slot` 으로 복원하고, export boundary 에서 legacy Slot mirror 로만 변환한다.
+- Frames 탭에서 frame Layout Preset 을 변경할 때 기존 Slot 이 삭제되지 않고 계속 누적되던 회귀를 수정했다.
+  - `removeElements` 는 삭제 후 `setElementsCanonicalPrimary()` 로 active `CompositionDocument` 를 full snapshot 기준으로 갱신한다.
+  - `updateElementProps` 는 body `appliedPreset` / container style 변경을 `mergeElementsCanonicalPrimary()` 로 canonical document 에 반영한다.
 
 ### Verification
 
 - `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/adapters/canonical/__tests__/canonicalMutations.test.ts src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts src/adapters/canonical/__tests__/frameElementLoader.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/renderers/__tests__/createSkiaRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/main/BuilderCore.static.test.ts` — 11 files / 83 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/elementCanonicalMutation.test.ts src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/adapters/canonical/__tests__/canonicalMutations.test.ts src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.static.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts` — 8 files / 60 tests PASS
 - Browser smoke: page Button add before/after reload 유지, frame Slot add/reload 유지, immediate frame Layers `["body", "Slot: content"]`, unexpected console/page errors 0건
 - `pnpm run codex:preflight` — PASS
 
