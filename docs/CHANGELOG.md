@@ -5,6 +5,26 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-916 post-cutover frame persistence/render fix] - 2026-05-03
+
+### Fixed
+
+- ADR-916 direct cutover 이후 Builder 에서 element 추가 후 브라우저 새로고침 시 변경사항이 사라지던 회귀를 수정했다.
+  - `elementCreation` 단일/복합 element 생성 경로가 active `CompositionDocument` 를 canonical primary store 에 upsert 한 뒤 `db.documents.put(projectId, doc)` 로 저장한다.
+  - 기존 `pages`/`elements` hydrate fallback 이 제거된 direct cutover 기준에 맞춰, 신규 편집의 primary persistence 를 `documents` store 로 고정했다.
+- Frames 탭과 Skia frame render 경로에서 page/body 가 frame 수만큼 중복 표시되거나 Slot 이 보이지 않던 회귀를 수정했다.
+  - `frameElementScope` canonical adapter 를 추가해 reusable FrameNode 별 element scope/body id 를 active `CompositionDocument` 에서 직접 산출한다.
+  - `FramesTab`, `buildFrameRendererInput`, `visibleFrameRoots`, `BuilderCanvas` 는 `layout_id` predicate 대신 canonical frame scope 를 입력으로 받는다.
+  - `isFrameElementForFrame` 의 legacy mirror predicate 는 `isLegacyFrameElementForFrame` fallback 으로 명시 분리했다.
+- Frame Slot 추가 후 authoring tree / Skia render / reload persistence 가 깨지던 회귀를 수정했다.
+  - `legacy-slot-hoisted` canonical placeholder 를 Builder derived Element view 에서 `Slot` 으로 복원하고, export boundary 에서 legacy Slot mirror 로만 변환한다.
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/adapters/canonical/__tests__/canonicalMutations.test.ts src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts src/adapters/canonical/__tests__/frameElementLoader.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/renderers/__tests__/createSkiaRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/main/BuilderCore.static.test.ts` — 11 files / 83 tests PASS
+- Browser smoke: page Button add before/after reload 유지, frame Slot add/reload 유지, immediate frame Layers `["body", "Slot: content"]`, unexpected console/page errors 0건
+- `pnpm run codex:preflight` — PASS
+
 ## [ADR-916/911/913 direct cutover — flags, backup, runtime migrations 제거 + ADR-911 Implemented] - 2026-05-02
 
 ### Architecture

@@ -1,6 +1,8 @@
 # ADR-911 Phase 2 Closure 5단계 사전 체크리스트
 
 > 본 문서는 [ADR-911](../completed/911-layout-frameset-pencil-redesign.md) Phase 2 closure 를 위해 작성됐던 historical checklist 다. 2026-04-30 이후 ADR-912 base 완료 + ADR-916 선행 결정으로, ADR-911 잔여 G3/G4/G5 는 ADR-916 G2/G5/G6 이후 재개한다.
+>
+> **2026-05-03 note**: ADR-911 은 2026-05-02 Implemented 로 archive 됐고, direct cutover 후 발견된 FramesTab / Skia frame body / Slot 표시 회귀는 ADR-916 canonical frame scope fix 로 닫았다. 이 checklist 는 historical pre-closure 자료로만 유지한다.
 
 ## 진입 prerequisite
 
@@ -28,7 +30,7 @@ ADR-913 Step 4-4 write-through 은 ADR-911 Phase 2 monitoring 이 아니라 ADR-
 
 ## 관련 문서
 
-- ADR-911: `docs/adr/completed/911-layout-frameset-pencil-redesign.md` (Status: In Progress)
+- ADR-911: `docs/adr/completed/911-layout-frameset-pencil-redesign.md` (Status: Implemented)
 - ADR-911 design breakdown: `docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md` (843줄)
 - ADR-916: `docs/adr/completed/916-canonical-document-ssot-transition.md` (canonical document SSOT 선행)
 - 메모리 [feedback-adr-closure-5-step.md] — closure 5단계 패턴 정본

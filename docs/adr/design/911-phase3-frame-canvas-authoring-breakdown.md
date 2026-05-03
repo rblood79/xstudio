@@ -3,6 +3,8 @@
 > **상태**: Closed (2026-04-30) — P3-α/β/γ/δ + δ fix #1~#4 + θ + P3-ε/P3-ζ closure 완료. ADR-911 본문 G3/G4/G5 잔여는 별도 진행
 > **연결 ADR**: [911](../completed/911-layout-frameset-pencil-redesign.md) Phase 3 sub-phase
 > **prerequisite**: 본 sub-phase 가 [ADR-912](../completed/912-editing-semantics-ui-5elements.md) 의 Canvas 시각 마커 land 의 prerequisite
+>
+> **2026-05-03 post-cutover fix**: ADR-916 final SSOT cutover 후 재발한 FramesTab/Skia body/Slot 중복/누락 회귀는 `layout_id` predicate 재사용이 아니라 active `CompositionDocument` 기반 `CanonicalFrameElementScope` 로 닫았다. 이 문서의 historical `layout_id` 기반 D1/A 구현 기록은 superseded 되었고, 현행 frame render root 는 canonical frame scope 의 `bodyElementId` 를 사용한다.
 
 ## 1. 결함 요약
 

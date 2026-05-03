@@ -2,10 +2,15 @@
 
 ## Status
 
-Implemented — 2026-05-02. `CompositionDocument` canonical schema 를 저장/편집/export/import 의 최종 SSOT 로 전환했다. feature flag / backup / runtime DB migration / rollback marker 없이 direct cutover 했고, IndexedDB `documents` store + `DatabaseAdapter.documents` 를 primary persistence 로 추가했다. legacy `pages`/`elements` compatibility export/import payload, DB `pages`/`elements`/`layouts` hydrate fallback, DB batch projection, `_meta` migration API, `getByLayout`, `layout_id` index 를 제거했다. legacy field runtime access / Element type schema / broader raw fixture key bucket 은 gate 0으로 닫았다.
+Implemented — 2026-05-02. `CompositionDocument` canonical schema 를 저장/편집/export/import 의 최종 SSOT 로 전환했다. feature flag / backup / runtime DB migration / rollback marker 없이 direct cutover 했고, IndexedDB `documents` store + `DatabaseAdapter.documents` 를 primary persistence 로 추가했다. legacy `pages`/`elements` compatibility export/import payload, DB `pages`/`elements`/`layouts` hydrate fallback, DB batch projection, `_meta` migration API, `getByLayout`, `layout_id` index 를 제거했다. legacy field runtime access / Element type schema / broader raw fixture key bucket 은 gate 0으로 닫았다. 2026-05-03 후속 fix 로 element 생성 write-through 와 frame renderer scope 도 `CompositionDocument` canonical schema 기준으로 고정했다.
 
 ### 진행 로그
 
+- **2026-05-03 — post-cutover persistence / canonical frame scope fix**:
+  - 사용자 smoke 에서 확인된 direct cutover 후속 회귀 2건을 닫았다. 신규 element 추가 후 refresh 시 초기화되던 원인은 `pages`/`elements` hydrate fallback 제거 이후에도 `elementCreation` 이 active canonical document 를 `db.documents` 에 즉시 저장하지 않던 write-through gap 이었다. page element / complex element 생성은 canonical document upsert 후 `DatabaseAdapter.documents.put()` 으로 primary persistence 를 갱신한다.
+  - Frames 탭과 Skia frame render 에 body/Slot 이 frame 수만큼 중복되거나 누락되던 원인은 frame element membership 을 여전히 `layout_id` mirror predicate 로 재구성하던 경계였다. 신규 `frameElementScope` adapter 가 active `CompositionDocument` 에서 reusable FrameNode 별 `elementIds` / `bodyElementId` 를 산출하고, `FramesTab`, `buildFrameRendererInput`, `visibleFrameRoots`, `BuilderCanvas` 는 canonical frame scope 를 직접 소비한다.
+  - `isFrameElementForFrame` 은 canonical scope API 로 고정하고, DB/hydration compatibility fallback 은 `isLegacyFrameElementForFrame` 으로 이름을 분리했다. `legacy-slot-hoisted` placeholder 는 Builder derived view 에서 authoring 가능한 `Slot` 으로 복원하고 export boundary 에서만 legacy Slot mirror 로 변환한다.
+  - 검증: targeted builder vitest 11 files / 83 tests PASS, browser smoke 에서 page Button add/reload 유지 + frame Slot add/reload 유지 + immediate frame Layers `["body", "Slot: content"]` + unexpected console/page errors 0건, `pnpm run codex:preflight` PASS.
 - **2026-04-30**: Proposed. ADR-903/910/911/912/913/914 라인업의 최종 cutover ADR 로 도입. ADR-914 standalone scope 흡수. tier3 entry "다음 Tier 1 = ADR-916 진입" 권고.
 - **2026-05-01 — Phase 0 G1 Schema Boundary Freeze land + Accepted 승격**:
   - **framing #3 lock-in** — §Decision 의 "ADR fork checkpoint (4 질문)" 서브섹션에서 ADR-903 의 read-through projection ↔ 본 ADR 의 primary SSOT reverse 가 valid 한 사유 명문화. base/응용 분류 + schema 4 영역 직교성 + reverse 정당화 (ADR-903 transition bridge / ADR-910/911/912/913 누적 / closure ADR 부재) + codex 1차 진입 합의.

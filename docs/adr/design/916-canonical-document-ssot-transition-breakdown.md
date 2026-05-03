@@ -3,6 +3,8 @@
 본 문서는 [ADR-916](../completed/916-canonical-document-ssot-transition.md)의 phase plan, inventory, gate 측정 방법을 정의한다. 핵심은 `CompositionDocument`를 최종 SSOT로 승격하고, legacy `elements[]`를 runtime 중심이 아니라 adapter 경계로 격리하는 것이다.
 
 > **2026-05-02 direct cutover 정정**: 개발 단계라 기존 사용자/데이터 보존 의무가 없으므로 feature flag, backup, rollback marker, runtime DB migration 은 더 이상 목표가 아니다. 아래 historical sub-phase 중 flag/backup/migration 전제는 direct cutover 로 superseded 된다.
+>
+> **2026-05-03 post-cutover fix**: element 생성 persistence 와 frame renderer input 도 canonical SSOT 기준으로 후속 고정했다. `elementCreation` 은 active `CompositionDocument` 를 `db.documents` 에 저장하고, `FramesTab` / `buildFrameRendererInput` / `visibleFrameRoots` 는 `layout_id` predicate 가 아니라 `CanonicalFrameElementScope` 를 직접 소비한다. legacy frame/slot mirror 는 adapter fallback/export boundary 에만 남긴다.
 
 ## 1. 최종 구조
 

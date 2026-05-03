@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented — 2026-05-02 direct cutover + G5 Pencil import/export parity closure
+Implemented — 2026-05-02 direct cutover + G5 Pencil import/export parity closure. 2026-05-03 후속 fix 로 Frames 탭 / Skia frame body / Slot 표시 회귀를 canonical frame scope 기준으로 닫았다.
 
 > **재개 사유** (2026-04-30): 본 ADR 은 ADR-912 (Editing Semantics UI — reusable component + slot 추상) 의 **frame-bundled preset 편의 확장** 임이 framing 재정의 됐고, 2026-04-30 ADR-912 가 Component/Slot base 를 `Implemented` 로 승격했다. 본 ADR 은 여전히 ADR-912 에 영향을 주거나 기준을 제공하지 않는다. `Frame.reusable` / `Frame.slot` / `Ref.descendants` schema 의 사용자 가시 편집 base 는 ADR-912 기준을 따른다. 본 ADR 의 이전 ##Slot section## 소유권 표현은 잘못된 설계 전제였고, ADR-912 기준으로 supersede 된다. **재개 범위**: P3-ε / P3-ζ 는 FramesTab / frame preset UX 가 완료된 ADR-912 기능을 더 쉽게 쓰게 하는 보조 흐름으로만 재설계한다.
 
@@ -16,6 +16,7 @@ Implemented — 2026-05-02 direct cutover + G5 Pencil import/export parity closu
 
 ### 진행 로그
 
+- **2026-05-03 — post-cutover FramesTab / Skia frame scope fix**: direct cutover 이후 page/body 가 frame 수만큼 Layers tree 에 중복 표시되고 frame Slot 이 Skia 에 정상 표시되지 않던 회귀를 수정했다. FramesTab 과 frame renderer input 은 active `CompositionDocument` 에서 산출한 canonical frame scope (`elementIds`, `bodyElementId`) 를 사용하고, legacy `layout_id` predicate 는 DB fallback 전용 `isLegacyFrameElementForFrame` 로 격리했다. frame Slot 추가/복원은 `legacy-slot-hoisted` placeholder 를 canonical authoring view 에서 `Slot` 으로 복원하는 경로로 고정했다. 검증: targeted builder vitest 11 files / 83 tests PASS + browser smoke page/Frame Slot reload persistence PASS + `pnpm run codex:preflight` PASS.
 - **2026-05-02 — G5 final closure / Implemented**: `apps/builder/src/adapters/pencil/` 에 Pencil document-level import/export adapter, schema map, type re-export, 5개 `.pen` fixture, import/roundtrip tests 를 추가했다. `packages/shared/src/types/pencil-adapter.types.ts` 의 Phase 5+ stub 함수는 실제 순수 매핑 함수로 승격했고, ADR-916 import payload adapter 는 같은 mapper 를 사용해 `.pen` top-level node 를 reusable canonical master 로 normalize 한다. 검증: targeted vitest 3 files / 24 tests PASS + `pnpm run codex:typecheck` PASS.
 - **2026-05-02 — G5 first cleanup slice**: Layout selection state 의 `currentLayoutId` backward-compat alias 를 제거하고 `selectedReusableFrameId` 단일 상태로 고정했다. `layouts.ts` persist payload, `layoutActions.ts`, `BuilderCore`, `useIframeMessenger`, `ComponentsPanel`, 관련 static/unit tests 를 갱신했다. 검증: targeted vitest 4 files / 19 tests PASS + `pnpm run codex:typecheck` PASS.
 - **2026-05-02 — G5 second cleanup slice**: `PageLayoutSelector` 의 page-frame binding write boundary 를 `apps/builder/src/adapters/canonical/pageFrameBinding.ts` 로 이동했다. 컴포넌트는 legacy `layout_id` field/persistence helper 를 직접 import 하지 않고, adapter 가 canonical document store 를 먼저 갱신한 뒤 현재 DB 구조에 필요한 `pages.layout_id` mirror payload 만 격리해 persist 한다. 검증: targeted vitest `pageFrameBinding.test.ts` + `PageLayoutSelector.static.test.ts` 2 files / 3 tests PASS + `pnpm run codex:typecheck` PASS.
