@@ -25,8 +25,14 @@ import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
 import { sanitizeFillDerivedStylePatch } from "../panels/styles/utils/fillDerivedStyleProps";
 import { saveService } from "../../services/save";
+import { getDB } from "../../lib/db";
 import { getElementDataBinding } from "../../adapters/canonical/legacyExtensionFields";
+import {
+  areCanonicalMutationStoreActionsRegistered,
+  mergeElementsCanonicalPrimary,
+} from "../../adapters/canonical/canonicalMutations";
 import { historyManager } from "./history";
+import { useCanonicalDocumentStore } from "./canonical/canonicalDocumentStore";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import type { BatchPropsUpdate } from "./utils/elementUpdate";
 import {
@@ -70,6 +76,21 @@ function sanitizeInspectorProps(
     );
   }
   return nextProps;
+}
+
+function syncInspectorElementToCanonical(element: Element): void {
+  if (!areCanonicalMutationStoreActionsRegistered()) return;
+  mergeElementsCanonicalPrimary([element]);
+}
+
+async function persistActiveCanonicalDocument(): Promise<void> {
+  const canonical = useCanonicalDocumentStore.getState();
+  const projectId = canonical.currentProjectId;
+  if (!projectId) return;
+  const doc = canonical.documents.get(projectId);
+  if (!doc) return;
+  const db = await getDB();
+  await db.documents.put(projectId, doc);
 }
 
 // ============================================
@@ -274,6 +295,7 @@ export const createInspectorActionsSlice: StateCreator<
     // ⚠️ 구조 변경(parent_id, 추가/삭제) 시에만 인덱스 재구축
     // props/style 변경은 구조 변경이 아니므로 스킵
     // (childrenMap, pageIndex는 parent_id 기반이므로 영향 없음)
+    syncInspectorElementToCanonical(updatedElement);
 
     // DB 저장 (비동기, idle callback)
     const runDbSync = async () => {
@@ -302,6 +324,7 @@ export const createInspectorActionsSlice: StateCreator<
             validateSerialization: true,
           },
         );
+        await persistActiveCanonicalDocument();
       } catch (error) {
         console.error("❌ Inspector action DB save failed:", error);
       }
@@ -465,6 +488,8 @@ export const createInspectorActionsSlice: StateCreator<
           dirtyElementIds: dirtyIds,
         } as Partial<CombinedState>;
       });
+
+      syncInspectorElementToCanonical(updatedElement);
     },
 
     updateSelectedStyles: (styles) => {
@@ -513,6 +538,7 @@ export const createInspectorActionsSlice: StateCreator<
             currentStyle[property] = value;
           }
         }
+        distributeShorthand(currentStyle as Record<string, unknown>, property);
       });
 
       updateAndSave(

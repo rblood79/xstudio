@@ -34,6 +34,8 @@ const PX_LIKE_STYLE_PROPS = new Set([
   "borderWidth",
   "borderRadius",
   "gap",
+  "rowGap",
+  "columnGap",
   "padding",
   "paddingTop",
   "paddingRight",
@@ -233,6 +235,20 @@ function resolveTargetValue(
   return specStyle[prop] ?? normalizeStyleValue(prop, legacyStyle[prop]) ?? "";
 }
 
+function resolveCurrentStyleValue(
+  prop: string,
+  currentStyle: Record<string, unknown>,
+): string | undefined {
+  if (prop === "gap") {
+    return (
+      normalizeStyleValue("rowGap", currentStyle.rowGap) ??
+      normalizeStyleValue("columnGap", currentStyle.columnGap) ??
+      normalizeStyleValue("gap", currentStyle.gap)
+    );
+  }
+  return normalizeStyleValue(prop, currentStyle[prop]);
+}
+
 /**
  * 선택된 요소의 특정 속성들이 기본값과 다른지 확인하는 훅
  * 리셋 버튼 조건부 표시용
@@ -250,7 +266,7 @@ export function useHasDirtyStyles(properties: string[]): boolean {
     const { legacyStyle, specStyle } = resolveResetBaseline(element);
 
     for (const prop of properties) {
-      const currentValue = normalizeStyleValue(prop, currentStyle[prop]);
+      const currentValue = resolveCurrentStyleValue(prop, currentStyle);
       if (currentValue === undefined) continue;
       const resetValue = resolveTargetValue(prop, specStyle, legacyStyle);
       if (currentValue !== resetValue) return true;
@@ -281,7 +297,7 @@ export function useResetStyles() {
     // 실제로 변경이 필요한 속성만 포함 (dirty check)
     const resetObj: Record<string, string> = {};
     properties.forEach((prop) => {
-      const currentValue = normalizeStyleValue(prop, currentStyle[prop]);
+      const currentValue = resolveCurrentStyleValue(prop, currentStyle);
       if (currentValue === undefined) return;
       const targetValue = resolveTargetValue(prop, specStyle, legacyStyle);
       const resetValue =

@@ -126,9 +126,17 @@ describe("useResetStyles — spec preset dirty regression", () => {
     expect(
       (
         useStore.getState().elementsMap.get("taggroup-1")?.props?.style as {
-          gap?: number;
+          rowGap?: number;
+          columnGap?: number;
         }
-      )?.gap,
+      )?.rowGap,
+    ).toBe(12);
+    expect(
+      (
+        useStore.getState().elementsMap.get("taggroup-1")?.props?.style as {
+          columnGap?: number;
+        }
+      )?.columnGap,
     ).toBe(12);
   });
 
@@ -153,6 +161,8 @@ describe("useResetStyles — spec preset dirty regression", () => {
       ?.style as Record<string, unknown> | undefined;
 
     expect(style?.gap).toBeUndefined();
+    expect(style?.rowGap).toBeUndefined();
+    expect(style?.columnGap).toBeUndefined();
     expect(dirty.current).toBe(false);
     expect(layout.current?.display).toBe("flex");
     expect(layout.current?.flexDirection).toBe("column");

@@ -7,6 +7,7 @@ import {
   registerCanonicalMutationStoreActions,
   resetCanonicalMutationStoreActions,
 } from "../../../../adapters/canonical/canonicalMutations";
+import { createInspectorActionsSlice } from "../../inspectorActions";
 import { createRemoveElementsAction } from "../elementRemoval";
 import { createUpdateElementPropsAction } from "../elementUpdate";
 
@@ -33,6 +34,12 @@ vi.mock("../../history", () => ({
   },
 }));
 
+vi.mock("../../../../services/save", () => ({
+  saveService: {
+    savePropertyChange: vi.fn(async () => {}),
+  },
+}));
+
 type MockState = {
   elements: Element[];
   elementsMap: Map<string, Element>;
@@ -47,6 +54,9 @@ type MockState = {
   dirtyElementIds: Set<string>;
   layoutVersion: number;
   batchUpdateElementOrders: ReturnType<typeof vi.fn>;
+  _cancelHydrateSelectedProps: ReturnType<typeof vi.fn>;
+  updateElement: ReturnType<typeof vi.fn>;
+  batchUpdateElementProps: ReturnType<typeof vi.fn>;
 };
 
 function makeElement(
@@ -94,6 +104,9 @@ function makeState(elements: Element[]): MockState {
     dirtyElementIds: new Set(),
     layoutVersion: 0,
     batchUpdateElementOrders: vi.fn(),
+    _cancelHydrateSelectedProps: vi.fn(),
+    updateElement: vi.fn(),
+    batchUpdateElementProps: vi.fn(),
   };
 }
 
@@ -263,6 +276,107 @@ describe("element mutations keep canonical document primary", () => {
     expect(state.elementsMap.get("frame-body")?.props).toEqual({
       style: { display: "grid", gridTemplateRows: "auto 1fr" },
       appliedPreset: "vertical-2",
+    });
+  });
+
+  it("style panel layout edits merge frame body and slot style into active canonical document", () => {
+    const body = makeElement("frame-body", "body", {
+      layout_id: "frame-1",
+      props: { style: { display: "block" } },
+    });
+    const slot = makeElement("slot-content", "Slot", {
+      parent_id: "frame-body",
+      layout_id: "frame-1",
+      props: { name: "content", style: { display: "block" } },
+      slot_name: "content",
+    });
+    const state = makeState([body, slot]);
+    state.selectedElementId = "frame-body";
+    state.selectedElementIds = ["frame-body"];
+    state.selectedElementIdsSet = new Set(["frame-body"]);
+    state.selectedElementProps = body.props as Record<string, unknown>;
+    registerCanonicalActions(state);
+    useCanonicalDocumentStore.getState().setDocument(
+      "project-1",
+      makeFrameDocument([
+        {
+          id: "frame-body",
+          type: "body",
+          props: body.props as Record<string, unknown>,
+          children: [
+            {
+              id: "slot-content",
+              type: "frame",
+              placeholder: true,
+              props: slot.props as Record<string, unknown>,
+              metadata: {
+                type: "legacy-slot-hoisted",
+                slotName: "content",
+              },
+              children: [],
+            },
+          ],
+        },
+      ]),
+    );
+
+    const inspectorActions = createInspectorActionsSlice(
+      createSetMock(state) as never,
+      () => state as never,
+      {} as never,
+    );
+
+    inspectorActions.updateSelectedStyles({
+      display: "flex",
+      flexDirection: "column",
+      gap: "12px",
+    });
+
+    const frame = useCanonicalDocumentStore.getState().getDocument("project-1")
+      ?.children[0] as FrameNode;
+    const frameBody = frame.children?.find((node) => node.id === "frame-body");
+    expect(frameBody?.props?.style).toMatchObject({
+      display: "flex",
+      flexDirection: "column",
+      rowGap: 12,
+      columnGap: 12,
+    });
+    expect(frameBody?.props?.style).not.toHaveProperty("gap");
+    expect(state.elementsMap.get("frame-body")?.props.style).toMatchObject({
+      display: "flex",
+      flexDirection: "column",
+      rowGap: 12,
+      columnGap: 12,
+    });
+
+    state.selectedElementId = "slot-content";
+    state.selectedElementIds = ["slot-content"];
+    state.selectedElementIdsSet = new Set(["slot-content"]);
+    state.selectedElementProps = slot.props as Record<string, unknown>;
+    inspectorActions.updateSelectedStyle("padding", "8px");
+
+    const updatedFrame = useCanonicalDocumentStore
+      .getState()
+      .getDocument("project-1")?.children[0] as FrameNode;
+    const updatedFrameBody = updatedFrame.children?.find(
+      (node) => node.id === "frame-body",
+    );
+    const slotNode = updatedFrameBody?.children?.find(
+      (node) => node.id === "slot-content",
+    );
+    expect(slotNode?.props?.style).toMatchObject({
+      display: "block",
+      paddingTop: 8,
+      paddingRight: 8,
+      paddingBottom: 8,
+      paddingLeft: 8,
+    });
+    expect(state.elementsMap.get("slot-content")?.props.style).toMatchObject({
+      display: "block",
+      paddingTop: 8,
+      paddingRight: 8,
+      paddingBottom: 8,
+      paddingLeft: 8,
     });
   });
 });

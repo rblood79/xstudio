@@ -10,7 +10,8 @@ Implemented — 2026-05-02. `Element.tag → Element.type` direct cutover 와 hy
   - ADR-916 frame persistence/render fix 는 `layout_id` / `slot_name` schema 를 되살리지 않고 canonical frame scope + adapter fallback 으로 처리했다. runtime frame membership 은 `CanonicalFrameElementScope` 를 사용하고, legacy mirror predicate 는 `isLegacyFrameElementForFrame` fallback 으로만 남는다.
   - `legacy-slot-hoisted` placeholder 는 canonical authoring view 에서 `Slot` 으로 복원하지만, legacy `slot_name` payload 는 export/import adapter boundary 에서만 생성된다. 따라서 Phase 5 frame/slot type schema cleanup 과 raw fixture key 0건 기준은 유지된다.
   - Layout Preset 변경 시 Slot 누적 fix 도 `layout_id` / `slot_name` schema 재도입 없이 `removeElements` full snapshot write-through 와 `updateElementProps` canonical merge 로 처리했다.
-  - 검증: targeted builder vitest 11 files / 83 tests PASS + Layout Preset canonical mutation targeted vitest 8 files / 60 tests PASS + `pnpm run codex:preflight` PASS.
+  - Style Panel Layout section 의 frame body / Slot style 적용 fix 도 legacy frame/slot schema 재도입 없이 `inspectorActions` 의 canonical merge/write-through 로 처리했다.
+  - 검증: targeted builder vitest 11 files / 83 tests PASS + Layout Preset canonical mutation targeted vitest 8 files / 60 tests PASS + Style Panel canonical mutation targeted vitest 4 files / 49 tests PASS + `pnpm run codex:preflight` PASS.
 - **2026-04-26**: Proposed (세션 35 마감)
 - **2026-04-27 (세션 36)**: Phase 0-α 진입 — `unified.types.ts` 7 legacy fields `@deprecated` 마킹 (commit `d716da4e`)
 - **2026-04-27 (세션 37)**: **Phase 1 + Phase 2 main land** (PR #250, commit `cad82b02`)

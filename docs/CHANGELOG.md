@@ -21,12 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frames 탭에서 frame Layout Preset 을 변경할 때 기존 Slot 이 삭제되지 않고 계속 누적되던 회귀를 수정했다.
   - `removeElements` 는 삭제 후 `setElementsCanonicalPrimary()` 로 active `CompositionDocument` 를 full snapshot 기준으로 갱신한다.
   - `updateElementProps` 는 body `appliedPreset` / container style 변경을 `mergeElementsCanonicalPrimary()` 로 canonical document 에 반영한다.
+- Frames 탭 frame body / Slot 선택 후 Style Panel 의 Layout section 변경이 Skia frame render 에 적용되지 않던 회귀를 수정했다.
+  - Style Panel 전용 `inspectorActions` commit/preview 경로가 `updateElementProps` 를 우회하던 canonical write-through gap 을 닫고, body/Slot style 을 active `CompositionDocument` 에 즉시 merge 한다.
+  - `gap` shorthand batch edit 도 store longhand 정책에 맞춰 `rowGap` / `columnGap` 으로 분배하고, reset dirty 판정이 longhand 값을 읽도록 보강했다.
 
 ### Verification
 
 - `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/adapters/canonical/__tests__/canonicalMutations.test.ts src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts src/adapters/canonical/__tests__/frameElementLoader.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/renderers/__tests__/createSkiaRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/main/BuilderCore.static.test.ts` — 11 files / 83 tests PASS
 - `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/elementCanonicalMutation.test.ts src/builder/stores/utils/__tests__/elementCreationCanonical.test.ts src/adapters/canonical/__tests__/canonicalMutations.test.ts src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.static.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts` — 8 files / 60 tests PASS
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/elementCanonicalMutation.test.ts src/builder/panels/styles/hooks/useResetStyles.test.tsx src/builder/panels/styles/hooks/useLayoutValues.test.tsx src/builder/stores/__tests__/inspectorFills.test.ts` — 4 files / 49 tests PASS
 - Browser smoke: page Button add before/after reload 유지, frame Slot add/reload 유지, immediate frame Layers `["body", "Slot: content"]`, unexpected console/page errors 0건
+- Browser smoke: frame body `display/flexDirection/gap` 와 Slot `padding` 스타일 변경 후 store/canonical `CompositionDocument` style 이 동일하게 갱신되고 relevant console/page errors 0건
 - `pnpm run codex:preflight` — PASS
 
 ## [ADR-916/911/913 direct cutover — flags, backup, runtime migrations 제거 + ADR-911 Implemented] - 2026-05-02
