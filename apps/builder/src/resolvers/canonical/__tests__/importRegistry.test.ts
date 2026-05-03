@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CanonicalNode, CompositionDocument } from "@composition/shared";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+  RefNode,
+} from "@composition/shared";
 import { resolveCanonicalDocument } from "../index";
 import {
   createCanonicalImportRegistry,
@@ -42,7 +46,7 @@ describe("canonical import registry", () => {
     const hostDoc: CompositionDocument = {
       version: "composition-1.0",
       imports: { kit: "./kit.pen" },
-      children: [{ id: "i1", type: "ref", ref: "kit:round-button" }],
+      children: [{ id: "i1", type: "ref", ref: "kit:round-button" } as RefNode],
     };
 
     const beforePrefetch = resolveCanonicalDocument(
@@ -378,7 +382,7 @@ describe("canonical import registry", () => {
     const hostDoc: CompositionDocument = {
       version: "composition-1.0",
       imports: { kit: "./kit.pen" },
-      children: [{ id: "i1", type: "ref", ref: "kit:hero" }],
+      children: [{ id: "i1", type: "ref", ref: "kit:hero" } as RefNode],
     };
 
     await registry.prefetchDocumentImports(hostDoc);

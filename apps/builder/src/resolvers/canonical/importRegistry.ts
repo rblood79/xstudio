@@ -72,7 +72,7 @@ function assertCompositionDocument(
     );
   }
 
-  return value as CompositionDocument;
+  return value as unknown as CompositionDocument;
 }
 
 function getDefaultImportBaseUrl(): string {

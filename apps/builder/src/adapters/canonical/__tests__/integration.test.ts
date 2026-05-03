@@ -36,7 +36,7 @@ import { resolveToken } from "@composition/specs";
 
 const deps = { convertComponentRole, convertPageLayout };
 
-function el(partial: Partial<Element> & Pick<Element, "id" | "tag">): Element {
+function el(partial: Partial<Element> & Pick<Element, "id" | "type">): Element {
   return {
     props: {},
     parent_id: null,

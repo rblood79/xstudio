@@ -243,7 +243,10 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          isLegacyFrameElementForFrame(el, currentLayoutId) &&
+          isLegacyFrameElementForFrame(
+            el as unknown as Element,
+            currentLayoutId,
+          ) &&
           !el.parent_id,
       );
     } else if (currentLayoutId && !currentPageId) {
@@ -251,7 +254,10 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          isLegacyFrameElementForFrame(el, currentLayoutId) &&
+          isLegacyFrameElementForFrame(
+            el as unknown as Element,
+            currentLayoutId,
+          ) &&
           !el.parent_id,
       );
     } else {
@@ -331,7 +337,7 @@ function CanvasContent() {
   // Computed style 수집 (Inspector에서 필요한 속성들)
   // 성능 최적화: getComputedStyle 1회 호출 후 필요한 속성만 추출
   const collectComputedStyle = useCallback(
-    (domElement: Element): Record<string, string> => {
+    (domElement: HTMLElement): Record<string, string> => {
       const computed = window.getComputedStyle(domElement);
       return {
         // Layout (필수)
@@ -908,7 +914,7 @@ function CanvasContent() {
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
     if (currentLayoutId && currentPageId) {
       const layoutElements = resolvedElements.filter((el) =>
-        isLegacyFrameElementForFrame(el, currentLayoutId),
+        isLegacyFrameElementForFrame(el as unknown as Element, currentLayoutId),
       );
       const pageElements = resolvedElements.filter(
         (el) => el.page_id === currentPageId && !hasFrameElementMirrorId(el),
@@ -939,7 +945,7 @@ function CanvasContent() {
     // ⭐ Layout 편집 모드 (currentLayoutId만 있고 currentPageId 없음)
     if (currentLayoutId && !currentPageId) {
       const layoutElements = resolvedElements.filter((el) =>
-        isLegacyFrameElementForFrame(el, currentLayoutId),
+        isLegacyFrameElementForFrame(el as unknown as Element, currentLayoutId),
       );
       const layoutBody = layoutElements.find(
         (el) => el.type === "body" && !el.parent_id,
@@ -1018,6 +1024,7 @@ export function App() {
     messageHandlerRef.current = new MessageHandler(
       {
         setElements: storeState.setElements,
+        setCanonicalDocument: storeState.setCanonicalDocument,
         updateElementProps: storeState.updateElementProps,
         setThemeVars: storeState.setThemeVars,
         setDarkMode: storeState.setDarkMode,

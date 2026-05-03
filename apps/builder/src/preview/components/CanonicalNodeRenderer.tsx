@@ -20,7 +20,7 @@ import React from "react";
 import { rendererMap } from "@composition/shared/renderers";
 import { adaptElementFillStyle } from "@composition/shared";
 import type { ResolvedNode } from "@composition/shared";
-import type { SharedRenderContext } from "@composition/shared/types";
+import type { RenderContext as SharedRenderContext } from "@composition/shared/types";
 import { extractCanonicalPropsFromResolved } from "../../resolvers/canonical/storeBridge";
 import type { RenderContext } from "../types/index";
 import type { PreviewElement } from "../types/index";

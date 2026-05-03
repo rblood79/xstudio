@@ -38,7 +38,7 @@ export function resolveLayoutForPage(
   allElements: Element[],
 ): LayoutResolutionResult {
   // Layout 없으면 기존 방식 (Page elements만 렌더링)
-  if (!layout || !getNullablePageFrameBindingId(page)) {
+  if (!layout || !page || !getNullablePageFrameBindingId(page)) {
     const pageElements = allElements.filter((el) => el.page_id === page?.id);
     return {
       resolvedTree: buildElementTree(pageElements, null),

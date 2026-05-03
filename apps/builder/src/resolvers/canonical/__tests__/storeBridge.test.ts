@@ -12,9 +12,15 @@
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import type { Element } from "@/types/builder/unified.types";
-import type { CompositionDocument, ResolvedNode } from "@composition/shared";
+import type {
+  CompositionDocument,
+  RefNode,
+  ResolvedNode,
+} from "@composition/shared";
 
 import {
+  getComponentMasterReference,
+  isComponentInstanceMirrorElement,
   withComponentInstanceMirror,
   withComponentOriginMirror,
 } from "@/adapters/canonical/componentSemanticsMirror";
@@ -81,7 +87,7 @@ describe("selectResolvedTree", () => {
               type: "ref",
               ref: "MasterBtn",
               props: { label: "Send" },
-            },
+            } as RefNode,
           ],
         },
       ],
@@ -117,8 +123,8 @@ describe("selectResolvedTree", () => {
           type: "frame",
           metadata: { type: "legacy-page", pageId: "P1" },
           children: [
-            { id: "inst-A1", type: "ref", ref: "master-A" },
-            { id: "inst-A2", type: "ref", ref: "master-A" },
+            { id: "inst-A1", type: "ref", ref: "master-A" } as RefNode,
+            { id: "inst-A2", type: "ref", ref: "master-A" } as RefNode,
           ],
         },
       ],
@@ -155,7 +161,9 @@ describe("selectResolvedTree", () => {
     const doc: CompositionDocument = {
       version: "composition-1.0",
       imports: { kit: "./kit.pen" },
-      children: [{ id: "inst", type: "ref", ref: "kit:round-button" }],
+      children: [
+        { id: "inst", type: "ref", ref: "kit:round-button" } as RefNode,
+      ],
     };
 
     const result = await prefetchResolvedTreeImports(doc, registry);
@@ -591,9 +599,9 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     );
     const canonical = resolveInstanceWithSharedCache(instance, master);
     expect(canonical?.id).toBe("i7-unique");
-    // 다른 instance 메타필드도 보존
-    expect(canonical?.componentRole).toBe("instance");
-    expect(canonical?.masterId).toBe("m7");
+    // 다른 instance 메타필드도 보존 — adapter helper 경유 (legacy field direct access 회피)
+    expect(canonical && isComponentInstanceMirrorElement(canonical)).toBe(true);
+    expect(canonical && getComponentMasterReference(canonical)).toBe("m7");
   });
 
   // P3-B tests are appended after TC21
