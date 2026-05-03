@@ -1,0 +1,1 @@
+import{r as t}from"./slotMirror-BFWTjrAL.js";import{bd as e,be as p}from"./main-CIAMe3KQ.js";const c=t.memo(function(o){const r=p("TagGroup");return r?t.createElement(e,{...o,spec:r}):null});export{c as default};
